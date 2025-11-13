@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './Layout.module.css';
 import { Outlet, NavLink } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth'; // <-- 1. IMPORTAR HOOK
+import { useAuth } from '../../hooks/AuthContext.jsx';
 import { 
   FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt 
 } from 'react-icons/fa';

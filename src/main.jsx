@@ -5,7 +5,7 @@ import './index.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 // 1. IMPORTAR NUESTRAS HERRAMIENTAS DE AUTENTICACIÓN
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from './hooks/AuthContext.jsx';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Importamos todas las páginas

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from './Login.module.css';
 
 // 1. Importamos nuestro hook useAuth
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext.jsx';
 
 import logo from '../assets/img/logo.png'; 
 
