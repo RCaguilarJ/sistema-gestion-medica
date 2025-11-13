@@ -18,7 +18,7 @@
 }
 
 .chartContainer {
-  /* Damos una altura fija para que la gráfica se renderice */
+  /* Damos una altura fija para que la gráfica se renderice  ayuda*/
   height: 300px;
   width: 100%;
 }
