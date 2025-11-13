@@ -1,0 +1,131 @@
+/* src/pages/Login.module.css */
+
+.loginPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  /* Este es el fondo degradado de tu diseño */
+  background: linear-gradient(120deg, #f0f9ff 0%, #e6f7f5 100%);
+}
+
+.loginCard {
+  background: #ffffff;
+  padding: 2.5rem 3rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Espacio reservado para el logo */
+.logo {
+  width: 120px; /* Ajusta el tamaño si es necesario */
+  margin: 0 auto 1rem; /* Margen inferior para separarlo del título */
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.formGroup {
+  text-align: left;
+  margin-bottom: 1.25rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
+}
+
+.select {
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.6-3.6%205.4-7.9%205.4-12.9%200-5-1.8-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.65em auto;
+}
+
+/* Color azul principal de tu botón */
+.submitButton {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+.submitButton:hover {
+  background-color: #0069e6;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #1573ff;
+  box-shadow: 0 8px 20px rgba(21,115,255,0.10);
+  transform: translateY(-1px);
+}
+
+.input:focus::placeholder,
+.select:focus::placeholder {
+  color: #9aaedc;
+}
+
+.submitButton:active {
+  transform: translateY(1px) scale(0.997);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+
+.submitButton:focus {
+  outline: none;
+  box-shadow: 0 10px 30px rgba(21,115,255,0.14);
+}
+
+/* Focus visible for accessibility */
+.input:focus-visible,
+.select:focus-visible,
+.submitButton:focus-visible {
+  outline: 3px solid rgba(21,115,255,0.12);
+  outline-offset: 2px;
+}
+
+/* Color azul del enlace */
+.forgotPassword {
+  margin-top: 1.5rem;
+  display: block;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.forgotPassword:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,215 @@
+/* src/pages/Importar.module.css */
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.stepTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.stepSubtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.infoBox {
+  background-color: #f4f4f4;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+/* --- Paso 1: Dropzone --- */
+.dropzone {
+  border: 2px dashed #dcdcdc;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  text-align: center;
+  background-color: #fafafa;
+  cursor: pointer;
+}
+
+.dropzoneIcon {
+  font-size: 3rem;
+  color: #999;
+  margin-bottom: 1rem;
+}
+
+.dropzoneFormats {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 0.5rem;
+}
+
+/* --- Pasos 2 y 4: Tablas --- */
+.tableContainer {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.9rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table th {
+  background-color: #f9f9f9;
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.table td {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Etiquetas de Validación */
+.tagValido,
+.tagAdvertencia,
+.tagError {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tagValido { background-color: #e6f7f0; color: #00875a; }
+.tagAdvertencia { background-color: #fff8e1; color: #ff8b00; }
+.tagError { background-color: #ffebe6; color: #de350b; }
+
+/* --- Paso 3: Carga --- */
+.loadingStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  min-height: 300px;
+}
+
+.spinner {
+  font-size: 3rem;
+  color: #007bff;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  color: #555;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progressInner {
+  width: 100%;
+  height: 100%;
+  background-color: #007bff;
+  /* Animación de barra de progreso */
+  animation: progress-indeterminate 2s linear infinite;
+}
+
+/* --- Paso 4: Resumen --- */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summaryCard {
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+.summaryCardBlue { background-color: #e7f3ff; }
+.summaryCardGreen { background-color: #e6f7f0; }
+.summaryCardYellow { background-color: #fff8e1; }
+.summaryCardRed { background-color: #ffebe6; }
+
+.summaryNumber {
+  font-size: 2.5rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.summaryCardBlue .summaryNumber { color: #007bff; }
+.summaryCardGreen .summaryNumber { color: #00875a; }
+.summaryCardYellow .summaryNumber { color: #ff8b00; }
+.summaryCardRed .summaryNumber { color: #de350b; }
+
+.summaryLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* --- Paso 5: Completado --- */
+.completeStep {
+  text-align: center;
+  padding: 4rem 2rem;
+  min-height: 300px;
+}
+
+.completeIcon {
+  font-size: 4rem;
+  color: #00875a; /* Verde */
+  margin-bottom: 1.5rem;
+}
+
+/* Animaciones */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes progress-indeterminate {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}

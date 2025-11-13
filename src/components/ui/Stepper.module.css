@@ -1,0 +1,52 @@
+/* src/components/ui/Stepper.module.css */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0 3rem 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f0f0f0; /* Gris por defecto */
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: 2px solid #f0f0f0;
+  z-index: 2;
+}
+
+.circleActive {
+  background-color: #007bff; /* Azul */
+  border-color: #007bff;
+  color: white;
+}
+
+.circleDone {
+  background-color: #e6f7f0; /* Verde claro */
+  border-color: #00875a; /* Verde oscuro */
+  color: #00875a;
+}
+
+.line {
+  width: 100px;
+  height: 2px;
+  background-color: #f0f0f0;
+  margin: 0 -0.5rem; /* Pequeño solapamiento */
+  z-index: 1;
+}
+
+.lineDone {
+  background-color: #00875a; /* Verde oscuro */
+}

@@ -1,0 +1,30 @@
+/* src/components/ui/Tag.module.css */
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+/* Colores de tu diseño */
+.green {
+  background-color: #e6f7f0;
+  color: #00875a;
+}
+
+.red {
+  background-color: #ffebe6;
+  color: #de350b;
+}
+
+.yellow {
+  background-color: #fff8e1;
+  color: #ff8b00;
+}
+
+.grey {
+  background-color: #f4f4f4;
+  color: #666;
+}

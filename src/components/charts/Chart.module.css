@@ -1,0 +1,24 @@
+/* src/components/charts/Chart.module.css */
+.chartHeader {
+  margin-bottom: 1.5rem;
+  /* (Estilos opcionales para el título, como en tu diseño) */
+}
+
+.chartTitle {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.chartSubtitle {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+
+.chartContainer {
+  /* Damos una altura fija para que la gráfica se renderice */
+  height: 300px;
+  width: 100%;
+}

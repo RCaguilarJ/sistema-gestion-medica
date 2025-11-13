@@ -1,0 +1,120 @@
+/* src/pages/Reportes.module.css */
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 2rem 0;
+}
+
+.pageLayout {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Columna izquierda más ancha */
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+/* Columna Izquierda */
+.reportTemplates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.filtersCard {
+  margin-top: 2rem;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+/* Columna Derecha */
+.summaryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.summaryItem:last-child {
+  border-bottom: none;
+}
+
+.summaryLabel {
+  color: #555;
+}
+
+.summaryValue {
+  font-weight: 700;
+  color: #333;
+}
+
+.summaryValueRed {
+  color: #de350b;
+}
+
+/* Barra Final */
+.finalSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.finalTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.finalMeta {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}

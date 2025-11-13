@@ -1,0 +1,129 @@
+/* src/pages/Pacientes.module.css */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.filterBar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1rem;
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.searchInput,
+.selectInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+}
+
+.searchInput {
+  padding-left: 2.5rem; /* Espacio para el ícono */
+}
+
+.searchWrapper {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #777;
+}
+
+.tableContainer {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table th {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Estilos de celdas específicas */
+.pacienteNombre {
+  font-weight: 600;
+}
+.pacienteMeta {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.hba1cAlto {
+  color: #de350b;
+  font-weight: 600;
+}
+
+.hba1cMedio {
+  color: #ff8b00;
+  font-weight: 600;
+}
+
+.hba1cBajo {
+  color: #00875a;
+  font-weight: 600;
+}
+
+.accionIcon {
+  color: #555;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.spinner {
+  font-size: 2.5rem;
+  color: #007bff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

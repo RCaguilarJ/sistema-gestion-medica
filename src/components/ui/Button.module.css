@@ -1,0 +1,45 @@
+/* src/components/ui/Button.module.css */
+.button {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Estilo Primario (azul) */
+.primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.primary:hover {
+  background-color: #0056b3;
+}
+
+/* Estilo Secundario (para "Volver") */
+.secondary {
+  background-color: transparent;
+  color: #555;
+  border: 1px solid #dcdcdc;
+}
+
+.secondary:hover {
+  background-color: #f9f9f9;
+  border-color: #aaa;
+}
+
+/* Estilo para los botones oscuros (como en el dropzone) */
+.dark {
+  background-color: #333;
+  color: white;
+}
+
+.dark:hover {
+  background-color: #555;
+}

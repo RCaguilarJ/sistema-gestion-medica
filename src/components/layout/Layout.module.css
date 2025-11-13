@@ -1,0 +1,172 @@
+/* src/components/layout/Layout.module.css */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.navbar {
+  width: 100%;
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Esta regla se aplica a la <img> */
+.navbarLogo {
+  height: 40px; /* Define la altura del logo. Ajusta a 35px o 45px si es necesario */
+  width: auto;  /* El ancho se ajustará automáticamente */
+}
+
+.menuButton {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.navbarUser {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #007bff; /* El azul de tu diseño */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.mainContent {
+  width: 100%;
+  max-width: 1200px; /* Un ancho máximo para centrar el contenido */
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.navLinks {
+  display: flex;
+  gap: 2rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.navLinksOpen {
+  display: flex;
+}
+
+.navLink,
+.navLinkActive {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem; 
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.navLink {
+  color: #555;
+}
+
+.navLink:hover {
+  color: #000;
+}
+
+.navLinkActive {
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+/* Media queries para dispositivos móviles */
+@media (max-width: 768px) {
+  .menuButton {
+    display: block;
+  }
+
+  .navLinks {
+    display: none; /* oculto por defecto en móvil */
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 64px; /* debajo de la navbar */
+    transform: none;
+    flex-direction: column;
+    gap: 0;
+    background: #ffffff;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    z-index: 9;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 280ms ease, opacity 220ms ease;
+    pointer-events: none;
+  }
+
+  .navLinksOpen {
+    display: flex;
+    max-height: 420px; /* suficiente para las opciones */
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .navLink,
+  .navLinkActive {
+    padding: 0.75rem 0;
+    width: 100%;
+    border-bottom: none;
+  }
+
+  .navbarUser {
+    display: none; /* ocultamos info de usuario en pantallas pequeñas */
+  }
+
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .navbarLogo {
+    height: 36px;
+  }
+
+  /* Ajustes del main para evitar desfaces del contenido en móvil */
+  .mainContent {
+    padding: 1rem;
+    max-width: 100%;
+  }
+}
+/* ... (todos tus estilos anteriores) ... */
+
+.logoutButton {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.logoutButton:hover {
+  background-color: #f4f4f4;
+  color: #de350b; /* Rojo al pasar el mouse */
+}

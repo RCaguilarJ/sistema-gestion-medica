@@ -1,0 +1,171 @@
+/* src/pages/Configuracion.module.css */
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 2rem 0;
+}
+
+/* --- Estilos de las Pestañas (Tabs) --- */
+.tabNav {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 2rem;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background-color: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  /* Mueve el botón 2px hacia arriba para que el borde se alinee */
+  transform: translateY(2px); 
+}
+
+.tabButtonActive {
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+/* --- Estilos de Usuarios y Roles --- */
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.permissionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.permissionCard {
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.permissionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.permissionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.permissionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #333;
+}
+
+.permissionItem svg {
+  font-size: 0.8rem;
+}
+
+.itemAllow { color: #00875a; } /* Verde */
+.itemDeny { color: #de350b; } /* Rojo */
+
+/* --- Estilos de Catálogos --- */
+.catalogGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.catalogList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.catalogItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.catalogItem:last-child {
+  border-bottom: none;
+}
+
+.catalogItem span {
+  font-size: 0.95rem;
+}
+
+.catalogItem svg {
+  cursor: pointer;
+  color: #555;
+}
+
+/* --- Estilos de Programas --- */
+.metaForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+}
+
+.formGroup small {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.25rem;
+}
+
+.formActions {
+  grid-column: 1 / -1; /* Ocupa todo el ancho */
+  text-align: right;
+  margin-top: 1rem;
+}
