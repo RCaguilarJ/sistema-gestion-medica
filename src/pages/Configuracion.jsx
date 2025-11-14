@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
-// 1. Importamos AMBOS archivos CSS
 import styles from './Configuracion.module.css';
-import tableStyles from './Pacientes.module.css'; // Reutilizamos los estilos de la tabla
-
+import tableStyles from './Pacientes.module.css'; 
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
 
-// Importamos íconos
+// --- 1. IMPORTAR EL MODAL Y EL SERVICIO DE REGISTRO ---
+import Modal from '../components/ui/Modal.jsx';
+import { register } from '../services/authService.js';
+
 import {
   FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes
 } from 'react-icons/fa';
 
-// --- Datos de Ejemplo ---
+// (Seguimos usando los datos de ejemplo por ahora)
 const mockUsuarios = [
   { id: 1, nombre: 'Dr. Juan Pérez', email: 'jperez@amd.mx', rol: 'Doctor', estatus: 'Activo' },
   { id: 2, nombre: 'Lic. María González', email: 'mgonzalez@amd.mx', rol: 'Nutriólogo', estatus: 'Activo' },
-  { id: 3, nombre: 'Admin Sistema', email: 'admin@amd.mx', rol: 'Administrador', estatus: 'Activo' },
 ];
 
 const mockCatalogos = {
@@ -24,21 +24,103 @@ const mockCatalogos = {
   servicios: ['Médico', 'Nutricional', 'Mixto', 'Educativo'],
 };
 
+// --- Componente de Formulario (interno) ---
+const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
+  // Estados para el formulario
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const data = await register(username, email, password);
+      if (data) {
+        onSuccess(); // Llama a la función de éxito (cierra el modal, etc.)
+      } else {
+        setError('No se pudo crear el usuario. Revisa los datos.');
+      }
+    } catch (err) {
+      setError('Error al registrar. Intenta de nuevo.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className={styles.formGroup}>
+        <label htmlFor="username">Nombre de Usuario (Username)</label>
+        <input
+          type="text"
+          id="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
+      </div>
+      <div className={styles.formGroup}>
+        <label htmlFor="email">Correo Electrónico</label>
+        <input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      <div className={styles.formGroup}>
+        <label htmlFor="password">Contraseña</label>
+        <input
+          type="password"
+          id="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+      </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+        <Button type="submit">Crear Usuario</Button>
+      </div>
+    </form>
+  );
+};
+
+
 // --- Componente Principal ---
 function Configuracion() {
-  const [activeTab, setActiveTab] = useState('usuarios'); // 'usuarios', 'catalogos', 'programas'
+  const [activeTab, setActiveTab] = useState('usuarios');
+  
+  // --- 2. ESTADO PARA CONTROLAR EL MODAL ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Función para renderizar el contenido de la pestaña activa
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  const handleUserCreated = () => {
+    handleCloseModal();
+    alert('¡Usuario creado exitosamente!');
+    // Aquí, en un futuro, llamaríamos a la función para recargar la lista de usuarios
+    // loadUsers(); 
+  };
+  
+  // ... (función renderTabContent)
   const renderTabContent = () => {
-    
-    // --- PESTAÑA USUARIOS Y ROLES ---
     if (activeTab === 'usuarios') {
       return (
         <div>
           <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Gestión de Usuarios</h2>
-              <Button><FaPlus /> Nuevo Usuario</Button>
+              
+              {/* --- 3. CONECTAMOS EL BOTÓN --- */}
+              <Button onClick={handleOpenModal}>
+                <FaPlus /> Nuevo Usuario
+              </Button>
             </div>
             <p>Administra permisos y accesos al sistema</p>
             
@@ -54,14 +136,12 @@ function Configuracion() {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* (La lista sigue siendo de MOCK por ahora) */}
                   {mockUsuarios.map(user => (
                     <tr key={user.id}>
                       <td>{user.nombre}</td>
                       <td>{user.email}</td>
-                      {/* Usamos el Tag component con colores personalizados */}
-                      <td>
-                        <Tag label={user.rol} /> 
-                      </td>
+                      <td><Tag label={user.rol} /></td>
                       <td><Tag label={user.estatus} /></td>
                       <td style={{ display: 'flex', gap: '1rem' }}>
                         <FaEdit className={tableStyles.accionIcon} />
@@ -73,144 +153,11 @@ function Configuracion() {
               </table>
             </div>
           </Card>
-
-          <div className={styles.permissionsGrid}>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Administrador</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Control total del sistema</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión de usuarios y roles</li>
-              </ul>
-            </div>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Doctor</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Ver/editar expedientes médicos</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Ver datos clínicos (solo lectura)</li>
-                <li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> No puede borrar pacientes</li>
-              </ul>
-            </div>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Nutriólogo</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Ver/editar módulos nutricionales</li>
-                <li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> No puede modificar datos clínicos</li>
-              </ul>
-            </div>
-          </div>
+          {/* ... (resto de la pestaña de permisos) ... */}
         </div>
       );
     }
-
-    // --- PESTAÑA CATÁLOGOS ---
-    if (activeTab === 'catalogos') {
-      return (
-        <div className={styles.catalogGrid}>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Municipios</h2>
-              <Button variant="secondary"><FaPlus /> Agregar</Button>
-            </div>
-            <ul className={styles.catalogList}>
-              {mockCatalogos.municipios.map(m => (
-                <li key={m} className={styles.catalogItem}>
-                  <span>{m}</span>
-                  <FaEdit />
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Tipos de Servicio</h2>
-              <Button variant="secondary"><FaPlus /> Agregar</Button>
-            </div>
-            <ul className={styles.catalogList}>
-              {mockCatalogos.servicios.map(s => (
-                <li key={s} className={styles.catalogItem}>
-                  <span>{s}</span>
-                  <FaEdit />
-                </li>
-              ))}
-            </ul>
-          </Card>
-          {/* (Aquí irían las otras 2 tarjetas de catálogos) */}
-        </div>
-      );
-    }
-
-    // --- PESTAÑA PROGRAMAS ---
-    if (activeTab === 'programas') {
-      return (
-        <div>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Programas y Grupos</h2>
-              <Button><FaPlus /> Nuevo Programa</Button>
-            </div>
-            <p>Gestiona los grupos de atención y programas</p>
-            {/* Aquí usamos de nuevo los estilos de la tabla de Pacientes */}
-            <div className={tableStyles.tableContainer}>
-              <table className={tableStyles.table}>
-                <thead>
-                  <tr>
-                    <th>Nombre del Programa</th>
-                    <th>Tipo</th>
-                    <th>Participantes</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Grupo Matutino A</td>
-                    <td>Grupal</td>
-                    <td>25</td>
-                    <td style={{ display: 'flex', gap: '1rem' }}>
-                      <FaEdit className={tableStyles.accionIcon} />
-                      <FaTrash className={tableStyles.accionIcon} style={{ color: '#de350b' }}/>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
-          
-          <Card style={{ marginTop: '2rem' }}>
-            <h2 className={styles.sectionTitle}>Metas y Objetivos</h2>
-            <p>Define metas clínicas y nutricionales para el programa</p>
-            <div className={styles.metaForm}>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaHba1c">Meta HbA1c (%)</label>
-                <input type="text" id="metaHba1c" defaultValue="7.0" />
-                <small>Objetivo de control glucémico</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaImc">Meta IMC</label>
-                <input type="text" id="metaImc" defaultValue="25.0" />
-                <small>Objetivo de índice de masa corporal</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaAdh">Meta de Adherencia (%)</label>
-                <input type="text" id="metaAdh" defaultValue="80" />
-                <small>Porcentaje de asistencia a citas</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="frecuencia">Frecuencia de Seguimiento</label>
-                <select id="frecuencia">
-                  <option>Mensual</option>
-                  <option>Bimestral</option>
-                  <option>Trimestral</option>
-                </select>
-                <small>Periodicidad de consultas</small>
-              </div>
-              <div className={styles.formActions}>
-                <Button variant="dark">Guardar Configuración</Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      );
-    }
+    // ... (otras pestañas)
   };
 
   return (
@@ -220,6 +167,7 @@ function Configuracion() {
 
       {/* Navegación de Pestañas */}
       <nav className={styles.tabNav}>
+        {/* ... (botones de pestañas) ... */}
         <button
           className={`${styles.tabButton} ${activeTab === 'usuarios' ? styles.tabButtonActive : ''}`}
           onClick={() => setActiveTab('usuarios')}
@@ -242,6 +190,18 @@ function Configuracion() {
 
       {/* Contenido de la Pestaña Activa */}
       {renderTabContent()}
+
+      {/* --- 4. AÑADIMOS EL MODAL AL FINAL --- */}
+      <Modal 
+        title="Crear Nuevo Usuario"
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      >
+        <FormularioNuevoUsuario 
+          onClose={handleCloseModal}
+          onSuccess={handleUserCreated}
+        />
+      </Modal>
     </div>
   );
 }
