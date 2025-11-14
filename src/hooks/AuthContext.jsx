@@ -1,22 +1,19 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // (Esto lo quitamos en el paso anterior)
-
-// --- CORRECCIÓN AQUÍ ---
+// import { useNavigate } from 'react-router-dom'; // <--- BORRADO
 import * as authService from '../services/authService.js'; 
 import api from '../services/api.js'; 
-// -----------------------
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // const navigate = useNavigate(); // (Esto lo quitamos en el paso anterior)
+  // const navigate = useNavigate(); // <--- BORRADO
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    
+
     if (token && userData) {
       setUser(JSON.parse(userData));
       setIsAuthenticated(true);
@@ -30,7 +27,7 @@ export const AuthProvider = ({ children }) => {
       setUser(data.user);
       setIsAuthenticated(true);
       api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
-      // navigate('/'); // (Esto lo quitamos en el paso anterior)
+      // navigate('/'); // <--- BORRADO
       return true;
     }
     return false;
@@ -41,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     delete api.defaults.headers.common['Authorization'];
-    // navigate('/login'); // (Esto lo quitamos en el paso anterior)
+    // navigate('/login'); // <--- BORRADO
     return true;
   };
 

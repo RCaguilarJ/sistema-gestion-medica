@@ -1,27 +1,25 @@
 import React from 'react';
 import styles from './Layout.module.css';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAR
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'; // <--- AÑADIDO
 import { useAuth } from '../../hooks/AuthContext.jsx';
-import { 
-  FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt 
-} from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import logoAmd from '../../assets/img/logo.png'; 
 
 function Layout() {
   const { logout } = useAuth();
-  const navigate = useNavigate(); // <--- 2. INICIALIZAR
+  const navigate = useNavigate(); // <--- AÑADIDO
 
   const handleLogout = () => {
     logout();
-    navigate('/login'); // <--- 3. REDIRIGIR
+    navigate('/login'); // <--- AÑADIDO
   };
 
   return (
     <div className={styles.layout}>
       <nav className={styles.navbar}>
         <img src={logoAmd} alt="Logo AMD" className={styles.navbarLogo} />
-        
-        {/* Restauré tus NavLinks que faltaban en el archivo que subiste */}
+
+        {/* (Restauré tus NavLinks que faltaban en el repo) */}
         <div className={styles.navLinks}>
           <NavLink to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaTachometerAlt /> <span>Dashboard</span>
@@ -43,7 +41,7 @@ function Layout() {
         <div className={styles.navbarUser}>
           <span>Administrador Sistema</span>
           <div className={styles.userAvatar}>AS</div>
-          <button onClick={handleLogout} className={styles.logoutButton}>
+          <button onClick={handleLogout} className={styles.logoutButton}> {/* <--- CORREGIDO */}
             <FaSignOutAlt />
           </button>
         </div>
@@ -55,5 +53,4 @@ function Layout() {
     </div>
   );
 }
-
 export default Layout;
