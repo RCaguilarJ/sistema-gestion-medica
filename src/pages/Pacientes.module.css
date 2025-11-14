@@ -63,6 +63,24 @@
   overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
 }
 
+/* Horizontal scroll for wide tables on small screens */
+@media (max-width: 768px) {
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* keep vertical overflow hidden but allow horizontal scroll */
+    overflow-y: hidden;
+    padding: 0.5rem; /* small padding so scrollbar doesn't touch edges */
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 10px;
+  }
+
+  .table {
+    min-width: 900px; /* ensure columns remain visible; adjust if needed */
+  }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -132,6 +150,7 @@
 @media (max-width: 1024px) {
   .filterBar {
     grid-template-columns: 1fr 1fr;
+    padding: 1rem;
   }
 }
 
@@ -140,6 +159,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+  }
+  .header > div {
+    width: 100%;
+  }
+  .header > button,
+  .header > .button {
+    width: 100%;
   }
   .filterBar {
     grid-template-columns: 1fr;
@@ -154,5 +180,53 @@
   }
   .title {
     font-size: 1.5rem;
+  }
+}
+
+/* Lista de pacientes en móvil (tarjetas) */
+.patientList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.patientCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.patientCardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.patientCardMeta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.patientCardActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.patientTags {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Make sure table rows remain readable on medium screens by reducing padding */
+@media (max-width: 1024px) {
+  .table th,
+  .table td {
+    padding: 0.9rem 1rem;
   }
 }

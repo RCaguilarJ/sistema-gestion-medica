@@ -114,9 +114,8 @@ function Configuracion() {
       return (
         <div>
           <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={styles.cardHeader}>
               <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Gestión de Usuarios</h2>
-              
               {/* --- 3. CONECTAMOS EL BOTÓN --- */}
               <Button onClick={handleOpenModal}>
                 <FaPlus /> Nuevo Usuario

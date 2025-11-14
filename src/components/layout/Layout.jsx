@@ -29,19 +29,19 @@ function Layout() {
 
         {/* (Restauré tus NavLinks que faltaban en el repo) */}
         <div className={`${styles.navLinks} ${mobileOpen ? styles.navLinksOpen : ''}`}>
-          <NavLink to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaTachometerAlt /> <span>Dashboard</span>
           </NavLink>
-          <NavLink to="/pacientes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/pacientes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaUsers /> <span>Pacientes</span>
           </NavLink>
-          <NavLink to="/importar" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/importar" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaUpload /> <span>Importar</span>
           </NavLink>
-          <NavLink to="/reportes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/reportes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaFileAlt /> <span>Reportes</span>
           </NavLink>
-          <NavLink to="/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaCog /> <span>Configuración</span>
           </NavLink>
         </div>

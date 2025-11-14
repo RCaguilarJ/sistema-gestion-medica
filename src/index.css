@@ -31,6 +31,8 @@ html, body, #root {
   --gutter: 1rem;
   --bp-tablet: 1024px;
   --bp-mobile: 768px;
+  --nav-height: 64px;
+  --menu-width: 240px;
 }
 
 .container {

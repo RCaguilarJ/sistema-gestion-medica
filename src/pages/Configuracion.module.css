@@ -49,6 +49,71 @@
   margin-bottom: 1.5rem;
 }
 
+/* Header dentro de las tarjetas: título + acciones */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 1024px) {
+  .tabNav {
+    gap: 0.35rem;
+  }
+  .tabButton {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+  .permissionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .catalogGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.6rem;
+  }
+  .subtitle {
+    margin-bottom: 1rem;
+  }
+  .tabNav {
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+  .tabButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+  }
+  .cardHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cardHeader > *:not(:first-child) {
+    margin-top: 0.5rem;
+  }
+  .permissionsGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .catalogGrid {
+    grid-template-columns: 1fr;
+  }
+  .metaForm {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .sectionTitle {
+    margin-bottom: 0.75rem;
+  }
+}
+
 .permissionsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

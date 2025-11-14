@@ -93,6 +93,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(false);
   
   // --- 2. ESTADO PARA EL MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -109,6 +110,14 @@ function Pacientes() {
   useEffect(() => {
     cargarPacientes();
   }, []); // El array vacío [] significa que esto se ejecuta 1 sola vez
+
+  // Detectar vista móvil para render alternativo (tarjetas)
+  useEffect(() => {
+    const check = () => setIsMobileView(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Callback para cuando se crea un paciente
   const handlePacienteCreado = () => {
@@ -141,6 +150,37 @@ function Pacientes() {
       );
     }
     
+    // En móvil renderizamos tarjetas con la info más relevante
+    if (isMobileView) {
+      return (
+        <div className={styles.patientList}>
+          {pacientes.map((p) => (
+            <Card key={p.id}>
+              <div className={styles.patientCard}>
+                <div className={styles.patientCardMain}>
+                  <div className={styles.pacienteNombre}>{p.nombre}</div>
+                  <div className={styles.patientCardMeta}>
+                    <div><strong>CURP:</strong> {p.curp}</div>
+                    <div><strong>Municipio:</strong> {p.municipio || 'N/A'}</div>
+                    <div><strong>HbA1c:</strong> {p.hba1c ? `${p.hba1c}%` : 'N/A'}</div>
+                  </div>
+                </div>
+                <div className={styles.patientCardActions}>
+                  <div className={styles.patientTags}>
+                    <Tag label={p.riesgo || 'N/A'} />
+                    <Tag label={p.estatus || 'N/A'} />
+                  </div>
+                  <div>
+                    <FaEye className={styles.accionIcon} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+    
     return (
       <div className={styles.tableContainer}>
         <table className={styles.table}>
@@ -162,8 +202,6 @@ function Pacientes() {
               <tr key={paciente.id}>
                 <td>
                   <div className={styles.pacienteNombre}>{paciente.nombre}</div>
-                  {/* (Necesitaremos añadir edad y genero al modelo para esto) */}
-                  {/* <div className={styles.pacienteMeta}>{paciente.meta}</div> */}
                 </td>
                 <td>{paciente.curp}</td>
                 <td>{paciente.municipio}</td>
