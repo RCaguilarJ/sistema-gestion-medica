@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styles from './Login.module.css';
 import { useAuth } from '../hooks/AuthContext.jsx'; 
 import { useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAR
+import Button from '../components/ui/Button.jsx';
 import logo from '../assets/img/logo.png'; 
 
 function Login() {
@@ -11,6 +12,9 @@ function Login() {
   
   const { login } = useAuth();
   const navigate = useNavigate(); // <--- 2. INICIALIZAR
+
+  // Mostrar siempre el botón para crear el primer usuario
+  const showCreateAdmin = true;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -69,6 +73,17 @@ function Login() {
         <a href="#" className={styles.forgotPassword}>
           ¿Olvidaste tu contraseña?
         </a>
+        {showCreateAdmin && (
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/crear-admin-temporal')}
+            >
+              Crear primer usuario (Administrador)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

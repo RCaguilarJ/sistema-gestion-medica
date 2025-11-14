@@ -60,6 +60,23 @@ export const register = async (username, email, password) => {
   } catch (error) {
     const message = error.response?.data?.message || 'Error desconocido';
     console.error('Error en el registro:', message);
+
+    // Si no hay respuesta del servidor (por ejemplo backend no levantado),
+    // permitimos crear un usuario local temporal para poder inicializar la app.
+    if (!error.response) {
+      console.warn('Backend no disponible — creando usuario local temporal');
+      const fakeToken = btoa(`${email}:${Date.now()}`);
+      const user = {
+        id: Date.now(),
+        username,
+        email,
+        role: 'Administrador',
+      };
+      localStorage.setItem('token', fakeToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      return { jwt: fakeToken, user };
+    }
+
     return null;
   }
 };

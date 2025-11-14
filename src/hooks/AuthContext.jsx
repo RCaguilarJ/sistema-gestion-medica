@@ -1,14 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // <--- BORRADO
+// import { useNavigate } from 'react-router-dom'; // (Esto lo quitamos en el paso anterior)
+
+// --- CORRECCIÓN AQUÍ ---
 import * as authService from '../services/authService.js'; 
 import api from '../services/api.js'; 
+// -----------------------
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // const navigate = useNavigate(); // <--- BORRADO
+  // const navigate = useNavigate(); // (Esto lo quitamos en el paso anterior)
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       setUser(data.user);
       setIsAuthenticated(true);
       api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
-      // navigate('/'); // <--- BORRADO
+      // navigate('/'); // (Esto lo quitamos en el paso anterior)
       return true;
     }
     return false;
@@ -38,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     delete api.defaults.headers.common['Authorization'];
-    // navigate('/login'); // <--- BORRADO
+    // navigate('/login'); // (Esto lo quitamos en el paso anterior)
     return true;
   };
 
