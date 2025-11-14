@@ -101,31 +101,28 @@
   .menuButton {
     display: block;
   }
-
   .navLinks {
-    display: none; /* oculto por defecto en móvil */
-    position: absolute;
+    /* Off-canvas panel */
+    position: fixed;
     left: 0;
-    right: 0;
-    top: 64px; /* debajo de la navbar */
-    transform: none;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    transform: translateX(-100%);
+    background: #ffffff;
     flex-direction: column;
     gap: 0;
-    background: #ffffff;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid #e0e0e0;
-    z-index: 9;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-height 280ms ease, opacity 220ms ease;
+    padding: 1rem;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+    z-index: 1001;
+    transition: transform 260ms cubic-bezier(.2,.9,.2,1);
+    overflow-y: auto;
+    align-items: flex-start;
     pointer-events: none;
   }
 
   .navLinksOpen {
-    display: flex;
-    max-height: 420px; /* suficiente para las opciones */
-    opacity: 1;
+    transform: translateX(0);
     pointer-events: auto;
   }
 
@@ -152,6 +149,32 @@
   .mainContent {
     padding: 1rem;
     max-width: 100%;
+  }
+}
+
+/* Backdrop when mobile menu is open */
+.mobileBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.mobileBackdropOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Small tweak for desktop nav layout to avoid overlap with logo */
+@media (min-width: 769px) {
+  .navLinks {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 50%;
+    translate: 0 -50%;
   }
 }
 /* ... (todos tus estilos anteriores) ... */

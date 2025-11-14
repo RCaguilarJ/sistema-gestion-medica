@@ -23,3 +23,50 @@ html, body, #root {
     padding: 0.75rem;
   }
 }
+
+/* Variables y utilidades responsivas */
+:root {
+  --max-width: 1200px;
+  --container-padding: 1rem;
+  --gutter: 1rem;
+  --bp-tablet: 1024px;
+  --bp-mobile: 768px;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--container-padding);
+}
+
+.grid {
+  display: grid;
+  gap: var(--gutter);
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.responsive-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Ajustes para tablets (horizontal) */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+  #root {
+    padding: 1rem;
+  }
+}
+
+/* Ajustes para móviles (vertical) */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .container {
+    padding: 0.75rem;
+  }
+}

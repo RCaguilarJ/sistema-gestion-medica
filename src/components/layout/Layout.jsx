@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './Layout.module.css';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'; // <--- AÑADIDO
 import { useAuth } from '../../hooks/AuthContext.jsx';
-import { FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import logoAmd from '../../assets/img/logo.png'; 
 
 function Layout() {
@@ -14,13 +14,21 @@ function Layout() {
     navigate('/login'); // <--- AÑADIDO
   };
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleMobile = () => setMobileOpen(v => !v);
+  const closeMobile = () => setMobileOpen(false);
+
   return (
     <div className={styles.layout}>
       <nav className={styles.navbar}>
         <img src={logoAmd} alt="Logo AMD" className={styles.navbarLogo} />
 
+        <button aria-label="Abrir menú" className={styles.menuButton} onClick={toggleMobile}>
+          {mobileOpen ? <FaTimes /> : <FaBars />}
+        </button>
+
         {/* (Restauré tus NavLinks que faltaban en el repo) */}
-        <div className={styles.navLinks}>
+        <div className={`${styles.navLinks} ${mobileOpen ? styles.navLinksOpen : ''}`}>
           <NavLink to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaTachometerAlt /> <span>Dashboard</span>
           </NavLink>
@@ -37,6 +45,9 @@ function Layout() {
             <FaCog /> <span>Configuración</span>
           </NavLink>
         </div>
+
+        {/* Backdrop for mobile menu */}
+        <div className={`${styles.mobileBackdrop} ${mobileOpen ? styles.mobileBackdropOpen : ''}`} onClick={closeMobile} />
 
         <div className={styles.navbarUser}>
           <span>Administrador Sistema</span>

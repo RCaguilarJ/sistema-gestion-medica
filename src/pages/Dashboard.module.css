@@ -55,3 +55,30 @@
   grid-column: 1 / 5; /* Ocupa todo el ancho */
   grid-row: 4 / 5;
 }
+
+/* Responsividad: tablet y móvil */
+@media (max-width: 1024px) {
+  .gridContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi1, .kpi2, .kpi3, .kpi4,
+  .pie1, .pie2, .barChart, .lineChart {
+    grid-column: auto;
+  }
+  .alerts {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .gridContainer {
+    grid-template-columns: 1fr;
+  }
+  .kpi1, .kpi2, .kpi3, .kpi4,
+  .pie1, .pie2, .barChart, .lineChart, .alerts {
+    grid-column: 1 / -1;
+  }
+  .title {
+    font-size: 1.5rem;
+  }
+}

@@ -43,3 +43,16 @@
   color: #777;
   margin: 0;
 }
+
+@media (max-width: 768px) {
+  .card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .icon {
+    font-size: 1.25rem;
+  }
+  .title {
+    font-size: 0.95rem;
+  }
+}

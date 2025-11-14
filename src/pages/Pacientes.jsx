@@ -1,61 +1,148 @@
-import React from 'react'; // <--- Quitamos useState y useEffect
+import React, { useState, useEffect } from 'react';
 import styles from './Pacientes.module.css';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
-import { FaSearch, FaPlus, FaEye } from 'react-icons/fa'; // <-- Quitamos FaSpinner
+import { FaSearch, FaPlus, FaEye, FaSpinner } from 'react-icons/fa';
 
-// <-- 1. IMPORTAR SERVICIO ELIMINADO
-// import { getPacientes } from '../services/pacienteService.js'; 
+// --- 1. IMPORTAR LO QUE NECESITAMOS ---
+import Modal from '../components/ui/Modal.jsx';
+import { getPacientes, createPaciente } from '../services/pacienteService.js';
 
-// --- 2. VOLVEMOS A AÑADIR LOS MOCK DATA ---
-const mockPacientes = [
-  {
-    id: 1,
-    nombre: 'Roberto García Pérez',
-    meta: '39 años • Masculino',
-    curp: 'GARP850615HOCLMR89',
-    municipio: 'Guadalajara',
-    hba1c: 9.2,
-    imc: 31.5,
-    riesgo: 'Alto',
-    estatus: 'Activo',
-    ultimaVisita: '14/10/2024',
-  },
-  {
-    id: 2,
-    nombre: 'Carmen López Martínez',
-    meta: '52 años • Femenino',
-    curp: 'LOMC520808AHOCRJT05',
-    municipio: 'Zapopan',
-    hba1c: 6.5,
-    imc: 26.8,
-    riesgo: 'Bajo',
-    estatus: 'Activo',
-    ultimaVisita: '19/10/2024',
-  },
-];
-// -------------------------------------
+// --- Formulario para el Modal ---
+// (Usamos los mismos estilos 'formGroup' que en Configuracion)
+import formStyles from './Configuracion.module.css'; 
 
-// Función para dar estilo al HbA1c
-const getHba1cStyle = (riesgo) => {
-  if (riesgo === 'Alto') return styles.hba1cAlto;
-  if (riesgo === 'Medio') return styles.hba1cMedio;
-  return styles.hba1cBajo;
+const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
+  const [nombre, setNombre] = useState('');
+  const [curp, setCurp] = useState('');
+  const [municipio, setMunicipio] = useState('');
+  const [riesgo, setRiesgo] = useState('Bajo');
+  const [estatus, setEstatus] = useState('Activo');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Preparamos los datos del paciente
+    const pacienteData = {
+      nombre,
+      curp,
+      municipio,
+      riesgo,
+      estatus,
+      // (Podemos añadir hba1c, imc, etc. aquí)
+    };
+
+    try {
+      const data = await createPaciente(pacienteData);
+      if (data) {
+        onSuccess(); // Cierra el modal y refresca la lista
+      } else {
+        setError('No se pudo crear el paciente. Revisa los datos.');
+      }
+    } catch (err) {
+      setError('Error al crear el paciente. Intenta de nuevo.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className={formStyles.formGroup}>
+        <label htmlFor="nombre">Nombre Completo</label>
+        <input type="text" id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+      </div>
+      <div className={formStyles.formGroup}>
+        <label htmlFor="curp">CURP</label>
+        <input type="text" id="curp" value={curp} onChange={(e) => setCurp(e.target.value)} required />
+      </div>
+      <div className={formStyles.formGroup}>
+        <label htmlFor="municipio">Municipio</label>
+        <input type="text" id="municipio" value={municipio} onChange={(e) => setMunicipio(e.target.value)} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="riesgo">Riesgo</label>
+          <select id="riesgo" value={riesgo} onChange={(e) => setRiesgo(e.target.value)}>
+            <option value="Bajo">Bajo</option>
+            <option value="Medio">Medio</option>
+            <option value="Alto">Alto</option>
+          </select>
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="estatus">Estatus</label>
+          <select id="estatus" value={estatus} onChange={(e) => setEstatus(e.target.value)}>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+        <Button type="submit">Crear Paciente</Button>
+      </div>
+    </form>
+  );
 };
 
-function Pacientes() {
-  // --- 3. ELIMINAMOS LOS ESTADOS Y useEffect ---
-  // const [pacientes, setPacientes] = useState([]);
-  // const [isLoading, setIsLoading] = useState(true);
-  // useEffect(...)
 
-  // --- 4. RENDERIZADO SIMPLIFICADO ---
+// --- Componente Principal de la Página ---
+function Pacientes() {
+  const [pacientes, setPacientes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // --- 2. ESTADO PARA EL MODAL ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // --- 3. FUNCIÓN REUTILIZABLE PARA CARGAR PACIENTES ---
+  const cargarPacientes = async () => {
+    setIsLoading(true);
+    const data = await getPacientes();
+    setPacientes(data);
+    setIsLoading(false);
+  };
+
+  // Cargar pacientes al montar el componente
+  useEffect(() => {
+    cargarPacientes();
+  }, []); // El array vacío [] significa que esto se ejecuta 1 sola vez
+
+  // Callback para cuando se crea un paciente
+  const handlePacienteCreado = () => {
+    setIsModalOpen(false); // Cierra el modal
+    alert('¡Paciente creado exitosamente!');
+    cargarPacientes(); // Vuelve a cargar la lista de pacientes
+  };
+
+  // Función para dar estilo al HbA1c
+  const getHba1cStyle = (riesgo) => {
+    if (riesgo === 'Alto') return styles.hba1cAlto;
+    if (riesgo === 'Medio') return styles.hba1cMedio;
+    return styles.hba1cBajo;
+  };
+
   const renderTabla = () => {
-    // (Eliminamos la lógica de isLoading y length === 0)
+    if (isLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <FaSpinner className={styles.spinner} />
+          <p>Cargando pacientes...</p>
+        </div>
+      );
+    }
+    if (pacientes.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <p>No se encontraron pacientes. ¡Haz clic en "Nuevo Paciente" para agregar el primero!</p>
+        </div>
+      );
+    }
     
     return (
-      <div className={styles.tableContainer}> {/* Usamos styles en lugar de tableStyles */}
+      <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -71,20 +158,20 @@ function Pacientes() {
             </tr>
           </thead>
           <tbody>
-            {/* 5. Usamos 'mockPacientes' de nuevo */}
-            {mockPacientes.map((paciente) => (
+            {pacientes.map((paciente) => (
               <tr key={paciente.id}>
                 <td>
                   <div className={styles.pacienteNombre}>{paciente.nombre}</div>
-                  <div className={styles.pacienteMeta}>{paciente.meta}</div>
+                  {/* (Necesitaremos añadir edad y genero al modelo para esto) */}
+                  {/* <div className={styles.pacienteMeta}>{paciente.meta}</div> */}
                 </td>
                 <td>{paciente.curp}</td>
                 <td>{paciente.municipio}</td>
-                <td className={getHba1cStyle(paciente.riesgo)}>{paciente.hba1c}%</td>
-                <td>{paciente.imc}</td>
-                <td><Tag label={paciente.riesgo} /></td>
-                <td><Tag label={paciente.estatus} /></td>
-                <td>{paciente.ultimaVisita}</td>
+                <td className={getHba1cStyle(paciente.riesgo)}>{paciente.hba1c || 'N/A'}%</td>
+                <td>{paciente.imc || 'N/A'}</td>
+                <td><Tag label={paciente.riesgo || 'N/A'} /></td>
+                <td><Tag label={paciente.estatus || 'N/A'} /></td>
+                <td>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</td>
                 <td>
                   <FaEye className={styles.accionIcon} />
                 </td>
@@ -101,19 +188,33 @@ function Pacientes() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Gestión de Pacientes</h1>
-          <p className={styles.subtitle}>Total: {mockPacientes.length} pacientes</p>
+          <p className={styles.subtitle}>Total: {pacientes.length} pacientes</p>
         </div>
-        <Button>
+        
+        {/* --- 4. CONECTAMOS EL BOTÓN PARA ABRIR EL MODAL --- */}
+        <Button onClick={() => setIsModalOpen(true)}>
           <FaPlus />
           Nuevo Paciente
         </Button>
       </div>
 
       <div className={styles.filterBar}>
-        {/* ... (filtros) ... */}
+         {/* ... (tus filtros) ... */}
       </div>
 
       {renderTabla()}
+
+      {/* --- 5. AÑADIMOS EL MODAL AL FINAL --- */}
+      <Modal 
+        title="Crear Nuevo Paciente"
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      >
+        <FormularioNuevoPaciente 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handlePacienteCreado}
+        />
+      </Modal>
     </div>
   );
 }
