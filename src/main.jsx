@@ -4,9 +4,7 @@ import './index.css';
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-// 1. IMPORTACIONES DE AUTH ELIMINADAS
-// import { AuthProvider } from './hooks/AuthContext.jsx';
-// import ProtectedRoute from './components/layout/ProtectedRoute';
+import { AuthProvider } from './hooks/AuthContext.jsx';
 
 // Importamos todas las páginas
 import Layout from './components/layout/Layout.jsx';
@@ -38,7 +36,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* 3. YA NO NECESITAMOS AUTHPROVIDER */}
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
 );

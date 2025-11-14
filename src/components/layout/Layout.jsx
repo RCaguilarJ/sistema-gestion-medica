@@ -1,23 +1,27 @@
 import React from 'react';
 import styles from './Layout.module.css';
-import { Outlet, NavLink } from 'react-router-dom'; // <-- Quitamos useNavigate
-// import { useAuth } from '../../hooks/AuthContext.jsx'; // <-- ELIMINADO
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAR
+import { useAuth } from '../../hooks/AuthContext.jsx';
 import { 
-  FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog 
-} from 'react-icons/fa'; // <-- Quitamos FaSignOutAlt
+  FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt 
+} from 'react-icons/fa';
 import logoAmd from '../../assets/img/logo.png'; 
 
 function Layout() {
-  // const { logout } = useAuth(); // <-- ELIMINADO
-  // const navigate = useNavigate(); 
-  
-  // const handleLogout = () => { ... }; // <-- ELIMINADO
+  const { logout } = useAuth();
+  const navigate = useNavigate(); // <--- 2. INICIALIZAR
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login'); // <--- 3. REDIRIGIR
+  };
 
   return (
     <div className={styles.layout}>
       <nav className={styles.navbar}>
         <img src={logoAmd} alt="Logo AMD" className={styles.navbarLogo} />
         
+        {/* Restauré tus NavLinks que faltaban en el archivo que subiste */}
         <div className={styles.navLinks}>
           <NavLink to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaTachometerAlt /> <span>Dashboard</span>
@@ -39,8 +43,9 @@ function Layout() {
         <div className={styles.navbarUser}>
           <span>Administrador Sistema</span>
           <div className={styles.userAvatar}>AS</div>
-          
-          {/* Botón de Logout ELIMINADO */}
+          <button onClick={handleLogout} className={styles.logoutButton}>
+            <FaSignOutAlt />
+          </button>
         </div>
       </nav>
 
