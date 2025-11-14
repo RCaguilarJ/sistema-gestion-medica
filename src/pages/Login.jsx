@@ -1,28 +1,21 @@
 import React, { useState } from 'react';
 import styles from './Login.module.css';
-import { useAuth } from '../hooks/AuthContext.jsx'; 
-import { useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAMOS useNavigate
+import { useNavigate } from 'react-router-dom'; // <-- Solo importamos useNavigate
+// import { useAuth } from '../hooks/AuthContext.jsx'; // <-- ELIMINADO
 import logo from '../assets/img/logo.png'; 
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('usuario@amd.org'); // (Valor de ejemplo)
+  const [password, setPassword] = useState('********'); // (Valor de ejemplo)
   
-  const { login } = useAuth();
-  const navigate = useNavigate(); // <--- 2. INICIALIZAMOS useNavigate
+  const navigate = useNavigate(); // <-- Inicializamos useNavigate
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
-    setError('');
-    
-    const success = await login(email, password);
-    
-    if (success) {
-      navigate('/'); // <--- 3. REDIRIGIMOS AL DASHBOARD
-    } else {
-      setError('Correo electrónico o contraseña incorrectos.');
-    }
+    // ¡PARCHE! Simplemente redirigimos al dashboard
+    // sin validar con Strapi.
+    console.log('Simulando login...');
+    navigate('/'); 
   };
 
   return (
@@ -36,15 +29,7 @@ function Login() {
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="userType">Tipo de Usuario</label>
-            <select id="userType" className={styles.select}>
-              <option>Administrador</option>
-              <option>Doctor</option>
-              <option>Nutriólogo</option>
-            </select>
-          </div>
-
+          {/* ... (select de tipo de usuario) ... */}
           <div className={styles.formGroup}>
             <label htmlFor="email">Correo Electrónico</label>
             <input
@@ -55,7 +40,6 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-
           <div className={styles.formGroup}>
             <label htmlFor="password">Contraseña</label>
             <input
@@ -66,7 +50,6 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && <p style={{ color: 'red', fontSize: '0.9rem' }}>{error}</p>}
           <button type="submit" className={styles.submitButton}>
             Iniciar Sesión
           </button>

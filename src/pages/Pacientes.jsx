@@ -1,16 +1,41 @@
-import React, { useState, useEffect } from 'react'; // <-- 1. IMPORTAR useState y useEffect
+import React from 'react'; // <--- Quitamos useState y useEffect
 import styles from './Pacientes.module.css';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
+import { FaSearch, FaPlus, FaEye } from 'react-icons/fa'; // <-- Quitamos FaSpinner
 
-// Importamos los íconos
-import { FaSearch, FaPlus, FaEye, FaSpinner } from 'react-icons/fa'; // <-- Añadimos FaSpinner
+// <-- 1. IMPORTAR SERVICIO ELIMINADO
+// import { getPacientes } from '../services/pacienteService.js'; 
 
-// <-- 2. IMPORTAR NUESTRO SERVICIO DE API
-import { getPacientes } from '../services/pacienteService.js';
-
-// --- (BORRAMOS LOS MOCK DATA QUE ESTABAN AQUÍ) ---
+// --- 2. VOLVEMOS A AÑADIR LOS MOCK DATA ---
+const mockPacientes = [
+  {
+    id: 1,
+    nombre: 'Roberto García Pérez',
+    meta: '39 años • Masculino',
+    curp: 'GARP850615HOCLMR89',
+    municipio: 'Guadalajara',
+    hba1c: 9.2,
+    imc: 31.5,
+    riesgo: 'Alto',
+    estatus: 'Activo',
+    ultimaVisita: '14/10/2024',
+  },
+  {
+    id: 2,
+    nombre: 'Carmen López Martínez',
+    meta: '52 años • Femenino',
+    curp: 'LOMC520808AHOCRJT05',
+    municipio: 'Zapopan',
+    hba1c: 6.5,
+    imc: 26.8,
+    riesgo: 'Bajo',
+    estatus: 'Activo',
+    ultimaVisita: '19/10/2024',
+  },
+];
+// -------------------------------------
 
 // Función para dar estilo al HbA1c
 const getHba1cStyle = (riesgo) => {
@@ -20,50 +45,18 @@ const getHba1cStyle = (riesgo) => {
 };
 
 function Pacientes() {
-  // --- 3. CREAR ESTADOS ---
-  // Un estado para guardar los pacientes que vienen de la API
-  const [pacientes, setPacientes] = useState([]);
-  // Un estado para saber si estamos "Cargando"
-  const [isLoading, setIsLoading] = useState(true);
+  // --- 3. ELIMINAMOS LOS ESTADOS Y useEffect ---
+  // const [pacientes, setPacientes] = useState([]);
+  // const [isLoading, setIsLoading] = useState(true);
+  // useEffect(...)
 
-  // --- 4. LLAMAR A LA API AL CARGAR LA PÁGINA ---
-  useEffect(() => {
-    // Definimos una función async para cargar los datos
-    const cargarPacientes = async () => {
-      setIsLoading(true); // Empezamos a cargar
-      const data = await getPacientes();
-      setPacientes(data);
-      setIsLoading(false); // Terminamos de cargar
-    };
-    
-    cargarPacientes(); // Llamamos a la función
-  }, []); // El array vacío [] significa que esto se ejecuta 1 sola vez
-
-  // --- 5. RENDERIZADO CONDICIONAL ---
-  
-  // Función para mostrar la tabla o un mensaje de carga
+  // --- 4. RENDERIZADO SIMPLIFICADO ---
   const renderTabla = () => {
-    if (isLoading) {
-      return (
-        <div style={{ textAlign: 'center', padding: '4rem' }}>
-          <FaSpinner className={styles.spinner} />
-          <p>Cargando pacientes...</p>
-        </div>
-      );
-    }
-
-    if (pacientes.length === 0) {
-      return (
-        <div style={{ textAlign: 'center', padding: '4rem' }}>
-          <p>No se encontraron pacientes. ¡Intenta agregar uno en Strapi!</p>
-        </div>
-      );
-    }
+    // (Eliminamos la lógica de isLoading y length === 0)
     
-    // Si no estamos cargando y hay pacientes, mostramos la tabla
     return (
-      <div className={tableStyles.tableContainer}>
-        <table className={tableStyles.table}>
+      <div className={styles.tableContainer}> {/* Usamos styles en lugar de tableStyles */}
+        <table className={styles.table}>
           <thead>
             <tr>
               <th>Paciente</th>
@@ -78,13 +71,12 @@ function Pacientes() {
             </tr>
           </thead>
           <tbody>
-            {/* 6. Usamos el estado 'pacientes', NO 'mockPacientes' */}
-            {pacientes.map((paciente) => (
+            {/* 5. Usamos 'mockPacientes' de nuevo */}
+            {mockPacientes.map((paciente) => (
               <tr key={paciente.id}>
                 <td>
-                  <div className={tableStyles.pacienteNombre}>{paciente.nombre}</div>
-                  {/* (Necesitaremos añadir edad y genero a Strapi para esto) */}
-                  {/* <div className={tableStyles.pacienteMeta}>{paciente.meta}</div> */}
+                  <div className={styles.pacienteNombre}>{paciente.nombre}</div>
+                  <div className={styles.pacienteMeta}>{paciente.meta}</div>
                 </td>
                 <td>{paciente.curp}</td>
                 <td>{paciente.municipio}</td>
@@ -92,9 +84,9 @@ function Pacientes() {
                 <td>{paciente.imc}</td>
                 <td><Tag label={paciente.riesgo} /></td>
                 <td><Tag label={paciente.estatus} /></td>
-                <td>{new Date(paciente.ultimaVisita).toLocaleDateString()}</td>
+                <td>{paciente.ultimaVisita}</td>
                 <td>
-                  <FaEye className={tableStyles.accionIcon} />
+                  <FaEye className={styles.accionIcon} />
                 </td>
               </tr>
             ))}
@@ -106,11 +98,10 @@ function Pacientes() {
 
   return (
     <div>
-      {/* 1. Encabezado */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Gestión de Pacientes</h1>
-          <p className={styles.subtitle}>Total: {pacientes.length} pacientes</p>
+          <p className={styles.subtitle}>Total: {mockPacientes.length} pacientes</p>
         </div>
         <Button>
           <FaPlus />
@@ -118,12 +109,10 @@ function Pacientes() {
         </Button>
       </div>
 
-      {/* 2. Filtros (Siguen igual) */}
       <div className={styles.filterBar}>
         {/* ... (filtros) ... */}
       </div>
 
-      {/* 3. Tabla (Ahora llama a nuestra función) */}
       {renderTabla()}
     </div>
   );

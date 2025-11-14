@@ -4,9 +4,9 @@ import './index.css';
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-// 1. IMPORTAR NUESTRAS HERRAMIENTAS DE AUTENTICACIÓN
-import { AuthProvider } from './hooks/AuthContext.jsx';
-import ProtectedRoute from './components/layout/ProtectedRoute';
+// 1. IMPORTACIONES DE AUTH ELIMINADAS
+// import { AuthProvider } from './hooks/AuthContext.jsx';
+// import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Importamos todas las páginas
 import Layout from './components/layout/Layout.jsx';
@@ -17,38 +17,28 @@ import Importar from './pages/Importar.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
 
-// 2. REESTRUCTURAR LAS RUTAS
+// 2. RUTAS SIMPLIFICADAS
 const router = createBrowserRouter([
   {
-    // Ruta pública de Login
     path: '/login',
     element: <Login />,
   },
   {
-    // Todas las rutas protegidas irán "dentro" de este elemento
-    element: <ProtectedRoute />,
+    path: '/',
+    element: <Layout />, // El Layout es ahora la ruta principal
     children: [
-      {
-        path: '/',
-        element: <Layout />, // El Layout contiene la Navbar y el Outlet
-        children: [
-          // Estas son las páginas que se renderizan dentro del Layout
-          { index: true, element: <Dashboard /> },
-          { path: 'pacientes', element: <Pacientes /> },
-          { path: 'importar', element: <Importar /> },
-          { path: 'reportes', element: <Reportes /> },
-          { path: 'configuracion', element: <Configuracion /> },
-        ],
-      },
+      { index: true, element: <Dashboard /> },
+      { path: 'pacientes', element: <Pacientes /> },
+      { path: 'importar', element: <Importar /> },
+      { path: 'reportes', element: <Reportes /> },
+      { path: 'configuracion', element: <Configuracion /> },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* 3. ENVOLVEMOS TODO EN EL AUTHPROVIDER */}
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    {/* 3. YA NO NECESITAMOS AUTHPROVIDER */}
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
