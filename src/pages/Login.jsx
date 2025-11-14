@@ -1,39 +1,50 @@
 import React, { useState } from 'react';
 import styles from './Login.module.css';
-
-// 1. Importamos nuestro hook useAuth
-import { useAuth } from '../hooks/AuthContext.jsx';
-
+import { useAuth } from '../hooks/AuthContext.jsx'; 
+import { useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAMOS useNavigate
 import logo from '../assets/img/logo.png'; 
 
 function Login() {
-  const [email, setEmail] = useState(''); // Empezamos con inputs vacíos
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  // 2. Obtenemos la función 'login' del contexto
   const { login } = useAuth();
+  const navigate = useNavigate(); // <--- 2. INICIALIZAMOS useNavigate
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     
-    // 3. Llamamos a la función 'login' del contexto
     const success = await login(email, password);
     
-    if (!success) {
+    if (success) {
+      navigate('/'); // <--- 3. REDIRIGIMOS AL DASHBOARD
+    } else {
       setError('Correo electrónico o contraseña incorrectos.');
     }
-    // (La redirección ahora ocurre DENTRO de la función 'login' del hook)
   };
 
   return (
     <div className={styles.loginPage}>
       <div className={styles.loginCard}>
         <img src={logo} alt="Logo Asociación" className={styles.logo} />
-        {/* ... (títulos) ... */}
+
+        <h1 className={styles.title}>Plataforma Administrativa</h1>
+        <p className={styles.subtitle}>
+          Sistema de Gestión Médica y Nutricional
+        </p>
+
         <form onSubmit={handleSubmit}>
-          {/* ... (select de tipo de usuario) ... */}
+          <div className={styles.formGroup}>
+            <label htmlFor="userType">Tipo de Usuario</label>
+            <select id="userType" className={styles.select}>
+              <option>Administrador</option>
+              <option>Doctor</option>
+              <option>Nutriólogo</option>
+            </select>
+          </div>
+
           <div className={styles.formGroup}>
             <label htmlFor="email">Correo Electrónico</label>
             <input
@@ -44,6 +55,7 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+
           <div className={styles.formGroup}>
             <label htmlFor="password">Contraseña</label>
             <input
@@ -59,7 +71,10 @@ function Login() {
             Iniciar Sesión
           </button>
         </form>
-        {/* ... (link de olvidar contraseña) ... */}
+
+        <a href="#" className={styles.forgotPassword}>
+          ¿Olvidaste tu contraseña?
+        </a>
       </div>
     </div>
   );

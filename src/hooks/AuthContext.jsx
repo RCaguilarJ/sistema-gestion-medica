@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // <--- 1. IMPORTAR useNavigate
+// import { useNavigate } from 'react-router-dom'; // <--- 1. BORRAMOS ESTO
 import * as authService from '../services/authService'; 
 import api from '../services/api'; 
 
@@ -8,7 +8,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate(); // <--- 2. INICIALIZAR useNavigate
+  // const navigate = useNavigate(); // <--- 2. BORRAMOS ESTO
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
       setUser(data.user);
       setIsAuthenticated(true);
       api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
-      navigate('/'); // <--- 3. AÑADIR REDIRECCIÓN AL DASHBOARD
+      // navigate('/'); // <--- 3. BORRAMOS ESTO
       return true;
     }
     return false;
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     delete api.defaults.headers.common['Authorization'];
-    navigate('/login'); // <--- 4. AÑADIR REDIRECCIÓN AL LOGIN
+    // navigate('/login'); // <--- 4. BORRAMOS ESTO
     return true;
   };
 
