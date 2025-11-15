@@ -4,35 +4,57 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
 import { FaSearch, FaPlus, FaEye, FaSpinner } from 'react-icons/fa';
-
-// --- 1. IMPORTAR LO QUE NECESITAMOS ---
 import Modal from '../components/ui/Modal.jsx';
 import { getPacientes, createPaciente } from '../services/pacienteService.js';
+import formStyles from './Configuracion.module.css'; // Reutilizamos los estilos base
 
-// --- Formulario para el Modal ---
-// (Usamos los mismos estilos 'formGroup' que en Configuracion)
-import formStyles from './Configuracion.module.css'; 
-
+// --- Formulario Nuevo/Edición Paciente ---
+// Este componente ahora maneja todos los campos del nuevo Figma
 const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
-  const [nombre, setNombre] = useState('');
-  const [curp, setCurp] = useState('');
-  const [municipio, setMunicipio] = useState('');
-  const [riesgo, setRiesgo] = useState('Bajo');
-  const [estatus, setEstatus] = useState('Activo');
+  
+  // Usamos un solo estado para todo el formulario
+  const [formData, setFormData] = useState({
+    nombre: '',
+    curp: '',
+    fechaNacimiento: '',
+    genero: 'Masculino',
+    telefono: '',
+    email: '',
+    calleNumero: '',
+    colonia: '',
+    municipio: '',
+    estado: '',
+    codigoPostal: '',
+    tipoDiabetes: 'Tipo 2',
+    fechaDiagnostico: '',
+    estaturaCm: '',
+    pesoKg: '',
+    estatus: 'Activo',
+    riesgo: 'Bajo',
+    programa: '',
+    tipoTerapia: '',
+  });
   const [error, setError] = useState('');
+
+  // Manejador genérico para todos los inputs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Preparamos los datos del paciente
+    // Preparamos los datos
     const pacienteData = {
-      nombre,
-      curp,
-      municipio,
-      riesgo,
-      estatus,
-      // (Podemos añadir hba1c, imc, etc. aquí)
+      ...formData,
+      // Convertimos a números los que lo necesiten
+      estaturaCm: formData.estaturaCm ? parseInt(formData.estaturaCm) : null,
+      pesoKg: formData.pesoKg ? parseFloat(formData.pesoKg) : null,
     };
 
     try {
@@ -43,43 +65,124 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
         setError('No se pudo crear el paciente. Revisa los datos.');
       }
     } catch (err) {
-      setError('Error al crear el paciente. Intenta de nuevo.');
+      setError('Error al crear el paciente. El CURP o Email podrían ya existir.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className={formStyles.formGroup}>
-        <label htmlFor="nombre">Nombre Completo</label>
-        <input type="text" id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+    // Usamos styles.responsiveForm para aplicar el media query
+    <form onSubmit={handleSubmit} className={styles.responsiveForm}>
+      
+      <h3 className={styles.formSectionTitle}>Datos Generales</h3>
+      {/* Usamos styles.formGrid para el layout responsivo */}
+      <div className={styles.formGrid}>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="nombre">Nombre Completo</label>
+          <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="curp">CURP</label>
+          <input type="text" name="curp" value={formData.curp} onChange={handleChange} required />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+          <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="genero">Género</label>
+          <select name="genero" value={formData.genero} onChange={handleChange}>
+            <option>Masculino</option>
+            <option>Femenino</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="telefono">Teléfono</label>
+          <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="email">Correo Electrónico</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} />
+        </div>
       </div>
-      <div className={formStyles.formGroup}>
-        <label htmlFor="curp">CURP</label>
-        <input type="text" id="curp" value={curp} onChange={(e) => setCurp(e.target.value)} required />
+
+      <h3 className={styles.formSectionTitle}>Domicilio</h3>
+      <div className={styles.formGrid}>
+        <div className={`${formStyles.formGroup} ${styles.fullWidthMobile}`}>
+          <label htmlFor="calleNumero">Calle y Número</label>
+          <input type="text" name="calleNumero" value={formData.calleNumero} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="colonia">Colonia</label>
+          <input type="text" name="colonia" value={formData.colonia} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="municipio">Municipio</label>
+          <input type="text" name="municipio" value={formData.municipio} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="estado">Estado</label>
+          <input type="text" name="estado" value={formData.estado} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="codigoPostal">Código Postal</label>
+          <input type="text" name="codigoPostal" value={formData.codigoPostal} onChange={handleChange} />
+        </div>
       </div>
-      <div className={formStyles.formGroup}>
-        <label htmlFor="municipio">Municipio</label>
-        <input type="text" id="municipio" value={municipio} onChange={(e) => setMunicipio(e.target.value)} />
+
+      <h3 className={styles.formSectionTitle}>Datos Clínicos</h3>
+      <div className={styles.formGrid}>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="tipoDiabetes">Tipo de Diabetes</label>
+          <select name="tipoDiabetes" value={formData.tipoDiabetes} onChange={handleChange}>
+            <option>Tipo 2</option>
+            <option>Tipo 1</option>
+            <option>Gestacional</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="fechaDiagnostico">Fecha de Diagnóstico</label>
+          <input type="date" name="fechaDiagnostico" value={formData.fechaDiagnostico} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="estaturaCm">Estatura (cm)</label>
+          <input type="number" name="estaturaCm" value={formData.estaturaCm} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="pesoKg">Peso (kg)</label>
+          <input type="number" step="0.1" name="pesoKg" value={formData.pesoKg} onChange={handleChange} />
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+      <h3 className={styles.formSectionTitle}>Configuración de Sistema</h3>
+      <div className={styles.formGrid}>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="estatus">Estatus</label>
+          <select name="estatus" value={formData.estatus} onChange={handleChange}>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
         <div className={formStyles.formGroup}>
           <label htmlFor="riesgo">Riesgo</label>
-          <select id="riesgo" value={riesgo} onChange={(e) => setRiesgo(e.target.value)}>
+          <select name="riesgo" value={formData.riesgo} onChange={handleChange}>
             <option value="Bajo">Bajo</option>
             <option value="Medio">Medio</option>
             <option value="Alto">Alto</option>
           </select>
         </div>
         <div className={formStyles.formGroup}>
-          <label htmlFor="estatus">Estatus</label>
-          <select id="estatus" value={estatus} onChange={(e) => setEstatus(e.target.value)}>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
+          <label htmlFor="programa">Programa</label>
+          <input type="text" name="programa" value={formData.programa} onChange={handleChange} />
+        </div>
+        <div className={formStyles.formGroup}>
+          <label htmlFor="tipoTerapia">Tipo de Terapia</label>
+          <input type="text" name="tipoTerapia" value={formData.tipoTerapia} onChange={handleChange} />
         </div>
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
         <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
         <Button type="submit">Crear Paciente</Button>
@@ -93,12 +196,8 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isMobileView, setIsMobileView] = useState(false);
-  
-  // --- 2. ESTADO PARA EL MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- 3. FUNCIÓN REUTILIZABLE PARA CARGAR PACIENTES ---
   const cargarPacientes = async () => {
     setIsLoading(true);
     const data = await getPacientes();
@@ -106,27 +205,16 @@ function Pacientes() {
     setIsLoading(false);
   };
 
-  // Cargar pacientes al montar el componente
   useEffect(() => {
     cargarPacientes();
-  }, []); // El array vacío [] significa que esto se ejecuta 1 sola vez
+  }, []); 
 
-  // Detectar vista móvil para render alternativo (tarjetas)
-  useEffect(() => {
-    const check = () => setIsMobileView(window.innerWidth <= 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  // Callback para cuando se crea un paciente
   const handlePacienteCreado = () => {
-    setIsModalOpen(false); // Cierra el modal
+    setIsModalOpen(false);
     alert('¡Paciente creado exitosamente!');
-    cargarPacientes(); // Vuelve a cargar la lista de pacientes
+    cargarPacientes(); 
   };
 
-  // Función para dar estilo al HbA1c
   const getHba1cStyle = (riesgo) => {
     if (riesgo === 'Alto') return styles.hba1cAlto;
     if (riesgo === 'Medio') return styles.hba1cMedio;
@@ -150,37 +238,6 @@ function Pacientes() {
       );
     }
     
-    // En móvil renderizamos tarjetas con la info más relevante
-    if (isMobileView) {
-      return (
-        <div className={styles.patientList}>
-          {pacientes.map((p) => (
-            <Card key={p.id}>
-              <div className={styles.patientCard}>
-                <div className={styles.patientCardMain}>
-                  <div className={styles.pacienteNombre}>{p.nombre}</div>
-                  <div className={styles.patientCardMeta}>
-                    <div><strong>CURP:</strong> {p.curp}</div>
-                    <div><strong>Municipio:</strong> {p.municipio || 'N/A'}</div>
-                    <div><strong>HbA1c:</strong> {p.hba1c ? `${p.hba1c}%` : 'N/A'}</div>
-                  </div>
-                </div>
-                <div className={styles.patientCardActions}>
-                  <div className={styles.patientTags}>
-                    <Tag label={p.riesgo || 'N/A'} />
-                    <Tag label={p.estatus || 'N/A'} />
-                  </div>
-                  <div>
-                    <FaEye className={styles.accionIcon} />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      );
-    }
-    
     return (
       <div className={styles.tableContainer}>
         <table className={styles.table}>
@@ -189,11 +246,9 @@ function Pacientes() {
               <th>Paciente</th>
               <th>CURP</th>
               <th>Municipio</th>
-              <th>HbA1c</th>
-              <th>IMC</th>
+              <th>Teléfono</th> {/* <-- Columna actualizada */}
               <th>Riesgo</th>
               <th>Estatus</th>
-              <th>Última Visita</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -202,16 +257,16 @@ function Pacientes() {
               <tr key={paciente.id}>
                 <td>
                   <div className={styles.pacienteNombre}>{paciente.nombre}</div>
+                  <div className={styles.pacienteMeta}>{paciente.email}</div> {/* <-- Mostramos email */}
                 </td>
                 <td>{paciente.curp}</td>
                 <td>{paciente.municipio}</td>
-                <td className={getHba1cStyle(paciente.riesgo)}>{paciente.hba1c || 'N/A'}%</td>
-                <td>{paciente.imc || 'N/A'}</td>
+                <td>{paciente.telefono || 'N/A'}</td> {/* <-- Columna actualizada */}
                 <td><Tag label={paciente.riesgo || 'N/A'} /></td>
                 <td><Tag label={paciente.estatus || 'N/A'} /></td>
-                <td>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</td>
                 <td>
                   <FaEye className={styles.accionIcon} />
+                  {/* (Aquí irán botones de editar/borrar) */}
                 </td>
               </tr>
             ))}
@@ -229,7 +284,6 @@ function Pacientes() {
           <p className={styles.subtitle}>Total: {pacientes.length} pacientes</p>
         </div>
         
-        {/* --- 4. CONECTAMOS EL BOTÓN PARA ABRIR EL MODAL --- */}
         <Button onClick={() => setIsModalOpen(true)}>
           <FaPlus />
           Nuevo Paciente
@@ -237,12 +291,12 @@ function Pacientes() {
       </div>
 
       <div className={styles.filterBar}>
-         {/* ... (tus filtros) ... */}
+        {/* ... (tus filtros) ... */}
       </div>
 
       {renderTabla()}
 
-      {/* --- 5. AÑADIMOS EL MODAL AL FINAL --- */}
+      {/* Actualizamos el título del Modal */}
       <Modal 
         title="Crear Nuevo Paciente"
         isOpen={isModalOpen}

@@ -182,14 +182,44 @@
   pointer-events: auto;
 }
 
-/* Small tweak for desktop nav layout to avoid overlap with logo */
-@media (min-width: 769px) {
+/* Layout for medium and large screens
+   - Medium (769px - 1024px): keep nav in document flow to avoid overlap with logo
+   - Large (>=1025px): center nav using absolute positioning */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .navLinks {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin: 0 auto;
+    display: flex;
+    gap: 0.75rem; /* menos espacio para evitar solapamiento */
+    flex-wrap: nowrap; /* evitar que los links salten a la siguiente línea */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .navbar {
+    padding: 0.8rem 1.5rem; /* padding más compacto en tablet */
+  }
+  .navbarLogo {
+    height: 34px; /* ligeramente más pequeño en tablet para evitar choque */
+  }
+  .navLink, .navLinkActive {
+    font-size: 0.95rem;
+  }
+  .navbarUser {
+    display: flex; /* mostrar usuario (avatar + nombre) en tablet para mejor contexto */
+    gap: 0.75rem;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1025px) {
   .navLinks {
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
     top: 50%;
-    translate: 0 -50%;
+    transform: translate(-50%, -50%);
   }
 }
 /* ... (todos tus estilos anteriores) ... */

@@ -230,3 +230,45 @@
     padding: 0.9rem 1rem;
   }
 }
+/* --- Añadir estos estilos al final de Pacientes.module.css --- */
+
+.formSectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.formSectionTitle:first-of-type {
+  margin-top: 0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 columnas por defecto */
+  gap: 1rem 1.5rem;
+}
+
+/* Clase especial para hacer que un campo ocupe todo el ancho 
+  en desktop (como "Calle y Número")
+*/
+.fullWidthMobile {
+  grid-column: 1 / 3;
+}
+
+
+/* Estilos responsivos para el formulario */
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr; /* 1 columna en móvil */
+    gap: 1rem;
+  }
+  
+  /* Hacemos que "Calle y Número" ocupe 1 columna en móvil */
+  .fullWidthMobile {
+    grid-column: 1 / -1; 
+  }
+}
