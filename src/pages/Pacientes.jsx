@@ -206,8 +206,27 @@ function Pacientes() {
   };
 
   useEffect(() => {
-    cargarPacientes();
-  }, []); 
+    let mounted = true;
+    const load = async () => {
+      // defer to the next microtask so we don't call setState synchronously inside the effect
+      await Promise.resolve();
+      if (!mounted) return;
+      setIsLoading(true);
+      try {
+        const data = await getPacientes();
+        if (!mounted) return;
+        setPacientes(data);
+      } catch (err) {
+        console.error('Error cargando pacientes:', err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handlePacienteCreado = () => {
     setIsModalOpen(false);
@@ -246,7 +265,7 @@ function Pacientes() {
               <th>Paciente</th>
               <th>CURP</th>
               <th>Municipio</th>
-              <th>Teléfono</th> {/* <-- Columna actualizada */}
+              <th>Teléfono</th>
               <th>Riesgo</th>
               <th>Estatus</th>
               <th>Acciones</th>
@@ -257,16 +276,15 @@ function Pacientes() {
               <tr key={paciente.id}>
                 <td>
                   <div className={styles.pacienteNombre}>{paciente.nombre}</div>
-                  <div className={styles.pacienteMeta}>{paciente.email}</div> {/* <-- Mostramos email */}
+                  <div className={styles.pacienteMeta}>{paciente.email}</div>
                 </td>
                 <td>{paciente.curp}</td>
                 <td>{paciente.municipio}</td>
-                <td>{paciente.telefono || 'N/A'}</td> {/* <-- Columna actualizada */}
+                <td>{paciente.telefono || 'N/A'}</td>
                 <td><Tag label={paciente.riesgo || 'N/A'} /></td>
                 <td><Tag label={paciente.estatus || 'N/A'} /></td>
                 <td>
                   <FaEye className={styles.accionIcon} />
-                  {/* (Aquí irán botones de editar/borrar) */}
                 </td>
               </tr>
             ))}

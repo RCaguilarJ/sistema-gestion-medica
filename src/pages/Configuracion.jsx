@@ -6,15 +6,25 @@ import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { register } from '../services/authService.js';
+import { getUsers } from '../services/userService.js';
 
 import {
   FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes
 } from 'react-icons/fa';
 
 // --- 1. DEFINICIÓN DE DATOS DE EJEMPLO (ESTO FALTABA) ---
+// Usamos claves de rol internas y mapeamos a etiquetas legibles
+const ROLE_LABELS = {
+  ADMIN: 'Administrador',
+  DOCTOR: 'Doctor',
+  NUTRI: 'Nutriólogo',
+  PSY: 'Psicólogo',
+  PATIENT: 'Paciente',
+};
+
 const mockUsuarios = [
-  { id: 1, nombre: 'Dr. Juan Pérez', email: 'jperez@amd.mx', rol: 'Doctor', estatus: 'Activo' },
-  { id: 2, nombre: 'Lic. María González', email: 'mgonzalez@amd.mx', rol: 'Nutriólogo', estatus: 'Activo' },
+  { id: 1, nombre: 'Dr. Juan Pérez', email: 'jperez@amd.mx', rol: 'DOCTOR', estatus: 'Activo' },
+  { id: 2, nombre: 'Lic. María González', email: 'mgonzalez@amd.mx', rol: 'NUTRI', estatus: 'Activo' },
 ];
 const mockCatalogos = {
   municipios: ['Guadalajara', 'Zapopan', 'Tlaquepaque', 'Tonalá'],
@@ -24,10 +34,11 @@ const mockCatalogos = {
 
 // --- Componente de Formulario (con campo de Rol) ---
 const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
+  const [nombre, setNombre] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Doctor'); // Estado para el rol
+  const [role, setRole] = useState('DOCTOR'); // Estado para el rol (clave)
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -35,20 +46,27 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
     setError('');
 
     try {
-      // Enviamos el rol al servicio de registro
-      const data = await register(username, email, password, role);
+      // Enviamos nombre, username, email, password y rol al servicio de registro
+      const data = await register(nombre, username, email, password, role);
       if (data) {
         onSuccess(); 
       } else {
         setError('No se pudo crear el usuario. Revisa los datos.');
       }
-    } catch (err) {
+    } catch (_) {
       setError('Error al registrar. Intenta de nuevo.');
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
+      <div className={styles.formGroup}>
+        <label htmlFor="nombre">Nombre Completo</label>
+        <input
+          type="text" id="nombre" value={nombre}
+          onChange={(e) => setNombre(e.target.value)} required
+        />
+      </div>
       <div className={styles.formGroup}>
         <label htmlFor="username">Nombre de Usuario (Username)</label>
         <input
@@ -67,15 +85,17 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
       {/* Campo de Rol */}
       <div className={styles.formGroup}>
         <label htmlFor="role">Rol de Usuario</label>
-        <select 
-          id="role" 
-          value={role} 
+        <select
+          id="role"
+          value={role}
           onChange={(e) => setRole(e.target.value)}
-          className={styles.selectInput} // Reutilizamos estilo
+          className={styles.selectInput}
         >
-          <option value="Administrador">Administrador</option>
-          <option value="Doctor">Doctor</option>
-          <option value="Nutriólogo">Nutriólogo</option>
+          <option value="ADMIN">{ROLE_LABELS.ADMIN}</option>
+          <option value="DOCTOR">{ROLE_LABELS.DOCTOR}</option>
+          <option value="NUTRI">{ROLE_LABELS.NUTRI}</option>
+          <option value="PSY">{ROLE_LABELS.PSY}</option>
+          <option value="PATIENT">{ROLE_LABELS.PATIENT}</option>
         </select>
       </div>
 
@@ -101,14 +121,29 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
 function Configuracion() {
   const [activeTab, setActiveTab] = useState('usuarios');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [usuarios, setUsuarios] = useState([]); // Estado para usuarios reales
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Cargar usuarios al montar el componente
+  React.useEffect(() => {
+    cargarUsuarios();
+  }, []);
+
+  const cargarUsuarios = async () => {
+    setIsLoading(true);
+    const data = await getUsers();
+    setUsuarios(data);
+    setIsLoading(false);
+  };
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleUserCreated = () => {
+  const handleUserCreated = async () => {
     handleCloseModal();
     alert('¡Usuario creado exitosamente!');
-    // (En el futuro, aquí recargamos la lista de usuarios)
+    // Recargar la lista de usuarios
+    await cargarUsuarios();
   };
   
   const renderTabContent = () => {
@@ -136,19 +171,29 @@ function Configuracion() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* ¡AQUÍ ESTÁ EL CÓDIGO QUE USABA LA VARIABLE FALTANTE! */}
-                  {mockUsuarios.map(user => (
-                    <tr key={user.id}>
-                      <td>{user.nombre}</td>
-                      <td>{user.email}</td>
-                      <td><Tag label={user.rol} /></td>
-                      <td><Tag label={user.estatus} /></td>
-                      <td style={{ display: 'flex', gap: '1rem' }}>
-                        <FaEdit className={tableStyles.accionIcon} />
-                        <FaTrash className={tableStyles.accionIcon} style={{ color: '#de350b' }}/>
-                      </td>
+                  {/* Mostrar usuarios reales desde la BD */}
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Cargando usuarios...</td>
                     </tr>
-                  ))}
+                  ) : usuarios.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>No hay usuarios registrados</td>
+                    </tr>
+                  ) : (
+                    usuarios.map(user => (
+                      <tr key={user.id}>
+                        <td>{user.nombre}</td>
+                        <td>{user.email}</td>
+                        <td><Tag label={ROLE_LABELS[user.role] || user.role} /></td>
+                        <td><Tag label={user.estatus || 'Activo'} /></td>
+                        <td style={{ display: 'flex', gap: '1rem' }}>
+                          <FaEdit className={tableStyles.accionIcon} />
+                          <FaTrash className={tableStyles.accionIcon} style={{ color: '#de350b' }}/>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

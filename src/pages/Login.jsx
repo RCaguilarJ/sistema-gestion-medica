@@ -50,6 +50,21 @@ function Login() {
           </div>
           {error && <p style={{ color: 'red', fontSize: '0.9rem' }}>{error}</p>}
           <button type="submit" className={styles.submitButton}>Iniciar Sesión</button>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/configuracion')}
+              style={{
+                background: 'transparent',
+                border: '1px solid #ccc',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Nuevo usuario
+            </button>
+          </div>
         </form>
         <a href="#" className={styles.forgotPassword}>¿Olvidaste tu contraseña?</a>
       </div>

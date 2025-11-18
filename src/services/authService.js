@@ -16,8 +16,15 @@ export const login = async (email, password) => {
 
     return { jwt: token, user }; // Lo devolvemos como 'jwt' para que AuthContext no se rompa
   } catch (error) {
-    const message = error.response?.data?.message || "Error desconocido";
-    console.error("Error en el login:", message);
+    const status = error.response?.status;
+    const respData = error.response?.data;
+    const message = respData?.message || error.message || "Error desconocido";
+    console.error("Error en el login:", {
+      status,
+      message,
+      respData,
+      url: error.config?.url,
+    });
     return null;
   }
 };
@@ -31,15 +38,16 @@ export const logout = () => {
 
 /**
  * Intenta registrar un nuevo usuario en nuestro backend de Express.
- * (ACTUALIZADO para incluir 'role')
+ * (ACTUALIZADO para incluir 'nombre' y 'role')
  */
-export const register = async (username, email, password, role) => {
+export const register = async (nombre, username, email, password, role) => {
   try {
     const response = await api.post("/auth/register", {
+      nombre: nombre,
       username: username,
       email: email,
       password: password,
-      role: role, // <-- ¡Añadido!
+      role: role,
     });
 
     const { token, user } = response.data;
@@ -48,8 +56,15 @@ export const register = async (username, email, password, role) => {
 
     return { jwt: token, user };
   } catch (error) {
-    const message = error.response?.data?.message || "Error desconocido";
-    console.error("Error en el registro:", message);
+    const status = error.response?.status;
+    const respData = error.response?.data;
+    const message = respData?.message || error.message || "Error desconocido";
+    console.error("Error en el registro:", {
+      status,
+      message,
+      respData,
+      url: error.config?.url,
+    });
     return null;
   }
 };
