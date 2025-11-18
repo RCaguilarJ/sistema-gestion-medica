@@ -1,18 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // <--- Importado para la navegación
 import styles from './Pacientes.module.css';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
-import { FaSearch, FaPlus, FaEye, FaSpinner } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEye, FaSpinner, FaEdit, FaTimesCircle, FaSave } from 'react-icons/fa'; // Iconos actualizados
 import Modal from '../components/ui/Modal.jsx';
+import DetallePacienteModal from '../components/ui/DetallePacienteModal.jsx';
 import { getPacientes, createPaciente } from '../services/pacienteService.js';
 import formStyles from './Configuracion.module.css'; // Reutilizamos los estilos base
 
+// --- Función Helper para Limpieza (Movida fuera para claridad, o mantenida aquí si es pequeña) ---
+const cleanAndNormalizeData = (data) => {
+    const cleanedData = { ...data };
+    
+    // 1. Eliminar campos vacíos, nulos o indefinidos
+    Object.keys(cleanedData).forEach((key) => {
+      if (cleanedData[key] === '' || cleanedData[key] === null || cleanedData[key] === undefined) {
+        delete cleanedData[key];
+      }
+    });
+
+    // 2. Conversiones a número (solo si el campo existe después de la limpieza)
+    if (cleanedData.estaturaCm) cleanedData.estaturaCm = parseInt(cleanedData.estaturaCm, 10);
+    if (cleanedData.pesoKg) cleanedData.pesoKg = parseFloat(cleanedData.pesoKg);
+    // Nota: imc y hba1c podrían calcularse en el backend o frontend, pero por ahora solo se envían si existen.
+    
+    return cleanedData;
+};
+
+
 // --- Formulario Nuevo/Edición Paciente ---
-// Este componente ahora maneja todos los campos del nuevo Figma
+// (Mismo componente de creación, ahora con la corrección del submit)
 const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
   
-  // Usamos un solo estado para todo el formulario
   const [formData, setFormData] = useState({
     nombre: '',
     curp: '',
@@ -33,10 +54,11 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
     riesgo: 'Bajo',
     programa: '',
     tipoTerapia: '',
+    // Nota: imc y hba1c se manejan en el backend o se ingresan en edición, no en creación inicial aquí
   });
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Manejador genérico para todos los inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -48,33 +70,35 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSaving(true); // Bloquear botón
 
-    // Preparamos los datos
-    const pacienteData = {
-      ...formData,
-      // Convertimos a números los que lo necesiten
-      estaturaCm: formData.estaturaCm ? parseInt(formData.estaturaCm) : null,
-      pesoKg: formData.pesoKg ? parseFloat(formData.pesoKg) : null,
-    };
+    // --- CORRECCIÓN CLAVE ---
+    const pacienteData = cleanAndNormalizeData(formData);
+    // -----------------------
 
     try {
-      const data = await createPaciente(pacienteData);
-      if (data) {
-        onSuccess(); // Cierra el modal y refresca la lista
-      } else {
-        setError('No se pudo crear el paciente. Revisa los datos.');
-      }
+      await createPaciente(pacienteData);
+      onSuccess(); // Cierra el modal y refresca la lista
+      
     } catch (err) {
-      setError('Error al crear el paciente. El CURP o Email podrían ya existir.');
+      // Manejo de errores más detallado
+      const details = err.details || [err.message || 'Error desconocido al crear paciente.'];
+      if (details.some(d => d.includes('curp'))) {
+          setError('Validation error: El CURP ya está registrado o es inválido.');
+      } else if (details.some(d => d.includes('email'))) {
+          setError('Validation error: El Email ya está registrado o es inválido.');
+      } else {
+          setError(`Error al crear paciente: ${details.join(', ')}`);
+      }
+    } finally {
+        setIsSaving(false); // Desbloquear botón
     }
   };
 
   return (
-    // Usamos styles.responsiveForm para aplicar el media query
     <form onSubmit={handleSubmit} className={styles.responsiveForm}>
-      
+      {/* ... (Todo el HTML del formulario de creación es el mismo) ... */}
       <h3 className={styles.formSectionTitle}>Datos Generales</h3>
-      {/* Usamos styles.formGrid para el layout responsivo */}
       <div className={styles.formGrid}>
         <div className={formStyles.formGroup}>
           <label htmlFor="nombre">Nombre Completo</label>
@@ -153,39 +177,15 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
           <label htmlFor="pesoKg">Peso (kg)</label>
           <input type="number" step="0.1" name="pesoKg" value={formData.pesoKg} onChange={handleChange} />
         </div>
-      </div>
-
-      <h3 className={styles.formSectionTitle}>Configuración de Sistema</h3>
-      <div className={styles.formGrid}>
-        <div className={formStyles.formGroup}>
-          <label htmlFor="estatus">Estatus</label>
-          <select name="estatus" value={formData.estatus} onChange={handleChange}>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-        <div className={formStyles.formGroup}>
-          <label htmlFor="riesgo">Riesgo</label>
-          <select name="riesgo" value={formData.riesgo} onChange={handleChange}>
-            <option value="Bajo">Bajo</option>
-            <option value="Medio">Medio</option>
-            <option value="Alto">Alto</option>
-          </select>
-        </div>
-        <div className={formStyles.formGroup}>
-          <label htmlFor="programa">Programa</label>
-          <input type="text" name="programa" value={formData.programa} onChange={handleChange} />
-        </div>
-        <div className={formStyles.formGroup}>
-          <label htmlFor="tipoTerapia">Tipo de Terapia</label>
-          <input type="text" name="tipoTerapia" value={formData.tipoTerapia} onChange={handleChange} />
-        </div>
+        {/* Aquí puedes agregar campos de configuración (estatus/riesgo) si se crean desde el inicio */}
       </div>
 
       {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
-        <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
-        <Button type="submit">Crear Paciente</Button>
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
+        <Button type="submit" disabled={isSaving}>
+            <FaPlus /> {isSaving ? 'Creando...' : 'Crear Paciente'}
+        </Button>
       </div>
     </form>
   );
@@ -197,35 +197,35 @@ function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [selectedPacienteId, setSelectedPacienteId] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(false);
+  
+  // Agregamos la instancia de useNavigate
+  const navigate = useNavigate();
 
   const cargarPacientes = async () => {
     setIsLoading(true);
-    const data = await getPacientes();
-    setPacientes(data);
-    setIsLoading(false);
+    try {
+        const data = await getPacientes();
+        setPacientes(data);
+    } catch (err) {
+        console.error('Error cargando pacientes:', err);
+        setPacientes([]);
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      // defer to the next microtask so we don't call setState synchronously inside the effect
-      await Promise.resolve();
-      if (!mounted) return;
-      setIsLoading(true);
-      try {
-        const data = await getPacientes();
-        if (!mounted) return;
-        setPacientes(data);
-      } catch (err) {
-        console.error('Error cargando pacientes:', err);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-    load();
-    return () => {
-      mounted = false;
-    };
+    cargarPacientes();
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobileView(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const handlePacienteCreado = () => {
@@ -233,6 +233,19 @@ function Pacientes() {
     alert('¡Paciente creado exitosamente!');
     cargarPacientes(); 
   };
+  
+  // --- FUNCIÓN ACTUALIZADA PARA NAVEGAR ---
+  const handleVerDetalle = (pacienteId) => {
+    if (isMobileView) {
+      // abrir modal con detalle ligero
+      setSelectedPacienteId(pacienteId);
+      setMobileDetailOpen(true);
+    } else {
+      // Navega a la ruta dinámica: /pacientes/123
+      navigate(`/pacientes/${pacienteId}`);
+    }
+  };
+  // ---------------------------------------
 
   const getHba1cStyle = (riesgo) => {
     if (riesgo === 'Alto') return styles.hba1cAlto;
@@ -284,7 +297,14 @@ function Pacientes() {
                 <td><Tag label={paciente.riesgo || 'N/A'} /></td>
                 <td><Tag label={paciente.estatus || 'N/A'} /></td>
                 <td>
-                  <FaEye className={styles.accionIcon} />
+                  {/* LLAMADA A LA FUNCIÓN DE NAVEGACIÓN */}
+                  <div 
+                    onClick={() => handleVerDetalle(paciente.id)}
+                    style={{ cursor: 'pointer', display: 'inline-block' }}
+                    title="Ver Expediente / Editar"
+                  >
+                      <FaEye className={styles.accionIcon} />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -309,12 +329,12 @@ function Pacientes() {
       </div>
 
       <div className={styles.filterBar}>
-        {/* ... (tus filtros) ... */}
+        {/* Aquí van los filtros */}
       </div>
 
       {renderTabla()}
 
-      {/* Actualizamos el título del Modal */}
+      {/* Modal para Crear Paciente */}
       <Modal 
         title="Crear Nuevo Paciente"
         isOpen={isModalOpen}
@@ -325,6 +345,13 @@ function Pacientes() {
           onSuccess={handlePacienteCreado}
         />
       </Modal>
+
+      {/* Modal ligero para mobile: detalle rápido */}
+      <DetallePacienteModal
+        pacienteId={selectedPacienteId}
+        isOpen={mobileDetailOpen}
+        onClose={() => { setMobileDetailOpen(false); setSelectedPacienteId(null); }}
+      />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import Pacientes from './pages/Pacientes.jsx';
 import Importar from './pages/Importar.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
+import DetallePacientePage from './pages/DetallePacientePage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Dashboard /> },
           { path: 'pacientes', element: <Pacientes /> },
+          { path: 'pacientes/:id', element: <DetallePacientePage /> },
           { path: 'importar', element: <Importar /> },
           { path: 'reportes', element: <Reportes /> },
           { path: 'configuracion', element: <Configuracion /> },
