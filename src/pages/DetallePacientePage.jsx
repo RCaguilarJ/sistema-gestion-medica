@@ -7,6 +7,8 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Tag from '../components/ui/Tag';
 import Card from '../components/ui/Card';
+import Nutricion from './Nutricion';
+import Documentos from './Documentos';
 import { getPacienteById, updatePaciente } from '../services/pacienteService';
 import {
     getConsultasByPaciente,
@@ -738,6 +740,20 @@ function DetallePacientePage() {
                 >
                     Citas
                 </span>
+                <span
+                    className={activeTab === 'nutricion' ? styles.tabActive : styles.tab}
+                    onClick={() => setActiveTab('nutricion')}
+                    style={{ fontWeight: activeTab === 'nutricion' ? 'bold' : 'normal', borderBottom: activeTab === 'nutricion' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
+                >
+                    Nutrición
+                </span>
+                <span
+                    className={activeTab === 'documentos' ? styles.tabActive : styles.tab}
+                    onClick={() => setActiveTab('documentos')}
+                    style={{ fontWeight: activeTab === 'documentos' ? 'bold' : 'normal', borderBottom: activeTab === 'documentos' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
+                >
+                    Documentos
+                </span>
             </div>
 
             {/* --- CONTENIDO CONDICIONAL --- */}
@@ -795,6 +811,16 @@ function DetallePacientePage() {
                     <CitasSection
                         pacienteId={paciente.id}
                     />
+                }
+
+                {/* PESTAÑA 4: NUTRICIÓN */}
+                {activeTab === 'nutricion' &&
+                    <Nutricion pacienteId={paciente.id} />
+                }
+
+                {/* PESTAÑA 5: DOCUMENTOS */}
+                {activeTab === 'documentos' &&
+                    <Documentos pacienteId={paciente.id} />
                 }
             </div>
 
