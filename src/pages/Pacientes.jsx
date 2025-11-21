@@ -67,33 +67,53 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsSaving(true); // Bloquear botón
+    const handleSubmit = async (e) => {
 
-    // --- CORRECCIÓN CLAVE ---
-    const pacienteData = cleanAndNormalizeData(formData);
-    // -----------------------
+      e.preventDefault();
 
-    try {
-      await createPaciente(pacienteData);
-      onSuccess(); // Cierra el modal y refresca la lista
-      
-    } catch (err) {
-      // Manejo de errores más detallado
-      const details = err.details || [err.message || 'Error desconocido al crear paciente.'];
-      if (details.some(d => d.includes('curp'))) {
-          setError('Validation error: El CURP ya está registrado o es inválido.');
-      } else if (details.some(d => d.includes('email'))) {
-          setError('Validation error: El Email ya está registrado o es inválido.');
-      } else {
-          setError(`Error al crear paciente: ${details.join(', ')}`);
+      setError('');
+
+      setIsSaving(true); // Bloquear botón
+
+  
+
+      const pacienteData = cleanAndNormalizeData(formData);
+
+  
+
+      try {
+
+        await createPaciente(pacienteData);
+
+        onSuccess(); // Cierra el modal y refresca la lista
+
+      } catch (err) {
+
+        // Manejo de errores más detallado
+
+        const details = err.details || [err.message || 'Error desconocido al crear paciente.'];
+
+        if (details.some(d => d.includes('curp'))) {
+
+            setError('Validation error: El CURP ya está registrado o es inválido.');
+
+        } else if (details.some(d => d.includes('email'))) {
+
+            setError('Validation error: El Email ya está registrado o es inválido.');
+
+        } else {
+
+            setError(`Error al crear paciente: ${details.join(', ')}`);
+
+        }
+
+      } finally {
+
+          setIsSaving(false); // Desbloquear botón
+
       }
-    } finally {
-        setIsSaving(false); // Desbloquear botón
-    }
-  };
+
+    };
 
   return (
     <form onSubmit={handleSubmit} className={styles.responsiveForm}>
@@ -314,6 +334,68 @@ function Pacientes() {
     );
   };
 
+  const renderCards = () => {
+    if (isLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <FaSpinner className={styles.spinner} />
+          <p>Cargando pacientes...</p>
+        </div>
+      );
+    }
+    if (pacientes.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <p>No se encontraron pacientes. ¡Haz clic en "Nuevo Paciente" para agregar el primero!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.patientList}>
+        {pacientes.map((paciente) => (
+          <div key={paciente.id} className={styles.patientCard}>
+            <div className={styles.patientCardHeader}>
+              <div>
+                <div className={styles.patientCardTitle}>{paciente.nombre}</div>
+                <div className={styles.patientCardMeta}>{paciente.email}</div>
+              </div>
+              <div 
+                onClick={() => handleVerDetalle(paciente.id)}
+                style={{ cursor: 'pointer' }}
+                title="Ver Expediente / Editar"
+              >
+                <FaEye className={styles.accionIcon} />
+              </div>
+            </div>
+            <div className={styles.patientCardBody}>
+              <div className={styles.patientCardDataItem}>
+                <span className={styles.patientCardLabel}>CURP</span>
+                <span>{paciente.curp}</span>
+              </div>
+              <div className={styles.patientCardDataItem}>
+                <span className={styles.patientCardLabel}>Municipio</span>
+                <span>{paciente.municipio}</span>
+              </div>
+              <div className={styles.patientCardDataItem}>
+                <span className={styles.patientCardLabel}>Teléfono</span>
+                <span>{paciente.telefono || 'N/A'}</span>
+              </div>
+              <div className={styles.patientCardDataItem}>
+                <span className={styles.patientCardLabel}>Riesgo</span>
+                <span><Tag label={paciente.riesgo || 'N/A'} /></span>
+              </div>
+              <div className={styles.patientCardDataItem}>
+                <span className={styles.patientCardLabel}>Estatus</span>
+                <span><Tag label={paciente.estatus || 'N/A'} /></span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className={styles.header}>
@@ -332,7 +414,7 @@ function Pacientes() {
         {/* Aquí van los filtros */}
       </div>
 
-      {renderTabla()}
+      {isMobileView ? renderCards() : renderTabla()}
 
       {/* Modal para Crear Paciente */}
       <Modal 

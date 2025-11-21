@@ -3,13 +3,17 @@ import api from "./api.js";
 
 export const login = async (email, password) => {
   try {
-    // La ruta ahora es '/auth/login'
     const response = await api.post("/auth/login", {
       email: email, // El backend espera 'email'
       password: password,
     });
 
-    const { token, user } = response.data; // El backend devuelve 'token'
+    const { token: tokenFromApi, jwt: jwtFromApi, user } = response.data || {};
+    const token = tokenFromApi || jwtFromApi;
+
+    if (!token) {
+      throw new Error("La respuesta del servidor no incluye un token");
+    }
 
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -29,6 +33,8 @@ export const login = async (email, password) => {
   }
 };
 
+
+
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
@@ -40,19 +46,29 @@ export const logout = () => {
  * Intenta registrar un nuevo usuario en nuestro backend de Express.
  * (ACTUALIZADO para incluir 'nombre' y 'role')
  */
-export const register = async (nombre, username, email, password, role) => {
+export const register = async (nombre, username, email, password, role, options = {}) => {
+  const { persistSession = true } = options;
   try {
+    const normalizedRole = (role || '').toUpperCase();
     const response = await api.post("/auth/register", {
       nombre: nombre,
       username: username,
       email: email,
       password: password,
-      role: role,
+      role: normalizedRole,
     });
 
-    const { token, user } = response.data;
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+    const { token: tokenFromApi, jwt: jwtFromApi, user } = response.data || {};
+    const token = tokenFromApi || jwtFromApi;
+
+    if (!token) {
+      throw new Error("La respuesta del servidor no incluye un token");
+    }
+
+    if (persistSession) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+    }
 
     return { jwt: token, user };
   } catch (error) {

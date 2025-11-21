@@ -1,12 +1,16 @@
 // src/services/api.js
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  // Apuntamos a nuestro nuevo backend de Express
-  baseURL: 'http://localhost:4000/api', 
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: "http://localhost:4000/api", // ✅ Este debe coincidir con el puerto real del backend
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;

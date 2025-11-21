@@ -1,22 +1,23 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // <--- BORRADO
 import * as authService from '../services/authService.js'; 
 import api from '../services/api.js'; 
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // const navigate = useNavigate(); // <--- BORRADO
+  const [user, setUser] = useState(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    return Boolean(token && storedUser);
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-      setIsAuthenticated(true);
+    if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
   }, []);
@@ -27,7 +28,6 @@ export const AuthProvider = ({ children }) => {
       setUser(data.user);
       setIsAuthenticated(true);
       api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
-      // navigate('/'); // <--- BORRADO
       return true;
     }
     return false;
@@ -38,12 +38,22 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     delete api.defaults.headers.common['Authorization'];
-    // navigate('/login'); // <--- BORRADO
     return true;
   };
 
+  const register = async (nombre, username, email, password, role) => {
+    const data = await authService.register(nombre, username, email, password, role);
+    if (data) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+      api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

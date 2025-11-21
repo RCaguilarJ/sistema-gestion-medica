@@ -6,8 +6,9 @@ import { FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt, FaB
 import logoAmd from '../../assets/img/logo.png'; 
 
 function Layout() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate(); // <--- AÑADIDO
+  const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
 
   const handleLogout = () => {
     logout();
@@ -41,9 +42,11 @@ function Layout() {
           <NavLink onClick={closeMobile} to="/reportes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaFileAlt /> <span>Reportes</span>
           </NavLink>
-          <NavLink onClick={closeMobile} to="/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
-            <FaCog /> <span>Configuración</span>
-          </NavLink>
+          {isAdmin && (
+            <NavLink onClick={closeMobile} to="/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+              <FaCog /> <span>Configuración</span>
+            </NavLink>
+          )}
         </div>
 
         {/* Backdrop for mobile menu */}

@@ -129,3 +129,9 @@
 .forgotPassword:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .loginCard {
+    padding: 2rem 1.5rem;
+  }
+}

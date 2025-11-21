@@ -7,10 +7,16 @@ import Tag from '../components/ui/Tag.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { register } from '../services/authService.js';
 import { getUsers } from '../services/userService.js';
+import { useAuth } from "../hooks/AuthContext.jsx";
+import { Navigate } from "react-router-dom";
+
 
 import {
   FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes
 } from 'react-icons/fa';
+
+
+
 
 // --- 1. DEFINICIÓN DE DATOS DE EJEMPLO (ESTO FALTABA) ---
 // Usamos claves de rol internas y mapeamos a etiquetas legibles
@@ -33,12 +39,15 @@ const mockCatalogos = {
 // ----------------------------------------------------
 
 // --- Componente de Formulario (con campo de Rol) ---
+// src/pages/Configuracion.jsx (Dentro del archivo)
+
 const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
-  const [nombre, setNombre] = useState('');
+  // 1. Nuevo estado para el nombre
+  const [nombre, setNombre] = useState(''); 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('DOCTOR'); // Estado para el rol (clave)
+  const [role, setRole] = useState('DOCTOR');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -46,27 +55,30 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
     setError('');
 
     try {
-      // Enviamos nombre, username, email, password y rol al servicio de registro
-      const data = await register(nombre, username, email, password, role);
+      // 2. Enviamos el nombre a la función register
+      const data = await register(nombre, username, email, password, role, { persistSession: false });
       if (data) {
         onSuccess(); 
       } else {
         setError('No se pudo crear el usuario. Revisa los datos.');
       }
-    } catch (_) {
+    } catch (err) {
       setError('Error al registrar. Intenta de nuevo.');
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* 3. Input visual para el Nombre */}
       <div className={styles.formGroup}>
         <label htmlFor="nombre">Nombre Completo</label>
         <input
           type="text" id="nombre" value={nombre}
-          onChange={(e) => setNombre(e.target.value)} required
+          onChange={(e) => setNombre(e.target.value)}
+          required placeholder="Ej. Dr. Juan Pérez"
         />
       </div>
+
       <div className={styles.formGroup}>
         <label htmlFor="username">Nombre de Usuario (Username)</label>
         <input
@@ -74,39 +86,24 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
           onChange={(e) => setUsername(e.target.value)} required
         />
       </div>
+      {/* ... (resto de inputs: email, role, password) ... */}
       <div className={styles.formGroup}>
         <label htmlFor="email">Correo Electrónico</label>
-        <input
-          type="email" id="email" value={email}
-          onChange={(e) => setEmail(e.target.value)} required
-        />
+        <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-      
-      {/* Campo de Rol */}
       <div className={styles.formGroup}>
-        <label htmlFor="role">Rol de Usuario</label>
-        <select
-          id="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className={styles.selectInput}
-        >
-          <option value="ADMIN">{ROLE_LABELS.ADMIN}</option>
-          <option value="DOCTOR">{ROLE_LABELS.DOCTOR}</option>
-          <option value="NUTRI">{ROLE_LABELS.NUTRI}</option>
-          <option value="PSY">{ROLE_LABELS.PSY}</option>
-          <option value="PATIENT">{ROLE_LABELS.PATIENT}</option>
+        <label htmlFor="role">Rol</label>
+        <select id="role" value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
+          <option value="ADMIN">Administrador</option>
+          <option value="DOCTOR">Doctor</option>
+          <option value="NUTRI">Nutriólogo</option>
         </select>
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="password">Contraseña</label>
-        <input
-          type="password" id="password" value={password}
-          onChange={(e) => setPassword(e.target.value)} required minLength={6}
-        />
+        <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
       </div>
-      
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
         <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
@@ -118,7 +115,14 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
 
 
 // --- Componente Principal ---
-function Configuracion() {
+export default function Configuracion() {
+  const { user } = useAuth();
+
+  // Bloqueo por correo
+  if (user?.email?.toLowerCase().startsWith("nutri") || 
+      user?.email?.toLowerCase().startsWith("doctor")) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const [activeTab, setActiveTab] = useState('usuarios');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarios, setUsuarios] = useState([]); // Estado para usuarios reales
@@ -386,5 +390,3 @@ function Configuracion() {
     </div>
   );
 }
-
-export default Configuracion;

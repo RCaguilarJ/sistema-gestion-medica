@@ -1,5 +1,5 @@
 // src/services/consultaCitaService.js
-import api from './api.js'; // Asumimos la importación de la instancia de Axios configurada
+import api from './api.js'; // Instancia de Axios configurada con baseURL
 
 // --- SERVICIOS PARA HISTORIAL CLÍNICO (CONSULTAS) ---
 
@@ -10,10 +10,9 @@ import api from './api.js'; // Asumimos la importación de la instancia de Axios
 export const getConsultasByPaciente = async (pacienteId) => {
   try {
     const response = await api.get(`/consultas/paciente/${pacienteId}`);
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error(`Error al obtener consultas del paciente ${pacienteId}:`, error);
-    // Lanzamos el error para que el componente lo maneje y muestre un mensaje
     throw error.response?.data || new Error("Error al cargar historial clínico.");
   }
 };
@@ -37,13 +36,13 @@ export const createConsulta = async (pacienteId, consultaData) => {
  * Llama a: GET /api/consultas/:id
  */
 export const getConsultaDetail = async (consultaId) => {
-    try {
-        const response = await api.get(`/consultas/${consultaId}`);
-        return response.data;
-    } catch (error) {
-        console.error(`Error al obtener detalle de consulta ${consultaId}:`, error);
-        throw error.response?.data || new Error("Error al cargar detalle de consulta.");
-    }
+  try {
+    const response = await api.get(`/consultas/${consultaId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error al obtener detalle de consulta ${consultaId}:`, error);
+    throw error.response?.data || new Error("Error al cargar detalle de consulta.");
+  }
 };
 
 // --- SERVICIOS PARA CITAS ---
@@ -68,13 +67,13 @@ export const getCitasByPaciente = async (pacienteId) => {
  * Llama a: POST /api/citas/paciente/:pacienteId
  */
 export const createCita = async (pacienteId, citaData) => {
-    try {
-        const response = await api.post(`/citas/paciente/${pacienteId}`, citaData);
-        return response.data;
-    } catch (error) {
-        console.error(`Error al agendar cita para el paciente ${pacienteId}:`, error);
-        throw error.response?.data || new Error("Error al agendar la cita.");
-    }
+  try {
+    const response = await api.post(`/citas/paciente/${pacienteId}`, citaData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error al agendar cita para el paciente ${pacienteId}:`, error);
+    throw error.response?.data || new Error("Error al agendar la cita.");
+  }
 };
 
 /**
@@ -82,12 +81,11 @@ export const createCita = async (pacienteId, citaData) => {
  * Llama a: PUT /api/citas/:id/estado
  */
 export const updateCitaEstado = async (citaId, nuevoEstado) => {
-    try {
-        // El body solo necesita el nuevo estado
-        const response = await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
-        return response.data;
-    } catch (error) {
-        console.error(`Error al actualizar el estado de la cita ${citaId}:`, error);
-        throw error.response?.data || new Error("Error al actualizar el estado.");
-    }
+  try {
+    const response = await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al actualizar el estado de la cita ${citaId}:`, error);
+    throw error.response?.data || new Error("Error al actualizar el estado.");
+  }
 };
