@@ -117,11 +117,10 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
 // --- Componente Principal ---
 export default function Configuracion() {
   const { user } = useAuth();
+  const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
 
-  // Bloqueo por correo
-  if (user?.email?.toLowerCase().startsWith("nutri") || 
-      user?.email?.toLowerCase().startsWith("doctor")) {
-    return <Navigate to="/dashboard" replace />;
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
   const [activeTab, setActiveTab] = useState('usuarios');
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import styles from './Layout.module.css';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'; // <--- AÑADIDO
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/AuthContext.jsx';
 import { FaTachometerAlt, FaUsers, FaUpload, FaFileAlt, FaCog, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import logoAmd from '../../assets/img/logo.png'; 
 
 function Layout() {
   const { logout, user } = useAuth();
-  const navigate = useNavigate(); // <--- AÑADIDO
+  const navigate = useNavigate();
   const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
 
   const handleLogout = () => {
     logout();
-    navigate('/login'); // <--- AÑADIDO
+    navigate('/login');
   };
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -28,34 +28,33 @@ function Layout() {
           {mobileOpen ? <FaTimes /> : <FaBars />}
         </button>
 
-        {/* (Restauré tus NavLinks que faltaban en el repo) */}
         <div className={`${styles.navLinks} ${mobileOpen ? styles.navLinksOpen : ''}`}>
-          <NavLink onClick={closeMobile} to="/" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          {/* CORRECCIÓN: Rutas actualizadas con el prefijo /app */}
+          <NavLink onClick={closeMobile} to="/app" end className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaTachometerAlt /> <span>Dashboard</span>
           </NavLink>
-          <NavLink onClick={closeMobile} to="/pacientes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/app/pacientes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaUsers /> <span>Pacientes</span>
           </NavLink>
-          <NavLink onClick={closeMobile} to="/importar" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/app/importar" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaUpload /> <span>Importar</span>
           </NavLink>
-          <NavLink onClick={closeMobile} to="/reportes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+          <NavLink onClick={closeMobile} to="/app/reportes" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
             <FaFileAlt /> <span>Reportes</span>
           </NavLink>
           {isAdmin && (
-            <NavLink onClick={closeMobile} to="/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
+            <NavLink onClick={closeMobile} to="/app/configuracion" className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}>
               <FaCog /> <span>Configuración</span>
             </NavLink>
           )}
         </div>
 
-        {/* Backdrop for mobile menu */}
         <div className={`${styles.mobileBackdrop} ${mobileOpen ? styles.mobileBackdropOpen : ''}`} onClick={closeMobile} />
 
         <div className={styles.navbarUser}>
-          <span>Administrador Sistema</span>
-          <div className={styles.userAvatar}>AS</div>
-          <button onClick={handleLogout} className={styles.logoutButton}> {/* <--- CORREGIDO */}
+          <span>{user?.nombre || 'Usuario'}</span>
+          <div className={styles.userAvatar}>{(user?.nombre || 'U')[0]}</div>
+          <button onClick={handleLogout} className={styles.logoutButton}>
             <FaSignOutAlt />
           </button>
         </div>

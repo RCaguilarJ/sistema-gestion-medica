@@ -9,6 +9,7 @@ import Tag from '../components/ui/Tag';
 import Card from '../components/ui/Card';
 import Nutricion from './Nutricion';
 import Documentos from './Documentos';
+import { getUsers } from '../services/userService.js';
 import { getPacienteById, updatePaciente } from '../services/pacienteService';
 import {
     getConsultasByPaciente,
@@ -180,14 +181,27 @@ const ModalNuevaConsulta = ({ pacienteId, onClose, onConsultaCreated }) => {
 
 // --- Modal de Agendar Cita (image_176ec3.png) ---
 const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
-    // Asumimos que tienes una forma de obtener la lista de médicos/nutriólogos (Users)
+    // Estado para guardar la lista real de médicos traída de la BD
+    const [medicos, setMedicos] = useState([]); 
     const [formData, setFormData] = useState({
         fechaHora: '', motivo: '', medicoId: '', notas: ''
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // [INTEGRACIÓN FALTANTE]: Cargar lista de User (Médicos/Nutriólogos) para el Select.
+    // Al abrir el modal, pedimos la lista de usuarios al Backend
+    useEffect(() => {
+        const fetchMedicos = async () => {
+            try {
+                const data = await getUsers();
+                setMedicos(data);
+            } catch (err) {
+                console.error("Error cargando médicos:", err);
+                setError("No se pudo cargar la lista de médicos.");
+            }
+        };
+        fetchMedicos();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -199,12 +213,20 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
         setError('');
         setIsSaving(true);
         try {
-            // Requiere fechaHora, motivo, medicoId
-            const dataToSend = cleanAndNormalizeData(formData);
-            await createCita(pacienteId, dataToSend);
+            // Validamos que se haya seleccionado un médico real
+            if (!formData.medicoId) {
+                setError("Debes seleccionar un profesional.");
+                setIsSaving(false);
+                return;
+            }
+            
+            await createCita(pacienteId, cleanAndNormalizeData(formData));
             onCitaCreated();
+            onClose();
         } catch (err) {
-            setError(err.message || 'Error al agendar la cita.');
+            // Si el error viene del backend, lo mostramos
+            const msg = err.response?.data?.message || 'Error al agendar la cita.';
+            setError(msg);
         } finally {
             setIsSaving(false);
         }
@@ -220,10 +242,13 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
                 <div className={formStyles.formGroup}>
                     <label htmlFor="medicoId">Asignar a *</label>
                     <select name="medicoId" value={formData.medicoId} onChange={handleChange} required>
-                        <option value="">Seleccione un Médico/Nutriólogo</option>
-                        {/* [INTEGRACIÓN FALTANTE]: Rellenar con la lista de Users */}
-                        <option value={1}>Administrador (1)</option>
-                        <option value={2}>Nutriólogo (2)</option>
+                        <option value="">Seleccione un profesional</option>
+                        {/* AQUÍ ESTÁ LA CLAVE: Mapeamos los usuarios reales */}
+                        {medicos.map(medico => (
+                            <option key={medico.id} value={medico.id}>
+                                {medico.nombre || medico.username} ({medico.role})
+                            </option>
+                        ))}
                     </select>
                 </div>
             </div>
@@ -235,7 +260,7 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
                 <label htmlFor="notas">Notas Internas</label>
                 <textarea rows="3" name="notas" value={formData.notas} onChange={handleChange}></textarea>
             </div>
-            {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
+            {error && <div style={{ backgroundColor: '#ffebe6', color: '#de350b', padding: '10px', borderRadius: '6px', marginTop: '1rem' }}>{error}</div>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
                 <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
                 <Button type="submit" disabled={isSaving}>

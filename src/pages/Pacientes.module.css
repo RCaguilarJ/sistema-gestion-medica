@@ -1,16 +1,18 @@
 /* src/pages/Pacientes.module.css */
+
+/* --- Header --- */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .subtitle {
@@ -19,319 +21,162 @@
   margin: 0;
 }
 
-.filterBar {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 1rem;
-  background-color: #ffffff;
-  padding: 1.5rem;
+/* --- Filtros --- */
+.filtersContainer {
+  background-color: #f8f9fa;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #eef0f2;
 }
 
-.searchInput,
-.selectInput {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #dcdcdc;
-  border-radius: 6px;
-  font-size: 1rem;
-  background-color: #f9f9f9;
+.filtersHeader { margin-bottom: 1rem; }
+.filtersTitle { font-size: 1rem; font-weight: 600; color: #333; margin: 0 0 0.25rem 0; }
+.filtersSubtitle { font-size: 0.85rem; color: #777; margin: 0; }
+
+.filtersRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.searchInput {
-  padding-left: 2.5rem; /* Espacio para el ícono */
-}
-
-.searchWrapper {
+.searchInputWrapper {
+  flex: 2;
+  min-width: 250px;
   position: relative;
 }
 
 .searchIcon {
   position: absolute;
-  left: 0.75rem;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #777;
+  color: #999;
 }
 
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #fff;
+}
+
+.filterSelect {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: #555;
+}
+
+/* --- Tabla --- */
 .tableContainer {
   background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
-}
-
-/* Horizontal scroll for wide tables on small screens */
-@media (max-width: 768px) {
-  .tableContainer {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    /* keep vertical overflow hidden but allow horizontal scroll */
-    overflow-y: hidden;
-    padding: 0.5rem; /* small padding so scrollbar doesn't touch edges */
-    margin-left: -0.5rem;
-    margin-right: -0.5rem;
-    border-radius: 10px;
-  }
-
-  .table {
-    min-width: 900px; /* ensure columns remain visible; adjust if needed */
-  }
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1.25rem 1.5rem;
-  text-align: left;
-  border-bottom: 1px solid #f0f0f0;
+  min-width: 800px;
 }
 
 .table th {
-  font-size: 0.8rem;
-  color: #666;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  background-color: #fcfcfc;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #eef0f2;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .table td {
-  font-size: 0.95rem;
-  color: #333;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f4f6f8;
+  vertical-align: middle;
 }
 
-/* Estilos de celdas específicas */
-.pacienteNombre {
-  font-weight: 600;
-}
-.pacienteMeta {
-  font-size: 0.85rem;
-  color: #777;
-}
+.cellNameMain { font-weight: 600; color: #222; font-size: 0.95rem; margin-bottom: 2px; }
+.cellNameSub { font-size: 0.8rem; color: #888; }
+.cellCurp { font-family: monospace; color: #555; font-size: 0.9rem; }
 
-.hba1cAlto {
-  color: #de350b;
-  font-weight: 600;
-}
-
-.hba1cMedio {
-  color: #ff8b00;
-  font-weight: 600;
-}
-
-.hba1cBajo {
-  color: #00875a;
-  font-weight: 600;
-}
-
-.accionIcon {
-  color: #555;
-  font-size: 1.25rem;
-  cursor: pointer;
-}
-
-.spinner {
-  font-size: 2.5rem;
-  color: #007bff;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Responsividad: tablet y móvil */
-@media (max-width: 1024px) {
-  .filterBar {
-    grid-template-columns: 1fr 1fr;
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  .header > div {
-    width: 100%;
-  }
-  .header > button,
-  .header > .button {
-    width: 100%;
-  }
-  .filterBar {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-  .searchInput {
-    padding-left: 1rem;
-  }
-  .table th,
-  .table td {
-    padding: 0.85rem 1rem;
-  }
-  .title {
-    font-size: 1.5rem;
-  }
-}
-
-/* Lista de pacientes en móvil (tarjetas) */
-.patientList {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.patientCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.patientCardMain {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.patientCardMeta {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
-  color: #555;
-  font-size: 0.95rem;
-}
-
-.patientCardActions {
-  display: flex;
-  justify-content: space-between;
+.actionButton {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.patientTags {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Make sure table rows remain readable on medium screens by reducing padding */
-@media (max-width: 1024px) {
-  .table th,
-  .table td {
-    padding: 0.9rem 1rem;
-  }
-}
-/* --- Añadir estos estilos al final de Pacientes.module.css --- */
-
-.formSectionTitle {
-  font-size: 1.1rem;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  color: #444;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
 }
+.actionButton:hover { background-color: #f5f5f5; border-color: #ddd; }
 
-.formSectionTitle:first-of-type {
-  margin-top: 0;
-}
+.loadingState, .emptyTable { text-align: center; padding: 3rem; color: #666; }
+
+/* --- Estilos del Formulario Modal --- */
+.modalFormContainer { padding: 0 1rem 1rem 1rem; }
+.requiredNote { font-size: 0.85rem; color: #666; margin-bottom: 1rem; }
+
+.sectionHeader { font-size: 1rem; font-weight: 700; color: #333; margin-top: 1.5rem; margin-bottom: 0.25rem; }
+.sectionSub { font-size: 0.85rem; color: #666; margin-bottom: 1rem; }
 
 .formGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* 2 columnas por defecto */
-  gap: 1rem 1.5rem;
-}
-
-/* Clase especial para hacer que un campo ocupe todo el ancho 
-  en desktop (como "Calle y Número")
-*/
-.fullWidthMobile {
-  grid-column: 1 / 3;
-}
-
-
-/* Estilos responsivos para el formulario */
-@media (max-width: 768px) {
-  .formGrid {
-    grid-template-columns: 1fr; /* 1 columna en móvil */
-    gap: 1rem;
-  }
-  
-  /* Hacemos que "Calle y Número" ocupe 1 columna en móvil */
-  .fullWidthMobile {
-    grid-column: 1 / -1; 
-  }
-
-  .tableContainer {
-    display: none; /* Ocultar la tabla en móvil */
-  }
-
-  .patientList {
-    display: flex; /* Mostrar la lista de tarjetas en móvil */
-    flex-direction: column;
-    gap: 1rem;
-  }
-}
-
-/* --- Estilos para las tarjetas de paciente en móvil --- */
-.patientCard {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.patientCardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.patientCardTitle {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.patientCardMeta {
-  font-size: 0.9rem;
-  color: #777;
-}
-
-.patientCardBody {
-  display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  font-size: 0.95rem;
+  gap: 1.2rem;
+  margin-bottom: 1rem;
 }
 
-.patientCardDataItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+.label { font-size: 0.85rem; fontWeight: 600; color: #444; margin-bottom: 4px; display: block; }
 
-.patientCardLabel {
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: uppercase;
+.inputFull {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333;
+  background-color: #fff;
 }
+.inputFull:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+.inputReadOnly { background-color: #f9f9f9; cursor: default; }
 
-.patientCardActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 0.5rem;
+.charCount { text-align: right; font-size: 0.75rem; color: #999; margin-top: 4px; }
+.errorMessage { background-color: #ffebe6; color: #de350b; padding: 10px; border-radius: 6px; margin-bottom: 1rem; fontSize: 0.9rem; }
+
+.divider { border-top: 1px solid #eee; margin: 1.5rem 0; }
+.modalActions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid #eee; margin-top: 1rem; }
+
+/* Toggle Switch Custom */
+.checkboxContainer { display: flex; align-items: center; height: 100%; padding-top: 1.5rem; }
+.checkboxLabel { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.toggleSwitch {
+  position: relative; width: 40px; height: 20px; background-color: #ccc; border-radius: 20px; transition: 0.3s;
+}
+.toggleActive { background-color: #007bff; }
+.toggleSwitch input { opacity: 0; width: 0; height: 0; }
+.toggleKnob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: #fff; border-radius: 50%; transition: 0.3s;
+}
+.toggleActive .toggleKnob { left: 22px; }
+
+@media (max-width: 640px) {
+  .formGrid { grid-template-columns: 1fr; }
+  .filtersRow { flex-direction: column; }
+  .tableContainer { overflow-x: auto; }
 }

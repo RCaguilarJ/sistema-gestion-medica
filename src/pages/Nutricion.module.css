@@ -1,90 +1,113 @@
-.container {
-    padding: 20px;
+/* src/pages/Nutricion.module.css */
+
+.card {
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    border: 1px solid #eef2f7; /* Borde sutil */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    padding: 2rem;
+    margin-bottom: 2rem;
 }
 
-.sectionTitle {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 5px;
+/* Títulos */
+.title {
+    font-size: 1rem;
+    font-weight: 700;
     color: #333;
+    margin: 0 0 0.25rem 0;
 }
 
-.sectionSubtitle {
-    font-size: 0.9rem;
-    color: #888;
-    margin-bottom: 20px;
+.subtitle {
+    font-size: 0.85rem;
+    color: #777;
+    margin: 0 0 1.5rem 0;
 }
 
-.grid {
+/* Grilla de Inputs Superiores */
+.gridRow {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 30px;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 columnas iguales */
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-.fieldGroup {
+.inputGroup {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
 }
 
 .label {
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: #333;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #444;
 }
 
-.input {
-    padding: 10px;
-    border: 1px solid #eee;
+/* Estilo específico del Input "Read Only" (Fondo Gris) */
+.readOnlyInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb; /* El gris muy clarito de la imagen */
+    border: 1px solid #f0f0f0;
     border-radius: 6px;
-    background-color: #f9f9f9;
     color: #555;
-    font-size: 1rem;
+    font-size: 0.9rem;
     outline: none;
 }
 
-.divider {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 30px 0;
+/* Sección Planes */
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
 }
 
+/* Estado Vacío (Empty State) */
 .emptyState {
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0; /* Borde muy sutil, casi invisible */
+    padding: 3rem 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px;
-    background-color: #fcfcfc;
-    border-radius: 8px;
-    border: 1px dashed #ddd;
+    gap: 0.75rem;
+    text-align: center;
 }
 
 .emptyIcon {
-    font-size: 2.5rem;
-    color: #ccc;
-    margin-bottom: 15px;
+    font-size: 2rem;
+    color: #9ca3af; /* Gris medio para el ícono */
+    margin-bottom: 0.5rem;
 }
 
 .emptyText {
-    color: #888;
-    margin-bottom: 15px;
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0;
 }
 
-.createButton {
+.createLink {
     background: none;
     border: none;
-    color: #333;
+    color: #111827; /* Negro suave */
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
-    font-size: 1rem;
+    text-decoration: none;
     padding: 0;
 }
 
-.createButton:hover {
+.createLink:hover {
     text-decoration: underline;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .gridRow {
+        grid-template-columns: 1fr; /* 1 columna en móvil */
+        gap: 1rem;
+    }
 }
