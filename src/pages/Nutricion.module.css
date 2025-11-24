@@ -111,3 +111,37 @@
         gap: 1rem;
     }
 }
+/* src/pages/Nutricion.module.css */
+
+/* ... (estilos anteriores iguales) ... */
+
+/* Input en modo lectura (Gris) */
+.readOnlyInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    color: #555;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+/* Input en modo edición (Blanco) */
+.editableInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc; /* Borde más visible */
+    border-radius: 6px;
+    color: #333;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.editableInput:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}

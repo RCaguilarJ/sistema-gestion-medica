@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaSave, FaTimesCircle, FaSpinner, FaCalendarAlt, FaPlus, FaEye } from 'react-icons/fa';
 import styles from '../styles/DetallePacientePage.module.css';
-import formStyles from '../styles/FormStyles.module.css';
+import formStyles from '../styles/FormStyles.module.css'; 
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Tag from '../components/ui/Tag';
 import Card from '../components/ui/Card';
+
+// Componentes de Secciones
 import Nutricion from './Nutricion';
 import Documentos from './Documentos';
-import { getUsers } from '../services/userService.js';
+
+// Servicios
 import { getPacienteById, updatePaciente } from '../services/pacienteService';
+import { getUsers } from '../services/userService.js';
 import {
     getConsultasByPaciente,
     getConsultaDetail,
@@ -18,38 +22,48 @@ import {
     getCitasByPaciente,
     createCita,
     updateCitaEstado,
-} from '../services/consultaCitaService.js'; // Servicio combinado (asumido)
+} from '../services/consultaCitaService.js';
 
-// --- HELPER: Limpieza de datos (para el update) ---
+// --- HELPERS ---
+
 const cleanAndNormalizeData = (data) => {
     const cleanedData = { ...data };
-
-    // 1. Eliminar campos vacíos, nulos o indefinidos
     Object.keys(cleanedData).forEach((key) => {
         if (cleanedData[key] === '' || cleanedData[key] === null || cleanedData[key] === undefined) {
             delete cleanedData[key];
         }
     });
-
-    // 2. Conversiones a número (solo si el campo existe después de la limpieza)
-    if (cleanedData.estaturaCm) cleanedData.estaturaCm = parseInt(cleanedData.estaturaCm, 10);
+    // Conversiones numéricas
     if (cleanedData.pesoKg) cleanedData.pesoKg = parseFloat(cleanedData.pesoKg);
+    if (cleanedData.estatura) cleanedData.estatura = parseFloat(cleanedData.estatura);
     if (cleanedData.hba1c) cleanedData.hba1c = parseFloat(cleanedData.hba1c);
     if (cleanedData.imc) cleanedData.imc = parseFloat(cleanedData.imc);
 
     return cleanedData;
 };
 
+// Fórmula IMC: Peso / (Estatura * Estatura) en metros
+const calcularIMC = (peso, estatura) => {
+    const p = parseFloat(peso);
+    const e = parseFloat(estatura);
+    
+    if (!p || !e || e === 0) return '';
+
+    const imc = p / (e * e);
+    return imc.toFixed(1);
+};
+
+// Listas para selectores
 const allowedGeneros = ['Masculino', 'Femenino', 'Otro'];
 const allowedTipoDiabetes = ['Tipo 1', 'Tipo 2', 'Gestacional', 'Otro'];
 const allowedEstatus = ['Activo', 'Inactivo'];
 const allowedRiesgo = ['Alto', 'Medio', 'Bajo'];
 
 // --------------------------------------------------------
-// --- MODALES Y SECCIONES DE PESTAÑAS (COMPONENTS) ---
+// --- SUB-COMPONENTES Y MODALES ---
 // --------------------------------------------------------
 
-// --- Modal de Ver Detalle de Consulta (image_17716a.png) ---
+// Modal Ver Detalle de Consulta
 const ModalVerConsulta = ({ consultaId, onClose }) => {
     const [consulta, setConsulta] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -70,38 +84,25 @@ const ModalVerConsulta = ({ consultaId, onClose }) => {
         fetchDetail();
     }, [consultaId]);
 
-    if (isLoading) return <div style={{ textAlign: 'center' }}><FaSpinner className={styles.spinner} /> Cargando...</div>;
-    if (!consulta) return <p>No se pudo cargar el detalle de la consulta.</p>;
+    if (isLoading) return <div style={{ textAlign: 'center' }}><FaSpinner className="fa-spin" /> Cargando...</div>;
+    if (!consulta) return <p>No se pudo cargar el detalle.</p>;
 
     return (
         <div style={{ padding: '20px' }}>
-            <h3 className={formStyles.formSectionTitle} style={{ borderBottom: 'none' }}>Consulta de {new Date(consulta.fechaConsulta).toLocaleDateString()}</h3>
-            <div className={formStyles.formGrid}>
-                <div className={formStyles.formGroup}>
-                    <label>Motivo</label>
-                    <p>{consulta.motivo}</p>
-                </div>
-                <div className={formStyles.formGroup}>
-                    <label>Médico/Nutriólogo</label>
-                    <p>{consulta.Medico ? consulta.Medico.nombre : 'N/A'}</p>
-                </div>
-                <div className={formStyles.formGroup}>
-                    <label>Peso Registrado</label>
-                    <p>{consulta.pesoKg || 'N/A'} kg</p>
-                </div>
-                <div className={formStyles.formGroup}>
-                    <label>HbA1c</label>
-                    <p>{consulta.hba1c || 'N/A'}%</p>
-                </div>
+            <h3 style={{fontSize:'1.1rem', borderBottom: '1px solid #eee', paddingBottom:'10px'}}>Consulta del {new Date(consulta.fechaConsulta).toLocaleDateString()}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px' }}>
+                <div><strong>Motivo:</strong> <p>{consulta.motivo}</p></div>
+                <div><strong>Médico:</strong> <p>{consulta.Medico ? consulta.Medico.nombre : 'N/A'}</p></div>
+                <div><strong>Peso:</strong> <p>{consulta.pesoKg || 'N/A'} kg</p></div>
+                <div><strong>HbA1c:</strong> <p>{consulta.hba1c || 'N/A'}%</p></div>
             </div>
-            <h3 className={formStyles.formSectionTitle}>Hallazgos y Tratamiento</h3>
-            <div className={formStyles.formGroup}>
-                <label>Hallazgos</label>
-                <textarea rows="4" value={consulta.hallazgos || 'No hay hallazgos registrados.'} disabled></textarea>
+            <div style={{ marginTop:'20px' }}>
+                <strong>Hallazgos:</strong>
+                <p style={{backgroundColor:'#f9f9f9', padding:'10px', borderRadius:'5px'}}>{consulta.hallazgos || 'Sin notas.'}</p>
             </div>
-            <div className={formStyles.formGroup}>
-                <label>Tratamiento</label>
-                <textarea rows="4" value={consulta.tratamiento || 'No hay tratamiento registrado.'} disabled></textarea>
+            <div style={{ marginTop:'15px' }}>
+                <strong>Tratamiento:</strong>
+                <p style={{backgroundColor:'#f9f9f9', padding:'10px', borderRadius:'5px'}}>{consulta.tratamiento || 'Sin tratamiento.'}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <Button onClick={onClose}>Cerrar</Button>
@@ -110,86 +111,74 @@ const ModalVerConsulta = ({ consultaId, onClose }) => {
     );
 };
 
-
-// --- Modal de Nueva Consulta (image_176ea5.png) ---
+// Modal Nueva Consulta
 const ModalNuevaConsulta = ({ pacienteId, onClose, onConsultaCreated }) => {
     const [formData, setFormData] = useState({
         motivo: '', hallazgos: '', tratamiento: '', pesoKg: '', hba1c: '', fechaConsulta: new Date().toISOString().slice(0, 10)
     });
-    const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setIsSaving(true);
         try {
-            const dataToSend = cleanAndNormalizeData(formData);
-            await createConsulta(pacienteId, dataToSend);
-            onConsultaCreated(); // Llama a la función que recarga el historial y cierra el modal
+            await createConsulta(pacienteId, cleanAndNormalizeData(formData));
+            onConsultaCreated();
+            onClose();
         } catch (err) {
-            setError(err.message || 'Error al registrar la consulta. Verifique los datos.');
+            alert('Error al registrar consulta');
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className={styles.responsiveForm} style={{ padding: '15px' }}>
-            <div className={formStyles.formGrid}>
+        <form onSubmit={handleSubmit} style={{ padding: '15px' }}>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="motivo">Motivo *</label>
-                    <input type="text" name="motivo" value={formData.motivo} onChange={handleChange} required />
+                    <label>Motivo *</label>
+                    <input name="motivo" value={formData.motivo} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
                 </div>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="fechaConsulta">Fecha</label>
-                    <input type="date" name="fechaConsulta" value={formData.fechaConsulta} onChange={handleChange} required />
+                    <label>Fecha</label>
+                    <input type="date" name="fechaConsulta" value={formData.fechaConsulta} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
                 </div>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="pesoKg">Peso (kg)</label>
-                    <input type="number" step="0.1" name="pesoKg" value={formData.pesoKg} onChange={handleChange} />
+                    <label>Peso (kg)</label>
+                    <input type="number" step="0.1" name="pesoKg" value={formData.pesoKg} onChange={handleChange} style={{width:'100%', padding:'8px'}} />
                 </div>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="hba1c">HbA1c (%)</label>
-                    <input type="number" step="0.1" name="hba1c" value={formData.hba1c} onChange={handleChange} />
+                    <label>HbA1c (%)</label>
+                    <input type="number" step="0.1" name="hba1c" value={formData.hba1c} onChange={handleChange} style={{width:'100%', padding:'8px'}} />
                 </div>
+            </div>
+            <div className={formStyles.formGroup} style={{marginTop:'15px'}}>
+                <label>Hallazgos</label>
+                <textarea rows="3" name="hallazgos" value={formData.hallazgos} onChange={handleChange} style={{width:'100%', padding:'8px'}}></textarea>
             </div>
             <div className={formStyles.formGroup}>
-                <label htmlFor="hallazgos">Hallazgos / Notas Clínicas</label>
-                <textarea rows="4" name="hallazgos" value={formData.hallazgos} onChange={handleChange}></textarea>
+                <label>Tratamiento</label>
+                <textarea rows="3" name="tratamiento" value={formData.tratamiento} onChange={handleChange} style={{width:'100%', padding:'8px'}}></textarea>
             </div>
-            <div className={formStyles.formGroup}>
-                <label htmlFor="tratamiento">Tratamiento / Recomendaciones</label>
-                <textarea rows="4" name="tratamiento" value={formData.tratamiento} onChange={handleChange}></textarea>
-            </div>
-            {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
-                <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-                <Button type="submit" disabled={isSaving}>
-                    <FaSave /> {isSaving ? 'Guardando...' : 'Registrar Consulta'}
-                </Button>
+                <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                <Button type="submit" disabled={isSaving}>Guardar</Button>
             </div>
         </form>
     );
 };
 
-
-// --- Modal de Agendar Cita (image_176ec3.png) ---
+// Modal Agendar Cita (CORREGIDO CON USUARIOS REALES)
 const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
-    // Estado para guardar la lista real de médicos traída de la BD
-    const [medicos, setMedicos] = useState([]); 
+    const [medicos, setMedicos] = useState([]);
     const [formData, setFormData] = useState({
         fechaHora: '', motivo: '', medicoId: '', notas: ''
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Al abrir el modal, pedimos la lista de usuarios al Backend
     useEffect(() => {
         const fetchMedicos = async () => {
             try {
@@ -197,320 +186,157 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
                 setMedicos(data);
             } catch (err) {
                 console.error("Error cargando médicos:", err);
-                setError("No se pudo cargar la lista de médicos.");
             }
         };
         fetchMedicos();
     }, []);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsSaving(true);
         try {
-            // Validamos que se haya seleccionado un médico real
             if (!formData.medicoId) {
-                setError("Debes seleccionar un profesional.");
-                setIsSaving(false);
-                return;
+                throw new Error("Seleccione un profesional.");
             }
-            
             await createCita(pacienteId, cleanAndNormalizeData(formData));
             onCitaCreated();
             onClose();
         } catch (err) {
-            // Si el error viene del backend, lo mostramos
-            const msg = err.response?.data?.message || 'Error al agendar la cita.';
-            setError(msg);
+            setError(err.response?.data?.message || err.message || 'Error al agendar');
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className={styles.responsiveForm} style={{ padding: '15px' }}>
-            <div className={formStyles.formGrid}>
+        <form onSubmit={handleSubmit} style={{ padding: '15px' }}>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="fechaHora">Fecha y Hora *</label>
-                    <input type="datetime-local" name="fechaHora" value={formData.fechaHora} onChange={handleChange} required />
+                    <label>Fecha y Hora *</label>
+                    <input type="datetime-local" name="fechaHora" value={formData.fechaHora} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
                 </div>
                 <div className={formStyles.formGroup}>
-                    <label htmlFor="medicoId">Asignar a *</label>
-                    <select name="medicoId" value={formData.medicoId} onChange={handleChange} required>
+                    <label>Asignar a *</label>
+                    <select name="medicoId" value={formData.medicoId} onChange={handleChange} required style={{width:'100%', padding:'8px'}}>
                         <option value="">Seleccione un profesional</option>
-                        {/* AQUÍ ESTÁ LA CLAVE: Mapeamos los usuarios reales */}
-                        {medicos.map(medico => (
-                            <option key={medico.id} value={medico.id}>
-                                {medico.nombre || medico.username} ({medico.role})
-                            </option>
+                        {medicos.map(m => (
+                            <option key={m.id} value={m.id}>{m.nombre} ({m.role})</option>
                         ))}
                     </select>
                 </div>
             </div>
-            <div className={formStyles.formGroup}>
-                <label htmlFor="motivo">Motivo de Cita *</label>
-                <input type="text" name="motivo" value={formData.motivo} onChange={handleChange} required />
+            <div className={formStyles.formGroup} style={{marginTop:'15px'}}>
+                <label>Motivo *</label>
+                <input name="motivo" value={formData.motivo} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
             </div>
             <div className={formStyles.formGroup}>
-                <label htmlFor="notas">Notas Internas</label>
-                <textarea rows="3" name="notas" value={formData.notas} onChange={handleChange}></textarea>
+                <label>Notas</label>
+                <textarea rows="2" name="notas" value={formData.notas} onChange={handleChange} style={{width:'100%', padding:'8px'}}></textarea>
             </div>
-            {error && <div style={{ backgroundColor: '#ffebe6', color: '#de350b', padding: '10px', borderRadius: '6px', marginTop: '1rem' }}>{error}</div>}
+            {error && <p style={{color:'red'}}>{error}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
-                <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-                <Button type="submit" disabled={isSaving}>
-                    <FaSave /> {isSaving ? 'Agendando...' : 'Agendar Cita'}
-                </Button>
+                <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                <Button type="submit" disabled={isSaving}>Agendar</Button>
             </div>
         </form>
     );
 };
 
-
-// --- SECCIÓN: HISTORIAL CLÍNICO ---
+// Secciones de Historial y Citas
 const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
     const [consultas, setConsultas] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isModalConsultaOpen, setIsModalConsultaOpen] = useState(false);
-    const [isViewConsultaOpen, setIsViewConsultaOpen] = useState(false);
-    const [selectedConsultaId, setSelectedConsultaId] = useState(null);
-
-    const loadConsultas = async () => {
-        setIsLoading(true);
-        try {
-            const data = await getConsultasByPaciente(pacienteId);
-            setConsultas(data);
-        } catch (err) {
-            console.error('Error cargando historial clínico:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
 
     useEffect(() => {
-        loadConsultas();
-    }, [pacienteId]);
+        getConsultasByPaciente(pacienteId).then(setConsultas).catch(console.error);
+    }, [pacienteId, isModalOpen]); 
 
-    const handleConsultaCreated = () => {
-        setIsModalConsultaOpen(false);
-        loadConsultas(); // Recargar la lista
-        onConsultaCreated(); // Notificar al padre para actualizar la última visita
-    };
-
-    const handleVerConsulta = (consultaId) => {
-        setSelectedConsultaId(consultaId);
-        setIsViewConsultaOpen(true);
-    };
-
-    const renderTablaConsultas = () => {
-        if (isLoading) {
-            return (<div style={{ textAlign: 'center', padding: '4rem' }}><FaSpinner className={styles.spinner} /> <p>Cargando consultas...</p></div>);
-        }
-        if (consultas.length === 0) {
-            return (
-                <p style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fff', borderRadius: '8px' }}>
-                    No hay consultas registradas.
-                </p>
-            );
-        }
-
-        return (
+    return (
+        <div style={{padding:'20px'}}>
+            <div style={{display:'flex', justifyContent:'flex-end', marginBottom:'20px'}}>
+                <Button onClick={() => setIsModalOpen(true)}><FaPlus /> Nueva Consulta</Button>
+            </div>
             <div className={styles.tableContainer}>
                 <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Motivo</th>
-                            <th>Médico/Nutriólogo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Fecha</th><th>Motivo</th><th>Médico</th><th>Acciones</th></tr></thead>
                     <tbody>
-                        {consultas.map((c) => (
+                        {consultas.map(c => (
                             <tr key={c.id}>
                                 <td>{new Date(c.fechaConsulta).toLocaleDateString()}</td>
                                 <td>{c.motivo}</td>
-                                <td>{c.Medico ? c.Medico.nombre : 'N/A'}</td>
-                                <td>
-                                    <div
-                                        onClick={() => handleVerConsulta(c.id)}
-                                        style={{ cursor: 'pointer', display: 'inline-block' }}
-                                        title="Ver Detalle de Consulta"
-                                    >
-                                        <FaEye className={styles.accionIcon} />
-                                    </div>
-                                </td>
+                                <td>{c.Medico?.nombre || 'N/A'}</td>
+                                <td><FaEye style={{cursor:'pointer'}} onClick={() => setSelectedId(c.id)} /></td>
                             </tr>
                         ))}
+                        {consultas.length === 0 && <tr><td colSpan="4" style={{textAlign:'center'}}>Sin historial.</td></tr>}
                     </tbody>
                 </table>
             </div>
-        );
-    };
-
-    return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-                <Button onClick={() => setIsModalConsultaOpen(true)} variant="primary">
-                    <FaPlus /> Nueva Consulta
-                </Button>
-            </div>
-
-            {renderTablaConsultas()}
-
-            <Modal title="Registrar Nueva Consulta" isOpen={isModalConsultaOpen} onClose={() => setIsModalConsultaOpen(false)} size="large">
-                <ModalNuevaConsulta
-                    pacienteId={pacienteId}
-                    onClose={() => setIsModalConsultaOpen(false)}
-                    onConsultaCreated={handleConsultaCreated}
-                />
+            <Modal title="Nueva Consulta" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <ModalNuevaConsulta pacienteId={pacienteId} onClose={() => setIsModalOpen(false)} onConsultaCreated={onConsultaCreated} />
             </Modal>
-
-            <Modal title="Detalle de la Consulta" isOpen={isViewConsultaOpen} onClose={() => setIsViewConsultaOpen(false)} size="large">
-                <ModalVerConsulta
-                    consultaId={selectedConsultaId}
-                    onClose={() => setIsViewConsultaOpen(false)}
-                />
+            <Modal title="Detalle" isOpen={!!selectedId} onClose={() => setSelectedId(null)}>
+                <ModalVerConsulta consultaId={selectedId} onClose={() => setSelectedId(null)} />
             </Modal>
         </div>
     );
 };
 
-
-// --- SECCIÓN: CITAS ---
 const CitasSection = ({ pacienteId }) => {
     const [citas, setCitas] = useState({ proximasCitas: [], historialCitas: [] });
-    const [isLoading, setIsLoading] = useState(true);
-    const [isModalCitaOpen, setIsModalCitaOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const loadCitas = async () => {
-        setIsLoading(true);
-        try {
-            const data = await getCitasByPaciente(pacienteId);
-            setCitas(data);
-        } catch (err) {
-            console.error('Error cargando citas:', err);
-            setCitas({ proximasCitas: [], historialCitas: [] });
-        } finally {
-            setIsLoading(false);
+    const load = () => getCitasByPaciente(pacienteId).then(setCitas).catch(console.error);
+    useEffect(() => { load(); }, [pacienteId]);
+
+    const handleStatus = async (id, status) => {
+        if(window.confirm(`¿Cambiar a ${status}?`)) {
+            await updateCitaEstado(id, status);
+            load();
         }
     };
 
-    useEffect(() => {
-        loadCitas();
-    }, [pacienteId]);
-
-    const handleCitaCreated = () => {
-        setIsModalCitaOpen(false);
-        loadCitas();
-    };
-
-    const handleUpdateCita = async (citaId, nuevoEstado) => {
-        if (window.confirm(`¿Está seguro de cambiar el estado de la cita a "${nuevoEstado}"?`)) {
-            try {
-                await updateCitaEstado(citaId, nuevoEstado);
-                loadCitas();
-            } catch (error) {
-                alert(`Error al actualizar la cita: ${error.message}`);
-            }
-        }
-    };
-
-    const now = new Date();
-
-    // Renderiza la tarjeta de cita (Simulación del diseño de Figma)
-    const renderCitaCard = (cita) => (
-        <Card key={cita.id} style={{
-            marginBottom: '15px',
-            padding: '15px',
-            // Colores basados en el estado
-            borderLeft: `5px solid ${cita.estado === 'Pendiente' ? '#FFC107' : cita.estado === 'Confirmada' ? '#007BFF' : cita.estado === 'Completada' ? '#28A745' : '#DC3545'}`,
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    const renderCita = (c) => (
+        <Card key={c.id} style={{marginBottom:'10px', borderLeft: `4px solid ${c.estado === 'Confirmada' ? 'green' : 'orange'}`}}>
+            <div style={{display:'flex', justifyContent:'space-between'}}>
                 <div>
-                    <h4 style={{ margin: 0, color: '#007BFF' }}>{cita.motivo}</h4>
-                    <p style={{ margin: '5px 0' }}>
-                        <FaCalendarAlt /> **{new Date(cita.fechaHora).toLocaleString()}**
-                    </p>
-                    <p style={{ fontSize: '0.9em', color: '#666' }}>
-                        **Con:** {cita.Medico ? cita.Medico.nombre : 'N/A'}
-                    </p>
+                    <strong>{c.motivo}</strong><br/>
+                    <small>{new Date(c.fechaHora).toLocaleString()} con {c.Medico?.nombre}</small>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <Tag label={cita.estado} type={cita.estado === 'Pendiente' ? 'warning' : cita.estado === 'Confirmada' ? 'info' : cita.estado === 'Completada' ? 'success' : 'danger'} />
-
-                    <div style={{ marginTop: '10px', display: 'flex', gap: '5px', justifyContent: 'flex-end' }}>
-                        {cita.estado === 'Pendiente' && (
-                            <Button onClick={() => handleUpdateCita(cita.id, 'Confirmada')} variant="success" size="small">Confirmar</Button>
-                        )}
-                        {cita.estado === 'Confirmada' && new Date(cita.fechaHora) < now && (
-                            <Button onClick={() => handleUpdateCita(cita.id, 'Completada')} variant="primary" size="small">Finalizar</Button>
-                        )}
-                        {cita.estado !== 'Cancelada' && cita.estado !== 'Completada' && (
-                            <Button onClick={() => handleUpdateCita(cita.id, 'Cancelada')} variant="danger" size="small">Cancelar</Button>
-                        )}
-                    </div>
+                <div>
+                    <Tag label={c.estado} />
+                    {c.estado === 'Pendiente' && <Button size="small" onClick={() => handleStatus(c.id, 'Confirmada')}>Confirmar</Button>}
                 </div>
             </div>
         </Card>
     );
 
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 className={formStyles.formSectionTitle} style={{ borderBottom: 'none', paddingBottom: 0 }}>Gestión de Citas</h3>
-                <Button onClick={() => setIsModalCitaOpen(true)} variant="primary">
-                    <FaCalendarAlt /> Agendar Cita
-                </Button>
+        <div style={{padding:'20px'}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+                <h3>Próximas Citas</h3>
+                <Button onClick={() => setIsModalOpen(true)}><FaCalendarAlt /> Agendar</Button>
             </div>
+            {citas.proximasCitas.length > 0 ? citas.proximasCitas.map(renderCita) : <p>No hay citas próximas.</p>}
+            
+            <h3 style={{marginTop:'30px'}}>Historial</h3>
+            {citas.historialCitas.map(renderCita)}
 
-            {isLoading ? (
-                <div style={{ textAlign: 'center', padding: '4rem' }}>
-                    <FaSpinner className={styles.spinner} />
-                    <p>Cargando citas...</p>
-                </div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <h3 className={formStyles.formSectionTitle}>Próximas Citas ({citas.proximasCitas.length})</h3>
-                    <div style={{ backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '8px' }}>
-                        {citas.proximasCitas.length > 0 ? (
-                            citas.proximasCitas.map(renderCitaCard)
-                        ) : (
-                            <p style={{ margin: 0 }}>No hay citas próximas agendadas.</p>
-                        )}
-                    </div>
-
-                    <h3 className={formStyles.formSectionTitle}>Historial de Citas ({citas.historialCitas.length})</h3>
-                    <div style={{ backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '8px' }}>
-                        {citas.historialCitas.length > 0 ? (
-                            citas.historialCitas.map(renderCitaCard)
-                        ) : (
-                            <p style={{ margin: 0 }}>No hay historial de citas.</p>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <Modal title="Agendar Nueva Cita" isOpen={isModalCitaOpen} onClose={() => setIsModalCitaOpen(false)} size="medium">
-                <ModalAgendarCita
-                    pacienteId={pacienteId}
-                    onClose={() => setIsModalCitaOpen(false)}
-                    onCitaCreated={handleCitaCreated}
-                />
+            <Modal title="Agendar Cita" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <ModalAgendarCita pacienteId={pacienteId} onClose={() => setIsModalOpen(false)} onCitaCreated={load} />
             </Modal>
         </div>
     );
 };
 
+// --------------------------------------------------------
+// --- COMPONENTE PRINCIPAL ---
+// --------------------------------------------------------
 
-// --------------------------------------------------------
-// --- COMPONENTE PRINCIPAL: DetallePacientePage ---
-// --------------------------------------------------------
 function DetallePacientePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -518,350 +344,195 @@ function DetallePacientePage() {
     const [paciente, setPaciente] = useState(null);
     const [formData, setFormData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
     const [activeTab, setActiveTab] = useState('generales');
 
-    // Función para cargar los datos del paciente y actualizar el estado
     const fetchPaciente = async () => {
+        setIsLoading(true);
         try {
-            setIsLoading(true);
             const data = await getPacienteById(id);
-
-            // Formatear fechas para inputs 'date'
-            const fechaNacimiento = data.fechaNacimiento ? data.fechaNacimiento.slice(0, 10) : '';
-            const fechaDiagnostico = data.fechaDiagnostico ? data.fechaDiagnostico.slice(0, 10) : '';
-
-            const formattedData = { ...data, fechaNacimiento, fechaDiagnostico };
-            setPaciente(formattedData);
-            setFormData(formattedData);
-            setError('');
-            return formattedData;
+            setPaciente(data);
+            setFormData(data);
         } catch (err) {
-            setError('Error al cargar los datos del paciente.');
-            setPaciente(null);
-            setFormData({});
-            return null;
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchPaciente();
-    }, [id]);
+    useEffect(() => { fetchPaciente(); }, [id]);
 
-    // Función para forzar la recarga de datos generales (usada después de crear una consulta)
-    const handleUpdateUltimaVisita = () => {
-        fetchPaciente();
-    };
-
-
-    // Lógica de Edición (handleSave, handleCancel) ... (Mantenemos la lógica de edición en el componente padre)
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const newFormData = { ...formData, [name]: value };
+
+        // Cálculo Automático IMC en tiempo real
+        if (name === 'pesoKg' || name === 'estatura') {
+            const peso = name === 'pesoKg' ? value : formData.pesoKg;
+            const est = name === 'estatura' ? value : formData.estatura;
+            newFormData.imc = calcularIMC(peso, est);
+        }
+        setFormData(newFormData);
     };
 
     const handleSave = async () => {
         setIsSaving(true);
-        setError('');
-
         try {
-            const dataToSend = cleanAndNormalizeData(formData);
-
-            const updatedPaciente = await updatePaciente(id, dataToSend);
-
-            // Recargar datos y salir del modo edición
-            setPaciente(updatedPaciente);
-            // Reformatear para el estado
-            const fechaNacimiento = updatedPaciente.fechaNacimiento ? updatedPaciente.fechaNacimiento.slice(0, 10) : '';
-            const fechaDiagnostico = updatedPaciente.fechaDiagnostico ? updatedPaciente.fechaDiagnostico.slice(0, 10) : '';
-            setFormData({ ...updatedPaciente, fechaNacimiento, fechaDiagnostico });
-
+            const updated = await updatePaciente(id, cleanAndNormalizeData(formData));
+            setPaciente(updated);
+            setFormData(updated);
             setIsEditing(false);
-            alert('Paciente actualizado con éxito.');
+            alert("Guardado correctamente");
         } catch (err) {
-            setError(err.response?.data?.message || 'Error al actualizar. Verifique los campos.');
+            alert('Error al guardar');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleCancel = () => {
-        setFormData(paciente);
-        setIsEditing(false);
-        setError('');
-    };
+    if (isLoading) return <div className={styles.loadingContainer}><FaSpinner className="fa-spin" /> Cargando...</div>;
+    if (!paciente) return <div>No encontrado</div>;
 
-
-    // Renderizado de Spinners y Mensajes de Error
-    if (isLoading) {
-        return (
-            <div className={styles.loadingContainer}>
-                <FaSpinner className={styles.spinner} />
-                <p>Cargando datos del paciente...</p>
-            </div>
-        );
-    }
-
-    if (!paciente || Object.keys(paciente).length === 0) {
-        return (
-            <div className={styles.container}>
-                <h2>No se pudieron cargar los datos del paciente.</h2>
-                <p style={{ color: 'red' }}>{error}</p>
-                <Button onClick={() => navigate('/pacientes')}>Volver a la lista</Button>
-            </div>
-        );
-    }
-
-    const edad = paciente.fechaNacimiento ? new Date().getFullYear() - new Date(paciente.fechaNacimiento).getFullYear() : 'N/A';
-
-    // Helper para renderizar secciones del formulario (usado por el tab 'generales')
-    const renderFormSection = (title, fields) => (
-        <div className={styles.contentCard} style={{ marginBottom: '20px', padding: '20px', backgroundColor: '#fff' }}>
-            <h3 className={formStyles.formSectionTitle} style={{ borderBottom: 'none', paddingBottom: 0 }}>{title}</h3>
-            <div className={formStyles.formGrid}>
-                {fields.map((field) => (
-                    <div className={formStyles.formGroup} key={field.name}>
-                        <label htmlFor={field.name}>{field.label}</label>
-                        {field.type === 'select' ? (
-                            <select
-                                id={field.name}
-                                name={field.name}
-                                value={formData[field.name] || ''}
-                                onChange={handleInputChange}
-                                disabled={!isEditing}
-                                className={!isEditing ? formStyles.disabledInput : ''}
-                            >
-                                {field.options.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : (
-                            <input
-                                type={field.type || 'text'}
-                                id={field.name}
-                                name={field.name}
-                                value={field.value || formData[field.name] || ''}
-                                onChange={handleInputChange}
-                                disabled={!isEditing || field.disabled}
-                                readOnly={!isEditing || field.disabled}
-                                step={field.step}
-                                className={!isEditing || field.disabled ? formStyles.disabledInput : ''}
-                            />
-                        )}
-                    </div>
-                ))}
-            </div>
+    // Helper para renderizar campos
+    const renderField = (label, name, type = 'text', options = [], props = {}) => (
+        <div className={formStyles.formGroup}>
+            <label>{label}</label>
+            {type === 'select' ? (
+                <select 
+                    name={name} 
+                    value={formData[name] || ''} 
+                    onChange={handleInputChange} 
+                    disabled={!isEditing}
+                    className={!isEditing ? formStyles.disabledInput : ''}
+                >
+                    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+            ) : (
+                <input 
+                    type={type} 
+                    name={name} 
+                    value={formData[name] || ''} 
+                    onChange={handleInputChange} 
+                    disabled={!isEditing || props.readOnly} 
+                    className={(!isEditing || props.readOnly) ? formStyles.disabledInput : ''}
+                    {...props} 
+                />
+            )}
         </div>
     );
 
     return (
         <div className={styles.container}>
-
-            {/* --- HEADER Y BOTONES DE EDICIÓN --- */}
-            <div className={styles.header} style={{ justifyContent: 'space-between', marginBottom: '20px' }}>
-                <div className={styles.headerLeft} style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <Button onClick={() => navigate('/pacientes')} variant="secondary" title="Volver a Pacientes" style={{ fontSize: '1.2em', padding: '10px' }}>
-                        <FaArrowLeft />
-                    </Button>
-                    <div className={styles.patientInfo}>
-                        <h2 style={{ margin: 0 }}>{paciente.nombre}</h2>
-                        <p style={{ margin: 0, fontSize: '0.9em', color: '#666' }}>ID: PAT-{paciente.id} - CURP: {paciente.curp}</p>
+            {/* Header */}
+            <div className={styles.header} style={{justifyContent:'space-between'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                    <Button onClick={() => navigate('/app/pacientes')} variant="secondary"><FaArrowLeft/></Button>
+                    <div>
+                        <h2 style={{margin:0}}>{paciente.nombre}</h2>
+                        <small style={{color:'#666'}}>ID: {paciente.id} - {paciente.curp}</small>
                     </div>
                 </div>
-
-                <div className={styles.headerRight} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {error && <span style={{ color: 'red', marginRight: '10px' }}>{error}</span>}
-                    <span style={{
-                        padding: '5px 10px',
-                        borderRadius: '15px',
-                        fontWeight: 'bold',
-                        backgroundColor: paciente.estatus === 'Activo' ? '#4CAF50' : '#F44336',
-                        color: 'white',
-                    }}>
-                        {paciente.estatus || 'N/A'}
-                    </span>
-
+                <div>
+                    <Tag label={paciente.estatus} />
+                    <span style={{margin:'0 10px'}}></span>
                     {isEditing ? (
-                        <>
-                            <Button onClick={handleSave} disabled={isSaving} variant="primary">
-                                <FaSave /> {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                            </Button>
-                            <Button onClick={handleCancel} variant="secondary" disabled={isSaving}>
-                                <FaTimesCircle /> Cancelar
-                            </Button>
-                        </>
+                        <div style={{display:'inline-flex', gap:'10px'}}>
+                            <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
+                            <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
+                        </div>
                     ) : (
-                        <Button onClick={() => setIsEditing(true)}>
-                            <FaEdit /> Editar
-                        </Button>
+                        <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
                     )}
                 </div>
             </div>
 
-            {/* --- MÉTRICAS CLÍNICAS (Fila de Cards) --- */}
-            {/* ... (Renderizado de Métricas) ... */}
-            <div className={styles.metricsGrid} style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '20px',
-                marginBottom: '30px'
-            }}>
-                {/* Aquí irían tus 4 tarjetas de métricas */}
-                {/* Tarjeta 1: HbA1c y Riesgo */}
-                <div className={styles.metricCard} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    <h4>HbA1c</h4>
-                    <p style={{ fontSize: '1.8em', fontWeight: 'bold', color: paciente.riesgo === 'Alto' ? 'red' : paciente.riesgo === 'Medio' ? 'orange' : 'green' }}>{paciente.hba1c || '-'}%</p>
-                    <p style={{ margin: 0, color: '#666' }}>Riesgo: {paciente.riesgo || 'N/A'}</p>
-                </div>
-                {/* Tarjeta 4: Última Consulta (Actualizada por la nueva lógica de consultas) */}
-                <div className={styles.metricCard} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    <h4>Última Consulta</h4>
-                    <p style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#007BFF' }}>
-                        {paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}
-                    </p>
-                    <p style={{ margin: 0, color: '#666' }}>Tipo: {paciente.tipoTerapia || 'N/A'}</p>
-                </div>
-                {/* ... (otras tarjetas) ... */}
-                <div className={styles.metricCard} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    <h4>IMC</h4>
-                    <p style={{ fontSize: '1.8em', fontWeight: 'bold' }}>{paciente.imc || '-'}</p>
-                    <p style={{ margin: 0, color: '#666' }}>{paciente.pesoKg || '-'} kg / {paciente.estaturaCm || '-'} cm</p>
-                </div>
-                <div className={styles.metricCard} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    <h4>Edad</h4>
-                    <p style={{ fontSize: '1.8em', fontWeight: 'bold' }}>{edad}</p>
-                    <p style={{ margin: 0, color: '#666' }}>Nacimiento: {paciente.fechaNacimiento || 'N/A'}</p>
-                </div>
+            {/* Métricas */}
+            <div className={styles.metricsGrid}>
+                <div className={styles.metricCard}><h4>HbA1c</h4><h2>{paciente.hba1c || '-'}%</h2><small>{paciente.riesgo}</small></div>
+                <div className={styles.metricCard}><h4>Última Consulta</h4><h3>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</h3></div>
+                <div className={styles.metricCard}><h4>IMC</h4><h2>{paciente.imc || '-'}</h2><small>{paciente.pesoKg}kg / {paciente.estatura}m</small></div>
+                <div className={styles.metricCard}><h4>Edad</h4><h2>{calcularEdad(paciente.fechaNacimiento)}</h2><small>{paciente.fechaNacimiento}</small></div>
             </div>
 
-            {/* --- PESTAÑAS (TABS) --- */}
-            <div className={styles.tabContainer} style={{ borderBottom: '2px solid #ddd', marginBottom: '20px', display: 'flex' }}>
-                {/* La lógica de estilos inline se basa en la definición de activeTab */}
-                <span
-                    className={activeTab === 'generales' ? styles.tabActive : styles.tab}
-                    onClick={() => setActiveTab('generales')}
-                    style={{ fontWeight: activeTab === 'generales' ? 'bold' : 'normal', borderBottom: activeTab === 'generales' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
-                >
-                    Datos Generales
-                </span>
-                <span
-                    className={activeTab === 'clinico' ? styles.tabActive : styles.tab}
-                    onClick={() => setActiveTab('clinico')}
-                    style={{ fontWeight: activeTab === 'clinico' ? 'bold' : 'normal', borderBottom: activeTab === 'clinico' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
-                >
-                    Historial Clínico
-                </span>
-                <span
-                    className={activeTab === 'citas' ? styles.tabActive : styles.tab}
-                    onClick={() => setActiveTab('citas')}
-                    style={{ fontWeight: activeTab === 'citas' ? 'bold' : 'normal', borderBottom: activeTab === 'citas' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
-                >
-                    Citas
-                </span>
-                <span
-                    className={activeTab === 'nutricion' ? styles.tabActive : styles.tab}
-                    onClick={() => setActiveTab('nutricion')}
-                    style={{ fontWeight: activeTab === 'nutricion' ? 'bold' : 'normal', borderBottom: activeTab === 'nutricion' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
-                >
-                    Nutrición
-                </span>
-                <span
-                    className={activeTab === 'documentos' ? styles.tabActive : styles.tab}
-                    onClick={() => setActiveTab('documentos')}
-                    style={{ fontWeight: activeTab === 'documentos' ? 'bold' : 'normal', borderBottom: activeTab === 'documentos' ? '3px solid #007BFF' : 'none', cursor: 'pointer', padding: '10px 20px' }}
-                >
-                    Documentos
-                </span>
+            {/* Tabs */}
+            <div className={styles.tabContainer}>
+                {['generales', 'clinico', 'citas', 'nutricion', 'documentos'].map(tab => (
+                    <span 
+                        key={tab} 
+                        className={activeTab === tab ? styles.tabActive : styles.tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{textTransform: 'capitalize'}}
+                    >
+                        {tab === 'generales' ? 'Datos Generales' : tab}
+                    </span>
+                ))}
             </div>
 
-            {/* --- CONTENIDO CONDICIONAL --- */}
-            <div style={{ flexGrow: 1 }}>
-                {/* PESTAÑA 1: DATOS GENERALES (Formulario editable/de solo lectura) */}
+            {/* Contenido Tabs */}
+            <div className={styles.contentCard}>
                 {activeTab === 'generales' && (
-                    <form>
-                        {renderFormSection('Información Personal', [
-                            { label: 'Nombre Completo', name: 'nombre', type: 'text' },
-                            { label: 'CURP', name: 'curp', type: 'text', disabled: true },
-                            { label: 'Fecha de Nacimiento', name: 'fechaNacimiento', type: 'date' },
-                            { label: 'Edad', name: 'edad', type: 'text', disabled: true, value: edad },
-                            { label: 'Género', name: 'genero', type: 'select', options: allowedGeneros.map(v => ({ value: v, label: v })) },
-                            { label: 'Celular', name: 'telefono', type: 'text' },
-                            { label: 'Email', name: 'email', type: 'email' },
-                        ])}
+                    <form className={formStyles.formGrid} style={{display:'block'}}>
+                        <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
+                        <div className={formStyles.formGrid}>
+                            {renderField('Nombre Completo', 'nombre')}
+                            {renderField('CURP', 'curp')}
+                            {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
+                            {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
+                            {renderField('Celular', 'celular')}
+                            {renderField('Email', 'email', 'email')}
+                        </div>
 
-                        {renderFormSection('Domicilio', [
-                            { label: 'Calle y Número', name: 'calleNumero', type: 'text' },
-                            { label: 'Colonia', name: 'colonia', type: 'text' },
-                            { label: 'Municipio', name: 'municipio', type: 'text' },
-                            { label: 'Estado', name: 'estado', type: 'text' },
-                            { label: 'Código Postal', name: 'codigoPostal', type: 'text' },
-                        ])}
+                        <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
+                        <div className={formStyles.formGrid}>
+                            {renderField('Calle y Número', 'calleNumero')}
+                            {renderField('Colonia', 'colonia')}
+                            {renderField('Municipio', 'municipio')}
+                            {renderField('Estado', 'estado')}
+                            {renderField('CP', 'codigoPostal')}
+                        </div>
 
-                        {renderFormSection('Información Clínica', [
-                            { label: 'Tipo de Diabetes', name: 'tipoDiabetes', type: 'select', options: allowedTipoDiabetes.map(v => ({ value: v, label: v })) },
-                            { label: 'Fecha Diagnóstico', name: 'fechaDiagnostico', type: 'date' },
-                            { label: 'Estatura (cm)', name: 'estaturaCm', type: 'number' },
-                            { label: 'Peso (kg)', name: 'pesoKg', type: 'number', step: "0.1" },
-                            { label: 'HbA1c', name: 'hba1c', type: 'number', step: "0.1" },
-                            { label: 'IMC', name: 'imc', type: 'text', disabled: true, value: paciente.imc || '' },
-                        ])}
+                        <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
+                        <div className={formStyles.formGrid}>
+                            {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
+                            {renderField('Fecha Diagnóstico', 'fechaDiagnostico', 'date')}
+                            {renderField('Estatura (metros)', 'estatura', 'number', [], {step:'0.01', placeholder:'Ej: 1.65'})}
+                            {renderField('Peso (kg)', 'pesoKg', 'number', [], {step:'0.1'})}
+                            {renderField('HbA1c', 'hba1c', 'number', [], {step:'0.1'})}
+                            {renderField('IMC (Auto)', 'imc', 'number', [], {readOnly: true, placeholder:'Automático'})}
+                        </div>
 
-                        {renderFormSection('Configuración de Sistema', [
-                            { label: 'Estatus', name: 'estatus', type: 'select', options: allowedEstatus.map(v => ({ value: v, label: v })) },
-                            { label: 'Riesgo', name: 'riesgo', type: 'select', options: allowedRiesgo.map(v => ({ value: v, label: v })) },
-                            { label: 'Programa', name: 'programa', type: 'text' },
-                            { label: 'Tipo de Terapia', name: 'tipoTerapia', type: 'text' },
-                            { label: 'Nutriólogo Asignado (ID)', name: 'nutriologoId', type: 'number' },
-                        ])}
+                        <h3 className={formStyles.formSectionTitle}>Configuración</h3>
+                        <div className={formStyles.formGrid}>
+                            {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
+                            {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
+                            {renderField('Grupo/Programa', 'grupo')}
+                            {renderField('Tipo Terapia', 'tipoTerapia')}
+                        </div>
                     </form>
                 )}
 
-                {/* PESTAÑA 2: HISTORIAL CLÍNICO (Nueva sección) */}
-                {activeTab === 'clinico' &&
-                    <HistorialClinicoSection
-                        pacienteId={paciente.id}
-                        onConsultaCreated={handleUpdateUltimaVisita}
-                    />
-                }
-
-                {/* PESTAÑA 3: CITAS (Nueva sección) */}
-                {activeTab === 'citas' &&
-                    <CitasSection
-                        pacienteId={paciente.id}
-                    />
-                }
-
-                {/* PESTAÑA 4: NUTRICIÓN */}
-                {activeTab === 'nutricion' &&
-                    <Nutricion pacienteId={paciente.id} />
-                }
-
-                {/* PESTAÑA 5: DOCUMENTOS */}
-                {activeTab === 'documentos' &&
-                    <Documentos pacienteId={paciente.id} />
-                }
+                {activeTab === 'clinico' && <HistorialClinicoSection pacienteId={paciente.id} onConsultaCreated={fetchPaciente} />}
+                {activeTab === 'citas' && <CitasSection pacienteId={paciente.id} />}
+                
+                {/* CORRECCIÓN IMPORTANTE AQUÍ: */}
+                {activeTab === 'nutricion' && <Nutricion pacienteId={paciente.id} pacienteData={paciente} />}
+                
+                {activeTab === 'documentos' && <Documentos pacienteId={paciente.id} />}
             </div>
-
-            {/* Botones Fijos para Edición */}
-            {isEditing && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', position: 'sticky', bottom: 0, backgroundColor: '#f4f7f9', padding: '15px', borderTop: '1px solid #ddd', zIndex: 10 }}>
-                    <Button onClick={handleCancel} variant="secondary" disabled={isSaving}>
-                        <FaTimesCircle /> Cancelar
-                    </Button>
-                    <Button onClick={handleSave} disabled={isSaving} variant="primary">
-                        <FaSave /> {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                    </Button>
-                </div>
-            )}
         </div>
     );
 }
+
+// Función auxiliar para edad en la tarjeta
+const calcularEdad = (fecha) => {
+    if (!fecha) return '-';
+    const hoy = new Date();
+    const cumple = new Date(fecha);
+    let edad = hoy.getFullYear() - cumple.getFullYear();
+    const m = hoy.getMonth() - cumple.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) edad--;
+    return edad;
+};
 
 export default DetallePacientePage;

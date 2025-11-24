@@ -1,156 +1,209 @@
 /* src/pages/Reportes.module.css */
+
+.container {
+  padding-bottom: 80px; /* Espacio para la barra inferior */
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
 .title {
   font-size: 2rem;
   font-weight: 700;
+  color: #1a1a1a;
   margin: 0;
 }
 
 .subtitle {
   font-size: 1rem;
   color: #666;
-  margin: 0 0 2rem 0;
+  margin: 0.5rem 0 0 0;
 }
 
-.pageLayout {
+/* Layout Principal */
+.layout {
   display: grid;
-  grid-template-columns: 2fr 1fr; /* Columna izquierda más ancha */
+  grid-template-columns: 2.5fr 1fr; /* Izquierda amplia, Derecha resumen */
   gap: 2rem;
-  align-items: flex-start;
 }
 
-.sectionTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-/* Columna Izquierda */
-.reportTemplates {
+/* Grid de Plantillas */
+.templatesGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Tarjeta de Reporte */
+.reportCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: flex-start;
   gap: 1rem;
 }
 
-.filtersCard {
-  margin-top: 2rem;
+.reportCard:hover {
+  border-color: #b0b0b0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
-.filterGrid {
+.activeCard {
+  border-color: #007bff;
+  background-color: #f0f7ff; /* Azul muy claro */
+  box-shadow: 0 0 0 1px #007bff;
+}
+
+.iconWrapper {
+  font-size: 1.5rem;
+  color: #555;
+  margin-top: 2px;
+}
+
+.activeCard .iconWrapper {
+  color: #007bff;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #333;
+  margin: 0 0 0.25rem 0;
+}
+
+.cardDesc {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Filtros */
+.filtersCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.sectionText {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.filterRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.formGroup label {
-  margin-bottom: 0.5rem;
+.label {
+  font-size: 0.85rem;
   font-weight: 500;
   color: #444;
+}
+
+.input, .select {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
   font-size: 0.9rem;
 }
 
-.formGroup input,
-.formGroup select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #dcdcdc;
-  border-radius: 6px;
-  font-size: 1rem;
+/* Barra Lateral (Resumen) */
+.summaryCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  height: fit-content;
 }
 
-/* Columna Derecha */
 .summaryList {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 1rem 0 0 0;
 }
 
 .summaryItem {
   display: flex;
   justify-content: space-between;
-  font-size: 1rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid #f0f0f0;
+  font-size: 0.95rem;
 }
 
-.summaryItem:last-child {
-  border-bottom: none;
-}
+.summaryItem:last-child { border-bottom: none; }
 
-.summaryLabel {
-  color: #555;
-}
+.summaryVal { font-weight: 700; }
+.redText { color: #de350b; }
 
-.summaryValue {
-  font-weight: 700;
-  color: #333;
-}
-
-.summaryValueRed {
-  color: #de350b;
-}
-
-/* Barra Final */
-.finalSummary {
+/* Barra Inferior Flotante */
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0; /* Ajustar si tienes sidebar fija */
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  padding: 1.5rem 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-top: 2rem;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 100;
+  /* Ajuste para que no tape el sidebar si existe, o usar margin-left */
+  margin-left: 0; 
 }
 
-/* Responsividad: tablet y móvil */
-@media (max-width: 1024px) {
-  .pageLayout {
-    grid-template-columns: 1fr 1fr;
-  }
-  .reportTemplates {
-    grid-template-columns: 1fr;
-  }
-  .filterGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Ajuste responsive */
+@media (min-width: 768px) {
+    /* Si tienes un sidebar de 240px, ajusta esto */
+    .bottomBar { margin-left: 0; } 
 }
+
+.barInfo h4 { margin: 0; font-size: 1rem; }
+.barInfo p { margin: 0; font-size: 0.85rem; color: #666; }
+
+.downloadBtn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.downloadBtn:hover { background-color: #0056b3; }
 
 @media (max-width: 768px) {
-  .pageLayout {
-    grid-template-columns: 1fr;
-  }
-  .reportTemplates {
-    grid-template-columns: 1fr;
-  }
-  .filterGrid {
-    grid-template-columns: 1fr;
-  }
-  .finalSummary {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: flex-start;
-  }
-  .title {
-    font-size: 1.5rem;
-  }
-  .pageLayout {
-    gap: 1rem;
-  }
-}
-
-.finalTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 0.25rem 0;
-}
-
-.finalMeta {
-  font-size: 0.9rem;
-  color: #777;
-  margin: 0;
+  .layout { grid-template-columns: 1fr; }
+  .templatesGrid { grid-template-columns: 1fr; }
+  .filterRow { grid-template-columns: 1fr; }
+  .bottomBar { flex-direction: column; gap: 1rem; align-items: stretch; text-align: center; }
 }

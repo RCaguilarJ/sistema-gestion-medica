@@ -1,48 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Configuracion.module.css';
-import tableStyles from './Pacientes.module.css'; 
+import tableStyles from './Pacientes.module.css';
+// Necesitamos estilos adicionales para la barra de filtros nueva
+import formStyles from '../styles/FormStyles.module.css'; 
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { register } from '../services/authService.js';
-import { getUsers } from '../services/userService.js';
+import { getUsers, deleteUser, updateUser } from '../services/userService.js';
 import { useAuth } from "../hooks/AuthContext.jsx";
 import { Navigate } from "react-router-dom";
-
-
 import {
-  FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes
+  FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaSearch
 } from 'react-icons/fa';
 
-
-
-
-// --- 1. DEFINICIÓN DE DATOS DE EJEMPLO (ESTO FALTABA) ---
-// Usamos claves de rol internas y mapeamos a etiquetas legibles
-const ROLE_LABELS = {
-  ADMIN: 'Administrador',
-  DOCTOR: 'Doctor',
-  NUTRI: 'Nutriólogo',
-  PSY: 'Psicólogo',
-  PATIENT: 'Paciente',
-};
-
-const mockUsuarios = [
-  { id: 1, nombre: 'Dr. Juan Pérez', email: 'jperez@amd.mx', rol: 'DOCTOR', estatus: 'Activo' },
-  { id: 2, nombre: 'Lic. María González', email: 'mgonzalez@amd.mx', rol: 'NUTRI', estatus: 'Activo' },
-];
-const mockCatalogos = {
-  municipios: ['Guadalajara', 'Zapopan', 'Tlaquepaque', 'Tonalá'],
-  servicios: ['Médico', 'Nutricional', 'Mixto', 'Educativo'],
-};
-// ----------------------------------------------------
-
-// --- Componente de Formulario (con campo de Rol) ---
-// src/pages/Configuracion.jsx (Dentro del archivo)
-
+// --- 1. COMPONENTE: Formulario Nuevo Usuario ---
 const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
-  // 1. Nuevo estado para el nombre
   const [nombre, setNombre] = useState(''); 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -53,58 +27,42 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
     try {
-      // 2. Enviamos el nombre a la función register
       const data = await register(nombre, username, email, password, role, { persistSession: false });
-      if (data) {
-        onSuccess(); 
-      } else {
-        setError('No se pudo crear el usuario. Revisa los datos.');
-      }
+      if (data) onSuccess(); 
+      else setError('No se pudo crear el usuario.');
     } catch (err) {
-      setError('Error al registrar. Intenta de nuevo.');
+      setError('Error al registrar.');
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* 3. Input visual para el Nombre */}
       <div className={styles.formGroup}>
-        <label htmlFor="nombre">Nombre Completo</label>
-        <input
-          type="text" id="nombre" value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required placeholder="Ej. Dr. Juan Pérez"
-        />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label htmlFor="username">Nombre de Usuario (Username)</label>
-        <input
-          type="text" id="username" value={username}
-          onChange={(e) => setUsername(e.target.value)} required
-        />
-      </div>
-      {/* ... (resto de inputs: email, role, password) ... */}
-      <div className={styles.formGroup}>
-        <label htmlFor="email">Correo Electrónico</label>
-        <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <label>Nombre Completo</label>
+        <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required placeholder="Ej. Dr. Juan Pérez" />
       </div>
       <div className={styles.formGroup}>
-        <label htmlFor="role">Rol</label>
-        <select id="role" value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
+        <label>Usuario</label>
+        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+      </div>
+      <div className={styles.formGroup}>
+        <label>Correo</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </div>
+      <div className={styles.formGroup}>
+        <label>Rol</label>
+        <select value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
           <option value="ADMIN">Administrador</option>
           <option value="DOCTOR">Doctor</option>
           <option value="NUTRI">Nutriólogo</option>
         </select>
       </div>
       <div className={styles.formGroup}>
-        <label htmlFor="password">Contraseña</label>
-        <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+        <label>Contraseña</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
       </div>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: 'red', marginTop:'10px' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
         <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
         <Button type="submit">Crear Usuario</Button>
@@ -113,42 +71,155 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
   );
 };
 
+// --- 2. COMPONENTE: Formulario Editar Usuario ---
+const FormularioEditarUsuario = ({ userToEdit, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    nombre: userToEdit.nombre || '',
+    username: userToEdit.username || '',
+    email: userToEdit.email || '',
+    role: userToEdit.role || 'DOCTOR',
+    estatus: userToEdit.estatus || 'Activo',
+    password: '' 
+  });
+  const [error, setError] = useState('');
 
-// --- Componente Principal ---
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const payload = { ...formData };
+      if (!payload.password || payload.password.trim() === '') delete payload.password;
+      await updateUser(userToEdit.id, payload);
+      onSuccess();
+    } catch (err) {
+      setError(err.message || 'Error al actualizar usuario.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className={styles.formGroup}><label>Nombre</label><input name="nombre" value={formData.nombre} onChange={handleChange} required /></div>
+      <div className={styles.formGroup}><label>Usuario</label><input name="username" value={formData.username} onChange={handleChange} required /></div>
+      <div className={styles.formGroup}><label>Correo</label><input name="email" value={formData.email} onChange={handleChange} required /></div>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+        <div className={styles.formGroup}><label>Rol</label><select name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}><option value="ADMIN">Administrador</option><option value="DOCTOR">Doctor</option><option value="NUTRI">Nutriólogo</option></select></div>
+        <div className={styles.formGroup}><label>Estatus</label><select name="estatus" value={formData.estatus} onChange={handleChange} className={styles.selectInput}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+      </div>
+      <div className={styles.formGroup}><label>Nueva Contraseña (Opcional)</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Dejar en blanco para no cambiar" /></div>
+      {error && <p style={{ color: 'red', marginTop:'10px' }}>{error}</p>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+        <Button type="submit">Guardar Cambios</Button>
+      </div>
+    </form>
+  );
+};
+
+// --- 3. COMPONENTE: Tarjeta de Catálogo ---
+const CatalogCard = ({ title, subtitle, items, onAdd, footerText }) => {
+    return (
+        <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div>
+                    <h3 className={styles.sectionTitle} style={{ marginBottom: '0.25rem' }}>{title}</h3>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>{subtitle}</p>
+                </div>
+                <Button onClick={onAdd} size="small" style={{ backgroundColor: '#111827', color: '#fff', fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+                    <FaPlus /> Agregar
+                </Button>
+            </div>
+            <ul className={styles.catalogList}>
+                {items.map((item, idx) => (
+                    <li key={idx} className={styles.catalogItem} style={{ padding: '0.75rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#374151' }}>{item}</span>
+                        <FaEdit style={{ cursor: 'pointer', color: '#9ca3af' }} />
+                    </li>
+                ))}
+            </ul>
+            {footerText && <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '1rem' }}>{footerText}</p>}
+        </Card>
+    );
+};
+
+// --- 4. COMPONENTE: Modal Agregar Catálogo ---
+const ModalAgregarCatalogo = ({ title, onClose, onSave }) => {
+    const [valor, setValor] = useState("");
+    const handleSubmit = (e) => { e.preventDefault(); if (valor.trim()) onSave(valor); };
+    return (
+        <form onSubmit={handleSubmit}>
+            <div className={styles.formGroup}>
+                <label>Nombre del nuevo elemento</label>
+                <input autoFocus value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ej. Nuevo ${title}`} required />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                <Button type="submit" style={{ backgroundColor: '#111827', color: '#fff' }}>Agregar</Button>
+            </div>
+        </form>
+    );
+};
+
+// --- 5. COMPONENTE PRINCIPAL ---
 export default function Configuracion() {
-  const { user } = useAuth();
-  const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
+  const { user: currentUser } = useAuth();
 
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
+  if (currentUser?.role !== 'ADMIN') return <Navigate to="/app" replace />;
+
   const [activeTab, setActiveTab] = useState('usuarios');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [usuarios, setUsuarios] = useState([]); // Estado para usuarios reales
+  
+  // Estados Usuarios
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Cargar usuarios al montar el componente
-  React.useEffect(() => {
-    cargarUsuarios();
-  }, []);
+  // Estados Catálogos
+  const [municipios, setMunicipios] = useState(["Guadalajara", "Zapopan", "Tlaquepaque", "Tonalá", "Tlajomulco de Zúñiga"]);
+  const [servicios, setServicios] = useState(["Médico", "Nutricional", "Mixto", "Educativo", "Otro"]);
+  const [terapias, setTerapias] = useState(["Individual", "Grupal", "Educación", "Seguimiento", "Otro"]);
+  const [docs, setDocs] = useState(["Identificación", "Consentimiento", "Laboratorio", "Receta", "Referencia", "Nutrición"]);
+  const [catalogModal, setCatalogModal] = useState({ isOpen: false, type: '' });
 
+  // Estados Programas (Datos simulados para la UI)
+  const [programasData] = useState([
+      { id: 1, nombre: "Grupo de Control Matutino A", tipo: "Grupal", responsable: "Dr. Ana García", horario: "Lun, Mié, Vie - 9:00 AM", participantes: 25, cupo: 30, estatus: "Activo" },
+      { id: 2, nombre: "Taller de Nutrición Básica", tipo: "Educativo", responsable: "Lic. Carlos Ruiz", horario: "Martes - 16:00 PM (Semanal)", participantes: 18, cupo: 20, estatus: "Activo" },
+      { id: 3, nombre: "Programa de Ejercicio Físico", tipo: "Actividad", responsable: "Ent. Pedro Sánchez", horario: "Jueves - 10:00 AM", participantes: 15, cupo: 25, estatus: "Inactivo" },
+  ]);
+  const [searchProgramas, setSearchProgramas] = useState('');
+
+  // Cargar usuarios
+  useEffect(() => { cargarUsuarios(); }, []);
   const cargarUsuarios = async () => {
     setIsLoading(true);
-    const data = await getUsers();
-    setUsuarios(data);
-    setIsLoading(false);
+    try { setUsuarios(await getUsers()); } catch (err) { console.error(err); } finally { setIsLoading(false); }
   };
 
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
-
-  const handleUserCreated = async () => {
-    handleCloseModal();
-    alert('¡Usuario creado exitosamente!');
-    // Recargar la lista de usuarios
-    await cargarUsuarios();
+  // Handlers Usuarios
+  const handleUserCreated = async () => { setIsCreateModalOpen(false); await cargarUsuarios(); };
+  const handleUserUpdated = async () => { setIsEditModalOpen(false); setUserToEdit(null); await cargarUsuarios(); };
+  const handleEditClick = (u) => { setUserToEdit(u); setIsEditModalOpen(true); };
+  const handleDeleteClick = async (id, nombre) => {
+    if (window.confirm(`¿Eliminar a ${nombre}?`)) {
+        try { await deleteUser(id); setUsuarios(prev => prev.filter(u => u.id !== id)); } catch (err) { alert(err.message); }
+    }
   };
-  
+
+  // Handlers Catálogos
+  const openCatalogModal = (type) => setCatalogModal({ isOpen: true, type });
+  const handleAddCatalogItem = (newItem) => {
+      switch (catalogModal.type) {
+          case 'Municipio': setMunicipios([...municipios, newItem]); break;
+          case 'Servicio': setServicios([...servicios, newItem]); break;
+          case 'Terapia': setTerapias([...terapias, newItem]); break;
+          case 'Documento': setDocs([...docs, newItem]); break;
+      }
+      setCatalogModal({ isOpen: false, type: '' });
+  };
+
   const renderTabContent = () => {
     if (activeTab === 'usuarios') {
       return (
@@ -156,192 +227,126 @@ export default function Configuracion() {
           <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Gestión de Usuarios</h2>
-              <Button onClick={handleOpenModal}>
-                <FaPlus /> Nuevo Usuario
-              </Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}><FaPlus /> Nuevo Usuario</Button>
             </div>
-            <p>Administra permisos y accesos al sistema</p>
-            
+            <p style={{color:'#666', marginBottom:'1.5rem'}}>Administra permisos y accesos al sistema</p>
             <div className={tableStyles.tableContainer}>
               <table className={tableStyles.table}>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
-                  {/* Mostrar usuarios reales desde la BD */}
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Cargando usuarios...</td>
-                    </tr>
-                  ) : usuarios.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>No hay usuarios registrados</td>
-                    </tr>
-                  ) : (
-                    usuarios.map(user => (
-                      <tr key={user.id}>
-                        <td>{user.nombre}</td>
-                        <td>{user.email}</td>
-                        <td><Tag label={ROLE_LABELS[user.role] || user.role} /></td>
-                        <td><Tag label={user.estatus || 'Activo'} /></td>
-                        <td style={{ display: 'flex', gap: '1rem' }}>
-                          <FaEdit className={tableStyles.accionIcon} />
-                          <FaTrash className={tableStyles.accionIcon} style={{ color: '#de350b' }}/>
+                  {isLoading ? <tr><td colSpan="5" style={{textAlign:'center', padding:'2rem'}}>Cargando...</td></tr> : 
+                   usuarios.map(u => (
+                      <tr key={u.id}>
+                        <td>{u.nombre}<br/><small style={{color:'#888'}}>@{u.username}</small></td>
+                        <td>{u.email}</td>
+                        <td><Tag label={u.role} /></td>
+                        <td><Tag label={u.estatus || 'Activo'} /></td>
+                        <td style={{display:'flex', gap:'1rem'}}>
+                          <FaEdit className={tableStyles.accionIcon} onClick={() => handleEditClick(u)} title="Editar" style={{cursor:'pointer', color:'#555'}} />
+                          {currentUser.id !== u.id && <FaTrash className={tableStyles.accionIcon} style={{color:'#de350b', cursor:'pointer'}} onClick={() => handleDeleteClick(u.id, u.nombre)} title="Eliminar" />}
                         </td>
                       </tr>
-                    ))
-                  )}
+                   ))}
                 </tbody>
               </table>
             </div>
           </Card>
-          
+          {/* ... Sección de Permisos (igual que antes) ... */}
           <h2 className={styles.sectionTitle} style={{marginTop: '2rem'}}>Roles y Permisos</h2>
           <div className={styles.permissionsGrid}>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Administrador</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión de Usuarios y Roles</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión de Catálogos</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Generación de Reportes</li>
-              </ul>
-            </div>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Doctor</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión de Pacientes</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Ver Dashboard</li>
-                <li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> No puede acceder a Configuración</li>
-              </ul>
-            </div>
-            <div className={styles.permissionCard}>
-              <h3 className={styles.permissionTitle}>Nutriólogo</h3>
-              <ul className={styles.permissionList}>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión de Pacientes (solo nutrición)</li>
-                <li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Ver Dashboard</li>
-                <li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> No puede acceder a Configuración</li>
-              </ul>
-            </div>
+            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Administrador</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión Total</li><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Configuración</li></ul></div>
+            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Doctor</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Pacientes y Citas</li><li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> Configuración</li></ul></div>
+            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Nutriólogo</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Pacientes (Nutrición)</li><li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> Configuración</li></ul></div>
           </div>
-
         </div>
       );
     }
-    // --- PESTAÑA CATÁLOGOS ---
+
     if (activeTab === 'catalogos') {
       return (
         <div className={styles.catalogGrid}>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Municipios</h2>
-              <Button variant="secondary"><FaPlus /> Agregar</Button>
-            </div>
-            <ul className={styles.catalogList}>
-              {/* ¡AQUÍ USABA LA OTRA VARIABLE FALTANTE! */}
-              {mockCatalogos.municipios.map(m => (
-                <li key={m} className={styles.catalogItem}>
-                  <span>{m}</span>
-                  <FaEdit />
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Tipos de Servicio</h2>
-              <Button variant="secondary"><FaPlus /> Agregar</Button>
-            </div>
-            <ul className={styles.catalogList}>
-              {/* ¡AQUÍ USABA LA OTRA VARIABLE FALTANTE! */}
-              {mockCatalogos.servicios.map(s => (
-                <li key={s} className={styles.catalogItem}>
-                  <span>{s}</span>
-                  <FaEdit />
-                </li>
-              ))}
-            </ul>
-          </Card>
-          {/* (Aquí irían las otras 2 tarjetas de catálogos) */}
+          <CatalogCard title="Municipios" subtitle="Municipios de Jalisco registrados" items={municipios} onAdd={() => openCatalogModal('Municipio')} footerText="Y 120 municipios más..."/>
+          <CatalogCard title="Tipos de Servicio" subtitle="Categorías de servicios ofrecidos" items={servicios} onAdd={() => openCatalogModal('Servicio')}/>
+          <CatalogCard title="Tipos de Terapia" subtitle="Modalidades de atención" items={terapias} onAdd={() => openCatalogModal('Terapia')}/>
+          <CatalogCard title="Categorías de Documentos" subtitle="Tipos de archivos permitidos" items={docs} onAdd={() => openCatalogModal('Documento')}/>
         </div>
       );
     }
 
-    // --- PESTAÑA PROGRAMAS ---
+    // --- PESTAÑA PROGRAMAS (REPLICANDO LA IMAGEN) ---
     if (activeTab === 'programas') {
-      // (Esta pestaña no usaba mock data, así que estaba bien)
       return (
-        <div>
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Programas y Grupos</h2>
-              <Button><FaPlus /> Nuevo Programa</Button>
+        <Card>
+            {/* Encabezado */}
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem'}}>
+                <div>
+                    <h2 className={styles.sectionTitle} style={{marginBottom:'0.25rem'}}>Programas y Grupos de Atención</h2>
+                    <p style={{margin:0, color:'#666', fontSize:'0.9rem'}}>Gestión de grupos, talleres y programas educativos</p>
+                </div>
+                <Button style={{ backgroundColor: '#111827', color: '#fff' }}><FaPlus /> Nuevo Programa</Button>
             </div>
-            <p>Gestiona los grupos de atención y programas</p>
-            <div className={tableStyles.tableContainer}>
-              <table className={tableStyles.table}>
-                <thead>
-                  <tr>
-                    <th>Nombre del Programa</th>
-                    <th>Tipo</th>
-                    <th>Participantes</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Grupo Matutino A</td>
-                    <td>Grupal</td>
-                    <td>25</td>
-                    <td style={{ display: 'flex', gap: '1rem' }}>
-                      <FaEdit className={tableStyles.accionIcon} />
-                      <FaTrash className={tableStyles.accionIcon} style={{ color: '#de350b' }}/>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
-          
-          <Card style={{ marginTop: '2rem' }}>
-            <h2 className={styles.sectionTitle}>Metas y Objetivos</h2>
-            <p>Define metas clínicas y nutricionales para el programa</p>
-            <div className={styles.metaForm}>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaHba1c">Meta HbA1c (%)</label>
-                <input type="text" id="metaHba1c" defaultValue="7.0" />
-                <small>Objetivo de control glucémico</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaImc">Meta IMC</label>
-                <input type="text" id="metaImc" defaultValue="25.0" />
-                <small>Objetivo de índice de masa corporal</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="metaAdh">Meta de Adherencia (%)</label>
-                <input type="text" id="metaAdh" defaultValue="80" />
-                <small>Porcentaje de asistencia a citas</small>
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="frecuencia">Frecuencia de Seguimiento</label>
-                <select id="frecuencia">
-                  <option>Mensual</option>
-                  <option>Bimestral</option>
-                  <option>Trimestral</option>
+
+            {/* Barra de Filtros (Estilo Gris) */}
+            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem', border: '1px solid #e5e7eb' }}>
+                <div className={formStyles.formGroup} style={{ marginBottom: 0, position: 'relative' }}>
+                    <FaSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                    <input 
+                        type="text" 
+                        placeholder="Buscar programa o responsable..." 
+                        value={searchProgramas}
+                        onChange={(e) => setSearchProgramas(e.target.value)}
+                        style={{ paddingLeft: '36px', backgroundColor: '#fff' }}
+                        className={formStyles.input}
+                    />
+                </div>
+                <select className={formStyles.selectInput} style={{ backgroundColor: '#fff' }}>
+                    <option value="Todos">Todos los tipos</option>
+                    <option value="Grupal">Grupal</option>
+                    <option value="Educativo">Educativo</option>
                 </select>
-                <small>Periodicidad de consultas</small>
-              </div>
-              <div className={styles.formActions}>
-                <Button variant="dark">Guardar Configuración</Button>
-              </div>
+                <select className={formStyles.selectInput} style={{ backgroundColor: '#fff' }}>
+                    <option value="Todos">Todos los estatus</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                </select>
             </div>
-          </Card>
-        </div>
+
+            {/* Tabla de Programas */}
+            <div className={tableStyles.tableContainer}>
+                <table className={tableStyles.table}>
+                    <thead>
+                        <tr>
+                            <th>Nombre del Programa</th>
+                            <th>Tipo</th>
+                            <th>Responsable</th>
+                            <th>Horario/Frecuencia</th>
+                            <th>Participantes</th>
+                            <th>Estatus</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {programasData.map(prog => (
+                            <tr key={prog.id}>
+                                <td style={{fontWeight:'600'}}>{prog.nombre}</td>
+                                <td>{prog.tipo}</td>
+                                <td>{prog.responsable}</td>
+                                <td>{prog.horario}</td>
+                                <td>{prog.participantes} / {prog.cupo}</td>
+                                <td>
+                                    <Tag label={prog.estatus} style={{ backgroundColor: prog.estatus === 'Activo' ? '#def7ec' : '#f3f4f6', color: prog.estatus === 'Activo' ? '#03543f' : '#374151' }} />
+                                </td>
+                                <td style={{ display: 'flex', gap: '1rem' }}>
+                                    <FaEdit className={tableStyles.accionIcon} title="Editar" style={{cursor:'pointer', color:'#555'}} onClick={() => alert('Editar programa')} />
+                                    <FaTrash className={tableStyles.accionIcon} title="Eliminar" style={{color:'#de350b', cursor:'pointer'}} onClick={() => alert('Eliminar programa')} />
+                                    <FaUsers className={tableStyles.accionIcon} title="Ver participantes" style={{color:'#3B82F6', cursor:'pointer'}} onClick={() => alert('Ver participantes')} />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
       );
     }
   };
@@ -351,40 +356,22 @@ export default function Configuracion() {
       <h1 className={styles.title}>Configuración del Sistema</h1>
       <p className={styles.subtitle}>Administra usuarios, catálogos y parámetros del sistema</p>
 
-      {/* Navegación de Pestañas */}
       <nav className={styles.tabNav}>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'usuarios' ? styles.tabButtonActive : ''}`}
-          onClick={() => setActiveTab('usuarios')}
-        >
-          <FaUsers /> Usuarios y Roles
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'catalogos' ? styles.tabButtonActive : ''}`}
-          onClick={() => setActiveTab('catalogos')}
-        >
-          <FaBook /> Catálogos
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'programas' ? styles.tabButtonActive : ''}`}
-          onClick={() => setActiveTab('programas')}
-        >
-          <FaProjectDiagram /> Programas
-        </button>
+        <button className={`${styles.tabButton} ${activeTab === 'usuarios' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('usuarios')}><FaUsers /> Usuarios y Roles</button>
+        <button className={`${styles.tabButton} ${activeTab === 'catalogos' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('catalogos')}><FaBook /> Catálogos</button>
+        <button className={`${styles.tabButton} ${activeTab === 'programas' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('programas')}><FaProjectDiagram /> Programas</button>
       </nav>
 
-      {/* Contenido de la Pestaña Activa */}
       {renderTabContent()}
 
-      <Modal 
-        title="Crear Nuevo Usuario"
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      >
-        <FormularioNuevoUsuario 
-          onClose={handleCloseModal}
-          onSuccess={handleUserCreated}
-        />
+      <Modal title="Crear Nuevo Usuario" isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
+        <FormularioNuevoUsuario onClose={() => setIsCreateModalOpen(false)} onSuccess={handleUserCreated} />
+      </Modal>
+      <Modal title="Editar Usuario" isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+        {userToEdit && <FormularioEditarUsuario userToEdit={userToEdit} onClose={() => setIsEditModalOpen(false)} onSuccess={handleUserUpdated} />}
+      </Modal>
+      <Modal title={`Agregar ${catalogModal.type}`} isOpen={catalogModal.isOpen} onClose={() => setCatalogModal({isOpen:false, type:''})}>
+          <ModalAgregarCatalogo title={catalogModal.type} onClose={() => setCatalogModal({isOpen:false, type:''})} onSave={handleAddCatalogItem} />
       </Modal>
     </div>
   );

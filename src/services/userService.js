@@ -1,12 +1,7 @@
-// src/services/userService.js
 import api from './api.js';
 
-/**
- * Obtiene la lista de todos los usuarios registrados
- */
 export const getUsers = async () => {
   try {
-    // Esto llama a: GET http://localhost:4000/api/users
     const response = await api.get('/users');
     return response.data;
   } catch (error) {
@@ -15,4 +10,22 @@ export const getUsers = async () => {
   }
 };
 
-export default { getUsers };
+export const updateUser = async (id, userData) => {
+  try {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || new Error('Error al actualizar usuario');
+  }
+};
+
+export const deleteUser = async (id) => {
+  try {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || new Error('Error al eliminar usuario');
+  }
+};
+
+export default { getUsers, updateUser, deleteUser };
