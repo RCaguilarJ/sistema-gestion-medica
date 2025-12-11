@@ -28,7 +28,7 @@ function BarChart({ title, subtitle, data: chartData }) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false, // No mostramos leyenda en la de barras
+        display: false, 
       },
     },
     scales: {

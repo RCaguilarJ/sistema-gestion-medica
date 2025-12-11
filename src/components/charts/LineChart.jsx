@@ -34,11 +34,11 @@ function LineChart({ title, subtitle, data: chartData }) {
     },
     plugins: {
       legend: {
-        position: 'bottom', // Leyenda abajo, como en tu diseño
+        position: 'bottom', 
       },
     },
     scales: {
-      y: { // Eje Y Izquierdo (para Adherencia %)
+      y: { 
         type: 'linear',
         display: true,
         position: 'left',
@@ -50,7 +50,7 @@ function LineChart({ title, subtitle, data: chartData }) {
         display: true,
         position: 'right',
         grid: {
-          drawOnChartArea: false, // No dibujar cuadrícula de este eje
+          drawOnChartArea: false, 
         },
       },
     },

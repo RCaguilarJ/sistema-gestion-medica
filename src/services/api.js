@@ -4,7 +4,7 @@
 // import axios from "axios";
 
 // const api = axios.create({
-//   baseURL: "http://localhost:4000/api", // ✅ Este debe coincidir con el puerto real del backend
+//   baseURL: "https://admin.diabetesjalisco.org/api", // ✅ Este debe coincidir con el puerto real del backend
 // });
 
 // api.interceptors.request.use((config) => {
@@ -23,10 +23,10 @@
 import axios from "axios";
 
 // EN PRODUCCIÓN: La URL será relativa '/api' (el mismo dominio que sirve la web)
-// EN DESARROLLO: Sigue siendo localhost:4000
+// EN DESARROLLO: Usa https://admin.diabetesjalisco.org
 const baseURL = import.meta.env.PROD 
   ? '/api' 
-  : 'http://localhost:4000/api';
+  : 'https://admin.diabetesjalisco.org/api';
 
 const api = axios.create({
   baseURL: baseURL,

@@ -193,22 +193,22 @@
     transform: none;
     margin: 0 auto;
     display: flex;
-    gap: 0.75rem; /* menos espacio para evitar solapamiento */
-    flex-wrap: nowrap; /* evitar que los links salten a la siguiente línea */
+    gap: 0.75rem; 
+    flex-wrap: nowrap; 
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   .navbar {
-    padding: 0.8rem 1.5rem; /* padding más compacto en tablet */
+    padding: 0.8rem 1.5rem; 
   }
   .navbarLogo {
-    height: 34px; /* ligeramente más pequeño en tablet para evitar choque */
+    height: 34px;
   }
   .navLink, .navLinkActive {
     font-size: 0.95rem;
   }
   .navbarUser {
-    display: flex; /* mostrar usuario (avatar + nombre) en tablet para mejor contexto */
+    display: flex; 
     gap: 0.75rem;
     align-items: center;
   }
