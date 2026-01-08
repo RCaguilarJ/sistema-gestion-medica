@@ -165,7 +165,10 @@ const ModalAgregarCatalogo = ({ title, onClose, onSave }) => {
 export default function Configuracion() {
   const { user: currentUser } = useAuth();
 
-  if (currentUser?.role !== 'ADMIN') return <Navigate to="/app" replace />;
+  // Normalizar rol (case-insensitive + trim) y aceptar variantes que contengan 'ADMIN'
+  const roleNormalized = (currentUser?.role || '').toUpperCase().trim();
+  console.log('Configuración - usuario:', currentUser, 'rol normalizado:', roleNormalized);
+  if (!roleNormalized.includes('ADMIN')) return <Navigate to="/app" replace />;
 
   const [activeTab, setActiveTab] = useState('usuarios');
   

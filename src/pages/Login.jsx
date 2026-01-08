@@ -3,11 +3,13 @@ import styles from './Login.module.css';
 import { useAuth } from '../hooks/AuthContext.jsx'; 
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/img/logo.png'; 
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -38,7 +40,23 @@ function Login() {
           </div>
           <div className={styles.formGroup}>
             <label>Contraseña</label>
-            <input type="password" className={styles.input} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <div className={styles.passwordWrapper}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className={styles.passwordToggle}
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <button type="submit" className={styles.submitButton}>Entrar</button>

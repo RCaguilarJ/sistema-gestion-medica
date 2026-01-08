@@ -68,7 +68,10 @@ export const getCitasByPaciente = async (pacienteId) => {
  */
 export const createCita = async (pacienteId, citaData) => {
   try {
-    const response = await api.post(`/citas/paciente/${pacienteId}`, citaData);
+    // Si la API apuntada es la PHP que creamos, usa el endpoint create_cita.php
+    // La variable `api` usa el `baseURL` definido en `src/services/api.js`.
+    // El endpoint PHP espera { pacienteId, ...citaData }
+    const response = await api.post('/create_cita.php', { pacienteId, ...citaData });
     return response.data;
   } catch (error) {
     console.error(`Error al agendar cita para el paciente ${pacienteId}:`, error);

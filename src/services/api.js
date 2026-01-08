@@ -6,8 +6,9 @@ import axios from "axios";
 //Usar esta línea para producción
 // const baseURL = 'https://back.diabetesjalisco.org/api';
 
-// Esta lína es para trabajar en puebas locales 
-const baseURL = "http://localhost:4000/api";
+// Preferencia: usar la URL de la API definida en `REACT_APP_API_URL` (por ejemplo la API PHP).
+// Si no está definida, usar la API de Node de desarrollo por defecto.
+const baseURL = process.env.REACT_APP_API_URL || "http://localhost:4000/api";
 
 // -----------------------------------------------------------------------------
 

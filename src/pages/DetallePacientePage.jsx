@@ -173,8 +173,16 @@ const ModalNuevaConsulta = ({ pacienteId, onClose, onConsultaCreated }) => {
 // Modal Agendar Cita (CORREGIDO CON USUARIOS REALES)
 const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
     const [medicos, setMedicos] = useState([]);
+    const especialidades = [
+        { value: 'GENERAL', label: 'General' },
+        { value: 'ENDOCRINOLOGIA', label: 'Endocrinología' },
+        { value: 'NUTRICION', label: 'Nutrición' },
+        { value: 'PODOLOGIA', label: 'Podología' },
+        { value: 'PSICOLOGIA', label: 'Psicología' },
+    ];
+
     const [formData, setFormData] = useState({
-        fechaHora: '', motivo: '', medicoId: '', notas: ''
+        fechaHora: '', motivo: '', medicoId: '', notas: '', especialidad: 'GENERAL'
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -226,6 +234,18 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
                             <option key={m.id} value={m.id}>{m.nombre} ({m.role})</option>
                         ))}
                     </select>
+                </div>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'10px'}}>
+                <div className={formStyles.formGroup}>
+                    <label>Especialidad *</label>
+                    <select name="especialidad" value={formData.especialidad} onChange={handleChange} required style={{width:'100%', padding:'8px'}}>
+                        {especialidades.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                    </select>
+                </div>
+                <div className={formStyles.formGroup}>
+                    <label>&nbsp;</label>
+                    <small style={{display:'block', color:'#666'}}>La especialidad ayudará a direccionar la notificación al personal adecuado.</small>
                 </div>
             </div>
             <div className={formStyles.formGroup} style={{marginTop:'15px'}}>
@@ -408,11 +428,13 @@ function DetallePacientePage() {
                 >
                     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-            ) : (
-                <input 
-                    type={type} 
-                    name={name} 
-                    value={formData[name] || ''} 
+            try {
+                if (!formData.medicoId) {
+                    throw new Error("Seleccione un profesional.");
+                }
+                // Enviar especialidad junto con los datos de la cita
+                const payload = cleanAndNormalizeData(formData);
+                await createCita(pacienteId, payload);
                     onChange={handleInputChange} 
                     disabled={!isEditing || props.readOnly} 
                     className={(!isEditing || props.readOnly) ? formStyles.disabledInput : ''}

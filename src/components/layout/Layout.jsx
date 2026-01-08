@@ -8,7 +8,12 @@ import logoAmd from '../../assets/img/logo.png';
 function Layout() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
+  // Unificar comprobación de roles administrativos (case-insensitive)
+  const role = (user?.role || '').toUpperCase().trim();
+  const isAdmin = role.includes('ADMIN');
+
+  // Debugging temporal
+  console.log('Usuario actual:', user, 'Rol:', user?.role, 'Rol normalizado:', role);
 
   const handleLogout = () => {
     logout();

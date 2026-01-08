@@ -43,6 +43,30 @@
   margin-bottom: 1.25rem;
 }
 
+.passwordWrapper {
+  position: relative;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.input {
+  padding-right: 2.5rem; /* espacio para el icono */
+}
+
 .formGroup label {
   display: block;
   margin-bottom: 0.5rem;
