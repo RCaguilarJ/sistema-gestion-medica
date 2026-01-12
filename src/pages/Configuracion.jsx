@@ -15,6 +15,60 @@ import {
   FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaSearch
 } from 'react-icons/fa';
 
+const ROLE_OPTIONS = [
+  { value: 'ADMIN', label: 'Administrador' },
+  { value: 'DOCTOR', label: 'Doctor' },
+  { value: 'NUTRI', label: 'Nutriólogo' },
+  { value: 'ENDOCRINOLOGO', label: 'Endocrinólogo' },
+  { value: 'PODOLOGO', label: 'Podólogo' },
+  { value: 'PSICOLOGO', label: 'Psicólogo' },
+];
+
+const ROLE_PERMISSIONS = [
+  {
+    title: 'Administrador',
+    permissions: [
+      { text: 'Gestión Total', allowed: true },
+      { text: 'Configuración', allowed: true },
+    ],
+  },
+  {
+    title: 'Doctor',
+    permissions: [
+      { text: 'Pacientes y Citas', allowed: true },
+      { text: 'Configuración', allowed: false },
+    ],
+  },
+  {
+    title: 'Nutriólogo',
+    permissions: [
+      { text: 'Pacientes (Nutrición)', allowed: true },
+      { text: 'Configuración', allowed: false },
+    ],
+  },
+  {
+    title: 'Endocrinólogo',
+    permissions: [
+      { text: 'Pacientes (Endocrinología)', allowed: true },
+      { text: 'Configuración', allowed: false },
+    ],
+  },
+  {
+    title: 'Podólogo',
+    permissions: [
+      { text: 'Pacientes (Podología)', allowed: true },
+      { text: 'Configuración', allowed: false },
+    ],
+  },
+  {
+    title: 'Psicólogo',
+    permissions: [
+      { text: 'Pacientes (Psicología)', allowed: true },
+      { text: 'Configuración', allowed: false },
+    ],
+  },
+];
+
 // --- 1. COMPONENTE: Formulario Nuevo Usuario ---
 const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
   const [nombre, setNombre] = useState(''); 
@@ -53,9 +107,9 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
       <div className={styles.formGroup}>
         <label>Rol</label>
         <select value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
-          <option value="ADMIN">Administrador</option>
-          <option value="DOCTOR">Doctor</option>
-          <option value="NUTRI">Nutriólogo</option>
+          {ROLE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
       <div className={styles.formGroup}>
@@ -104,7 +158,14 @@ const FormularioEditarUsuario = ({ userToEdit, onClose, onSuccess }) => {
       <div className={styles.formGroup}><label>Usuario</label><input name="username" value={formData.username} onChange={handleChange} required /></div>
       <div className={styles.formGroup}><label>Correo</label><input name="email" value={formData.email} onChange={handleChange} required /></div>
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
-        <div className={styles.formGroup}><label>Rol</label><select name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}><option value="ADMIN">Administrador</option><option value="DOCTOR">Doctor</option><option value="NUTRI">Nutriólogo</option></select></div>
+        <div className={styles.formGroup}>
+          <label>Rol</label>
+          <select name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}>
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
         <div className={styles.formGroup}><label>Estatus</label><select name="estatus" value={formData.estatus} onChange={handleChange} className={styles.selectInput}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
       </div>
       <div className={styles.formGroup}><label>Nueva Contraseña (Opcional)</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Dejar en blanco para no cambiar" /></div>
@@ -254,9 +315,24 @@ export default function Configuracion() {
           {/* ... Sección de Permisos (igual que antes) ... */}
           <h2 className={styles.sectionTitle} style={{marginTop: '2rem'}}>Roles y Permisos</h2>
           <div className={styles.permissionsGrid}>
-            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Administrador</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Gestión Total</li><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Configuración</li></ul></div>
-            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Doctor</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Pacientes y Citas</li><li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> Configuración</li></ul></div>
-            <div className={styles.permissionCard}><h3 className={styles.permissionTitle}>Nutriólogo</h3><ul className={styles.permissionList}><li className={styles.permissionItem}><FaCheck className={styles.itemAllow} /> Pacientes (Nutrición)</li><li className={styles.permissionItem}><FaTimes className={styles.itemDeny} /> Configuración</li></ul></div>
+            {ROLE_PERMISSIONS.map((rolePerm) => (
+              <div key={rolePerm.title} className={styles.permissionCard}>
+                <h3 className={styles.permissionTitle}>{rolePerm.title}</h3>
+                <ul className={styles.permissionList}>
+                  {rolePerm.permissions.map((perm) => (
+                    <li key={perm.text} className={styles.permissionItem}>
+                      {perm.allowed ? (
+                        <FaCheck className={styles.itemAllow} />
+                      ) : (
+                        <FaTimes className={styles.itemDeny} />
+                      )}
+                      {' '}
+                      {perm.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       );

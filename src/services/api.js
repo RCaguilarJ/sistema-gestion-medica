@@ -5,7 +5,7 @@ import axios from "axios";
 // Usamos la dirección absoluta del backend porque está en un subdominio distinto ('back')
 // Esto asegura que tanto en desarrollo como en producción se apunte al servidor correcto.
 // ---------------------------------------------------------------------------
-const baseURL = 'https://back.diabetesjalisco.org/api';
+const baseURL = 'http://localhost:4000/api';
 
 const api = axios.create({
   baseURL: baseURL,
