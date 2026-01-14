@@ -1,10 +1,6 @@
 import axios from "axios";
 
-// ---------------------------------------------------------------------------
-// CONFIGURACIÓN DE URL BASE
-// Usamos la dirección absoluta del backend porque está en un subdominio distinto ('back')
-// Esto asegura que tanto en desarrollo como en producción se apunte al servidor correcto.
-// ---------------------------------------------------------------------------
+
 const baseURL = 'http://localhost:4000/api';
 
 const api = axios.create({

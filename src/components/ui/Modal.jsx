@@ -1,34 +1,55 @@
-import React from 'react';
-import styles from './Modal.module.css';
-import { FaTimes } from 'react-icons/fa';
+import { useState } from 'react';
+// ... otros imports ...
 
-function Modal({ isOpen, onClose, title, children }) {
-  if (!isOpen) {
-    return null;
-  }
+const Modal = () => { // Componente principal exportado por default
+    // 1. Agrega este estado para controlar el botón
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-  return (
-    // Fondo oscuro
-    <div className={styles.overlay} onClick={onClose}>
-      {/* Contenedor blanco (detenemos la propagación para que no se cierre al hacer clic) */}
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Encabezado */}
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>{title}</h3>
-          <button onClick={onClose} className={styles.closeButton}>
-            <FaTimes />
-          </button>
-        </div>
+    const handleSubmit = async (e) => {
+        // 2. IMPORTANTE: Prevenir el comportamiento por defecto del formulario
+        e.preventDefault();
 
-        {/* Contenido (aquí irá nuestro formulario) */}
-        <div className={styles.modalContent}>
-          {children}
-        </div>
-        
-      </div>
-    </div>
-  );
-}
+        // 3. Si ya se está enviando, no hacer nada (Evita doble clic)
+        if (isSubmitting) return;
+
+        // Bloqueamos el botón
+        setIsSubmitting(true);
+
+        try {
+            // Aquí va tu llamada al servicio (axios/fetch)
+            const response = await agendarCitaService({
+                usuarioId: usuario.id,
+                fecha: fechaSeleccionada,
+                hora: horaSeleccionada,
+                especialidad: especialidad
+                // ... resto de datos
+            });
+
+            // Manejo de éxito
+            alert('Cita agendada con éxito');
+            cerrarModal(); // O redirigir
+
+        } catch (error) {
+            // Si el backend responde 409 (Duplicado), aquí lo capturamos
+            alert(error.response?.data?.message || 'Error al agendar cita');
+        } finally {
+            // 4. Desbloqueamos el botón al terminar (sea éxito o error)
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            {/* ... tus inputs de fecha, hora, etc ... */}
+            <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className={`btn btn-primary ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+                {isSubmitting ? 'Agendando...' : 'Confirmar Cita'}
+            </button>
+        </form>
+    );
+};
 
 export default Modal;
