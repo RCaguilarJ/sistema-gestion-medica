@@ -1,7 +1,9 @@
 // src/services/pacienteService.js
+
 import api from './api.js';
 
-// Función para obtener TODOS los pacientes
+
+// Función para obtener TODOS los pacientes (solo locales)
 export const getPacientes = async () => {
   try {
     const response = await api.get('/pacientes');
@@ -11,6 +13,20 @@ export const getPacientes = async () => {
     throw error; // Propagar el error para manejo en el componente
   }
 };
+
+/**
+ * Obtiene todos los pacientes (locales y externos) para el doctor actual
+ * @param {string|number} doctorId - El ID del doctor/especialista logueado
+ */
+export async function getAllPacientesByDoctor(doctorId) {
+  try {
+    const res = await api.get(`/pacientes/todos?doctorId=${doctorId}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error al obtener todos los pacientes:', error);
+    throw error;
+  }
+}
 
 // Función para crear un nuevo paciente
 export const createPaciente = async (pacienteData) => {

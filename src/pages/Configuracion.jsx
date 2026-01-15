@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './Configuracion.module.css';
 import tableStyles from './Pacientes.module.css';
 // Necesitamos estilos adicionales para la barra de filtros nueva
@@ -94,19 +94,19 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
     <form onSubmit={handleSubmit}>
       <div className={styles.formGroup}>
         <label>Nombre Completo</label>
-        <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required placeholder="Ej. Dr. Juan Pérez" />
+        <input id="nuevo-nombre" name="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required placeholder="Ej. Dr. Juan Pérez" />
       </div>
       <div className={styles.formGroup}>
         <label>Usuario</label>
-        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        <input id="nuevo-username" name="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
       </div>
       <div className={styles.formGroup}>
         <label>Correo</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input id="nuevo-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
       <div className={styles.formGroup}>
         <label>Rol</label>
-        <select value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
+        <select id="nuevo-role" name="role" value={role} onChange={(e) => setRole(e.target.value)} className={styles.selectInput}>
           {ROLE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
@@ -114,7 +114,7 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
       </div>
       <div className={styles.formGroup}>
         <label>Contraseña</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+        <input id="nuevo-password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
       </div>
       {error && <p style={{ color: 'red', marginTop:'10px' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
@@ -154,21 +154,21 @@ const FormularioEditarUsuario = ({ userToEdit, onClose, onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className={styles.formGroup}><label>Nombre</label><input name="nombre" value={formData.nombre} onChange={handleChange} required /></div>
-      <div className={styles.formGroup}><label>Usuario</label><input name="username" value={formData.username} onChange={handleChange} required /></div>
-      <div className={styles.formGroup}><label>Correo</label><input name="email" value={formData.email} onChange={handleChange} required /></div>
+      <div className={styles.formGroup}><label>Nombre</label><input id="editar-nombre" name="nombre" value={formData.nombre} onChange={handleChange} required /></div>
+      <div className={styles.formGroup}><label>Usuario</label><input id="editar-username" name="username" value={formData.username} onChange={handleChange} required /></div>
+      <div className={styles.formGroup}><label>Correo</label><input id="editar-email" name="email" value={formData.email} onChange={handleChange} required /></div>
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
         <div className={styles.formGroup}>
           <label>Rol</label>
-          <select name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}>
+          <select id="editar-role" name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}>
             {ROLE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
-        <div className={styles.formGroup}><label>Estatus</label><select name="estatus" value={formData.estatus} onChange={handleChange} className={styles.selectInput}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div className={styles.formGroup}><label>Estatus</label><select id="editar-estatus" name="estatus" value={formData.estatus} onChange={handleChange} className={styles.selectInput}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
       </div>
-      <div className={styles.formGroup}><label>Nueva Contraseña (Opcional)</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Dejar en blanco para no cambiar" /></div>
+      <div className={styles.formGroup}><label>Nueva Contraseña (Opcional)</label><input id="editar-password" type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Dejar en blanco para no cambiar" /></div>
       {error && <p style={{ color: 'red', marginTop:'10px' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
         <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
@@ -212,7 +212,7 @@ const ModalAgregarCatalogo = ({ title, onClose, onSave }) => {
         <form onSubmit={handleSubmit}>
             <div className={styles.formGroup}>
                 <label>Nombre del nuevo elemento</label>
-                <input autoFocus value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ej. Nuevo ${title}`} required />
+                <input id="catalogo-nuevo-valor" name="valor" autoFocus value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ej. Nuevo ${title}`} required />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
                 <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>

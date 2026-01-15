@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/AuthContext.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaSave, FaTimesCircle, FaSpinner, FaCalendarAlt, FaPlus, FaEye } from 'react-icons/fa';
 import styles from '../styles/DetallePacientePage.module.css';
@@ -265,9 +266,24 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
 const CitasSection = ({ pacienteId }) => {
     const [citas, setCitas] = useState({ proximasCitas: [], historialCitas: [] });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { user: currentUser } = useAuth();
 
-    const load = () => getCitasByPaciente(pacienteId).then(setCitas).catch(console.error);
-    useEffect(() => { load(); }, [pacienteId]);
+    const load = async () => {
+        try {
+            let data = await getCitasByPaciente(pacienteId);
+            // Si el usuario es especialista, filtra las citas por su id
+            if (currentUser && currentUser.id) {
+                data = {
+                    proximasCitas: Array.isArray(data.proximasCitas) ? data.proximasCitas.filter(c => c.doctor_id === currentUser.id) : [],
+                    historialCitas: Array.isArray(data.historialCitas) ? data.historialCitas.filter(c => c.doctor_id === currentUser.id) : [],
+                };
+            }
+            setCitas(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    useEffect(() => { load(); }, [pacienteId, currentUser]);
 
     const handleStatus = async (id, status) => {
         if(window.confirm(`¿Cambiar a ${status}?`)) {
