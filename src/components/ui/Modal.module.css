@@ -12,16 +12,18 @@
   z-index: 1000;
 }
 
+
 .modal {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 500px;
+  max-width: 540px;
   z-index: 1001;
-  /* Ensure modal doesn't grow beyond viewport and becomes scrollable internally */
-  max-height: calc(100vh - 3rem);
+  max-height: calc(100vh - 4rem);
   overflow: auto;
+  margin: 2rem;
+  padding: 2.5rem 2rem 2rem 2rem;
 }
 
 .modalHeader {

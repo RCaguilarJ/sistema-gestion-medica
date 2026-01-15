@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/AuthContext.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaSave, FaTimesCircle, FaSpinner, FaCalendarAlt, FaPlus, FaEye } from 'react-icons/fa';
 import styles from '../styles/DetallePacientePage.module.css';
@@ -14,7 +15,6 @@ import Documentos from './Documentos';
 
 // Servicios
 import { getPacienteById, updatePaciente } from '../services/pacienteService';
-import { getUsers } from '../services/userService.js';
 import {
     getConsultasByPaciente,
     getConsultaDetail,
@@ -170,26 +170,13 @@ const ModalNuevaConsulta = ({ pacienteId, onClose, onConsultaCreated }) => {
     );
 };
 
-// Modal Agendar Cita (CORREGIDO CON USUARIOS REALES)
+// Modal Agendar Cita (sin asignación de especialista)
 const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
-    const [medicos, setMedicos] = useState([]);
     const [formData, setFormData] = useState({
-        fechaHora: '', motivo: '', medicoId: '', notas: ''
+        fechaHora: '', motivo: '', notas: ''
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        const fetchMedicos = async () => {
-            try {
-                const data = await getUsers();
-                setMedicos(data);
-            } catch (err) {
-                console.error("Error cargando médicos:", err);
-            }
-        };
-        fetchMedicos();
-    }, []);
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -198,10 +185,9 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
         setError('');
         setIsSaving(true);
         try {
-            if (!formData.medicoId) {
-                throw new Error("Seleccione un profesional.");
-            }
-            await createCita(pacienteId, cleanAndNormalizeData(formData));
+            const payload = cleanAndNormalizeData(formData);
+            payload.medicoId = null; // El backend espera explícitamente el campo en null
+            await createCita(pacienteId, payload);
             onCitaCreated();
             onClose();
         } catch (err) {
@@ -213,19 +199,10 @@ const ModalAgendarCita = ({ pacienteId, onClose, onCitaCreated }) => {
 
     return (
         <form onSubmit={handleSubmit} style={{ padding: '15px' }}>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+            <div style={{display:'grid', gridTemplateColumns:'1fr', gap:'15px'}}>
                 <div className={formStyles.formGroup}>
                     <label>Fecha y Hora *</label>
                     <input type="datetime-local" name="fechaHora" value={formData.fechaHora} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
-                </div>
-                <div className={formStyles.formGroup}>
-                    <label>Asignar a *</label>
-                    <select name="medicoId" value={formData.medicoId} onChange={handleChange} required style={{width:'100%', padding:'8px'}}>
-                        <option value="">Seleccione un profesional</option>
-                        {medicos.map(m => (
-                            <option key={m.id} value={m.id}>{m.nombre} ({m.role})</option>
-                        ))}
-                    </select>
                 </div>
             </div>
             <div className={formStyles.formGroup} style={{marginTop:'15px'}}>
@@ -289,9 +266,24 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
 const CitasSection = ({ pacienteId }) => {
     const [citas, setCitas] = useState({ proximasCitas: [], historialCitas: [] });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { user: currentUser } = useAuth();
 
-    const load = () => getCitasByPaciente(pacienteId).then(setCitas).catch(console.error);
-    useEffect(() => { load(); }, [pacienteId]);
+    const load = async () => {
+        try {
+            let data = await getCitasByPaciente(pacienteId);
+            // Si el usuario es especialista, filtra las citas por su id
+            if (currentUser && currentUser.id) {
+                data = {
+                    proximasCitas: Array.isArray(data.proximasCitas) ? data.proximasCitas.filter(c => c.doctor_id === currentUser.id) : [],
+                    historialCitas: Array.isArray(data.historialCitas) ? data.historialCitas.filter(c => c.doctor_id === currentUser.id) : [],
+                };
+            }
+            setCitas(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    useEffect(() => { load(); }, [pacienteId, currentUser]);
 
     const handleStatus = async (id, status) => {
         if(window.confirm(`¿Cambiar a ${status}?`)) {

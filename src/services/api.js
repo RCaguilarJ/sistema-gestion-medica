@@ -1,10 +1,6 @@
 import axios from "axios";
 
-// ---------------------------------------------------------------------------
-// CONFIGURACIÓN DE URL BASE
-// Usamos la dirección absoluta del backend porque está en un subdominio distinto ('back')
-// Esto asegura que tanto en desarrollo como en producción se apunte al servidor correcto.
-// ---------------------------------------------------------------------------
+
 const baseURL = 'http://localhost:4000/api';
 
 const api = axios.create({
@@ -13,7 +9,10 @@ const api = axios.create({
 
 // Interceptor para agregar el Token de sesión automáticamente a cada petición
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  let token = null;
+  if (typeof window !== "undefined" && window.localStorage) {
+    token = localStorage.getItem("token");
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

@@ -1,34 +1,20 @@
-import React from 'react';
 import styles from './Modal.module.css';
-import { FaTimes } from 'react-icons/fa';
 
-function Modal({ isOpen, onClose, title, children }) {
-  if (!isOpen) {
-    return null;
-  }
-
-  return (
-    // Fondo oscuro
-    <div className={styles.overlay} onClick={onClose}>
-      {/* Contenedor blanco (detenemos la propagación para que no se cierre al hacer clic) */}
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Encabezado */}
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>{title}</h3>
-          <button onClick={onClose} className={styles.closeButton}>
-            <FaTimes />
-          </button>
+const Modal = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return (
+        <div className={styles.overlay}>
+            <div className={styles.modal}>
+                <div className={styles.header}>
+                    {title && <h2 className={styles.title}>{title}</h2>}
+                    <button className={styles.closeButton} onClick={onClose}>&times;</button>
+                </div>
+                <div className={styles.content}>
+                    {children}
+                </div>
+            </div>
         </div>
-
-        {/* Contenido (aquí irá nuestro formulario) */}
-        <div className={styles.modalContent}>
-          {children}
-        </div>
-        
-      </div>
-    </div>
-  );
-}
+    );
+};
 
 export default Modal;

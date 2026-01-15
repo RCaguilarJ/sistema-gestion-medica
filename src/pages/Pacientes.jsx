@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../hooks/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import styles from './Pacientes.module.css';
 import Button from '../components/ui/Button.jsx';
@@ -6,7 +7,7 @@ import Tag from '../components/ui/Tag.jsx';
 import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave } from 'react-icons/fa';
 import Modal from '../components/ui/Modal.jsx';
 import DetallePacienteModal from '../components/ui/DetallePacienteModal.jsx';
-import { getPacientes, createPaciente } from '../services/pacienteService.js';
+import { getPacientes, createPaciente, getAllPacientesByDoctor } from '../services/pacienteService.js';
 
 // --- LISTA DE MUNICIPIOS DE JALISCO ---
 const municipiosJalisco = [
@@ -299,7 +300,8 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess }) => {
 
 // --- PÁGINA PRINCIPAL ---
 function Pacientes() {
-  const [pacientes, setPacientes] = useState([]);
+    const [pacientes, setPacientes] = useState([]);
+    const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados para Filtros
@@ -318,7 +320,14 @@ function Pacientes() {
   const cargarPacientes = async () => {
     setIsLoading(true);
     try {
-        const data = await getPacientes();
+        let data = [];
+        if (currentUser && currentUser.id) {
+            // Si hay usuario logueado, obtener pacientes por doctorId
+            data = await getAllPacientesByDoctor(currentUser.id);
+        } else {
+            // Fallback: obtener todos los pacientes
+            data = await getPacientes();
+        }
         setPacientes(data);
     } catch (err) {
         console.error("Error cargando pacientes:", err);
@@ -336,16 +345,17 @@ function Pacientes() {
 
   // Lógica de Filtrado
   const pacientesFiltrados = useMemo(() => {
-    return pacientes.filter(p => {
-        const matchesSearch = 
-            p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            p.curp?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesEstatus = filterEstatus ? p.estatus === filterEstatus : true;
-        const matchesRiesgo = filterRiesgo ? p.riesgo === filterRiesgo : true;
-        const matchesMunicipio = filterMunicipio ? p.municipio === filterMunicipio : true;
+        const pacientesArray = Array.isArray(pacientes) ? pacientes : [];
+        return pacientesArray.filter(p => {
+            const matchesSearch = 
+                p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                p.curp?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesEstatus = filterEstatus ? p.estatus === filterEstatus : true;
+            const matchesRiesgo = filterRiesgo ? p.riesgo === filterRiesgo : true;
+            const matchesMunicipio = filterMunicipio ? p.municipio === filterMunicipio : true;
 
-        return matchesSearch && matchesEstatus && matchesRiesgo && matchesMunicipio;
-    });
+            return matchesSearch && matchesEstatus && matchesRiesgo && matchesMunicipio;
+        });
   }, [pacientes, searchTerm, filterEstatus, filterRiesgo, filterMunicipio]);
 
   const handleVerDetalle = (pacienteId) => {
