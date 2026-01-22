@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/AuthContext.jsx';
-import ProtectedRoute from './components/layout/ProtectedRoute.jsx';
+import ProtectedRoute, { AccessTokenRoute, AdminRoute } from './components/layout/ProtectedRoute.jsx';
 import Layout from './components/layout/Layout.jsx';
 
 // Páginas
@@ -15,6 +15,7 @@ import DetallePacientePage from './pages/DetallePacientePage.jsx';
 import Importar from './pages/Importar.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
+import Citas from './pages/Citas.jsx';
 
 // Componente auxiliar para redirigir si ya está logueado
 const LoginRoute = () => {
@@ -47,9 +48,10 @@ const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'pacientes', element: <Pacientes /> },
           { path: 'pacientes/:id', element: <DetallePacientePage /> },
-          { path: 'importar', element: <Importar /> },
-          { path: 'reportes', element: <Reportes /> },
-          { path: 'configuracion', element: <Configuracion /> },
+          { path: 'citas', element: <Citas /> },
+          { path: 'importar', element: <AdminRoute><Importar /></AdminRoute> },
+          { path: 'reportes', element: <AdminRoute><Reportes /></AdminRoute> },
+          { path: 'configuracion', element: <AdminRoute><Configuracion /></AdminRoute> },
         ],
       },
     ],

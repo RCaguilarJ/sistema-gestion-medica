@@ -1,6 +1,5 @@
-import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import ProtectedRoute from './components/layout/ProtectedRoute.jsx';
+import ProtectedRoute, { AdminRoute } from './components/layout/ProtectedRoute.jsx';
 import Layout from './components/layout/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -9,6 +8,7 @@ import Importar from './pages/Importar.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
 import DetallePacientePage from './pages/DetallePacientePage.jsx';
+import Citas from './pages/Citas.jsx';
 
 const router = createBrowserRouter([
   {
@@ -29,9 +29,10 @@ const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'pacientes', element: <Pacientes /> },
           { path: 'pacientes/:id', element: <DetallePacientePage /> },
-          { path: 'importar', element: <Importar /> },
-          { path: 'reportes', element: <Reportes /> },
-          { path: 'configuracion', element: <Configuracion /> },
+          { path: 'citas', element: <Citas /> },
+          { path: 'importar', element: <AdminRoute><Importar /></AdminRoute> },
+          { path: 'reportes', element: <AdminRoute><Reportes /></AdminRoute> },
+          { path: 'configuracion', element: <AdminRoute><Configuracion /></AdminRoute> },
         ],
       },
     ],

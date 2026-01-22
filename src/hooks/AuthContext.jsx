@@ -27,7 +27,10 @@ export const AuthProvider = ({ children }) => {
     if (data) {
       setUser(data.user);
       setIsAuthenticated(true);
-      api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
+      const token = data.jwt || data.token;
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
       return true;
     }
     return false;
@@ -46,7 +49,10 @@ export const AuthProvider = ({ children }) => {
     if (data) {
       setUser(data.user);
       setIsAuthenticated(true);
-      api.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
+      const token = data.jwt || data.token;
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
       return true;
     }
     return false;

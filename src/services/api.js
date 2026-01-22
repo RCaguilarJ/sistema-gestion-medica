@@ -1,19 +1,15 @@
+// src/services/api.js
 import axios from "axios";
 
-
-const baseURL = 'http://localhost:4000/api';
-
 const api = axios.create({
-  baseURL: baseURL,
+  baseURL: "http://localhost:4000/api",
 });
 
-// Interceptor para agregar el Token de sesión automáticamente a cada petición
+// Interceptor para token
 api.interceptors.request.use((config) => {
-  let token = null;
-  if (typeof window !== "undefined" && window.localStorage) {
-    token = localStorage.getItem("token");
-  }
+  const token = localStorage.getItem("token");
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

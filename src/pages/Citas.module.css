@@ -1,0 +1,215 @@
+/* src/pages/Citas.module.css */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+.calendarCard {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.calendarPlaceholder {
+  border-radius: 14px;
+  border: 1px dashed #d7dbe0;
+  background: #f8fafc;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.calendarIcon {
+  font-size: 2.5rem;
+  color: #94a3b8;
+}
+
+.tableCard {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #eef0f2;
+  padding: 1.5rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.tableHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.tableHeader span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.tableContainer {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: #f9fafb;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f2f4f7;
+  font-size: 0.9rem;
+  color: #1f2937;
+  vertical-align: top;
+}
+
+.focusedRow td {
+  background: #eff6ff;
+}
+
+.motivoCell {
+  max-width: 320px;
+}
+
+.motivoMain {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.motivoSub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.statusPendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusConfirmada {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.statusCancelada {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statusCompletada {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.stateMessage {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+.actionButton:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.18);
+}
+
+@media (max-width: 768px) {
+  .calendarCard {
+    padding: 1rem;
+  }
+
+  .tableCard {
+    padding: 1rem;
+  }
+
+  .tableHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+}

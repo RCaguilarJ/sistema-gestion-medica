@@ -10,6 +10,15 @@ export const getUsers = async () => {
   }
 };
 
+export const createUser = async (userData) => {
+  try {
+    const response = await api.post('/users', userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || new Error('Error al crear usuario');
+  }
+};
+
 export const updateUser = async (id, userData) => {
   try {
     const response = await api.put(`/users/${id}`, userData);
@@ -28,4 +37,4 @@ export const deleteUser = async (id) => {
   }
 };
 
-export default { getUsers, updateUser, deleteUser };
+export default { getUsers, createUser, updateUser, deleteUser };

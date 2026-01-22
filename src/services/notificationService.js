@@ -23,7 +23,7 @@ export const openNotificationStream = ({ onOpen, onMessage, onError } = {}) => {
   }
 
   const streamUrl = `${buildUrl("/notifications/stream")}?token=${encodeURIComponent(token)}`;
-  const eventSource = new EventSource(streamUrl, { withCredentials: true });
+ const eventSource = new EventSource(streamUrl);
 
   eventSource.onopen = () => {
     if (onOpen) onOpen();

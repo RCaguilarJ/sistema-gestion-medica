@@ -115,3 +115,470 @@
     font-size: 1.5rem;
   }
 }
+
+.nutritionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.doctorGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.psychGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.psychKpi1 {
+  grid-column: 1 / 2;
+}
+
+.psychKpi2 {
+  grid-column: 2 / 3;
+}
+
+.psychKpi3 {
+  grid-column: 3 / 4;
+}
+
+.psychKpi4 {
+  grid-column: 4 / 5;
+}
+
+.psychAlerts,
+.psychLineChart,
+.psychAppointments,
+.psychPatients {
+  grid-column: 1 / -1;
+}
+
+.psychPie1 {
+  grid-column: 1 / 3;
+}
+
+.psychBarChart {
+  grid-column: 3 / 5;
+}
+
+.psychAlertList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.psychAlertRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  background: #fff5f5;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+}
+
+.psychAlertText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.psychAlertName {
+  font-weight: 600;
+  color: #111827;
+}
+
+.psychAlertMeta {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.psychSearchRow {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.podoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.podoKpi1 {
+  grid-column: 1 / 2;
+}
+
+.podoKpi2 {
+  grid-column: 2 / 3;
+}
+
+.podoKpi3 {
+  grid-column: 3 / 4;
+}
+
+.podoKpi4 {
+  grid-column: 4 / 5;
+}
+
+.podoAlerts,
+.podoLineChart,
+.podoAppointments,
+.podoPatients {
+  grid-column: 1 / -1;
+}
+
+.podoPie1 {
+  grid-column: 1 / 3;
+}
+
+.podoBarChart {
+  grid-column: 3 / 5;
+}
+
+.kpiCard {
+  padding: 1.25rem;
+}
+
+.kpiTitle {
+  font-size: 0.95rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.kpiValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+.kpiNote {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.fullCard {
+  grid-column: 1 / -1;
+  padding: 1.5rem;
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.cardHeader p {
+  margin: 0.35rem 0 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.cardHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardHeaderRow h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.cardHeaderRow p {
+  margin: 0.35rem 0 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.secondaryButton {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.distributionList {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.distributionRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.distributionLabel {
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+.distributionBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #111827;
+}
+
+.distributionMeta {
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.distributionNormal {
+  color: #16a34a;
+  background: #16a34a;
+}
+
+.distributionSobrepeso {
+  color: #f59e0b;
+  background: #f59e0b;
+}
+
+.distributionObesidad {
+  color: #dc2626;
+  background: #dc2626;
+}
+
+.tableWrapper {
+  margin-top: 1rem;
+}
+
+.simpleTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.simpleTable th {
+  text-align: left;
+  padding: 0.75rem 0;
+  color: #6b7280;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.simpleTable td {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeNormal {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badgeSobrepeso {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badgeObesidad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badgeMuted {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgePrimary {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.linkButton {
+  border: none;
+  background: transparent;
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.searchRow {
+  margin-top: 1rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.9rem;
+}
+
+.patientName {
+  font-weight: 600;
+}
+
+.patientMeta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.trendDown {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.trendUp {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .nutritionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .doctorGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .psychGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .podoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fullCard {
+    grid-column: 1 / -1;
+  }
+
+  .psychKpi1,
+  .psychKpi2,
+  .psychKpi3,
+  .psychKpi4,
+  .psychPie1,
+  .psychBarChart {
+    grid-column: auto;
+  }
+
+  .podoKpi1,
+  .podoKpi2,
+  .podoKpi3,
+  .podoKpi4,
+  .podoPie1,
+  .podoBarChart {
+    grid-column: auto;
+  }
+
+  .psychSearchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 768px) {
+  .nutritionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .psychGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .podoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .psychKpi1,
+  .psychKpi2,
+  .psychKpi3,
+  .psychKpi4,
+  .psychPie1,
+  .psychBarChart,
+  .psychLineChart,
+  .psychAlerts,
+  .psychAppointments,
+  .psychPatients {
+    grid-column: 1 / -1;
+  }
+
+  .podoKpi1,
+  .podoKpi2,
+  .podoKpi3,
+  .podoKpi4,
+  .podoPie1,
+  .podoBarChart,
+  .podoLineChart,
+  .podoAlerts,
+  .podoAppointments,
+  .podoPatients {
+    grid-column: 1 / -1;
+  }
+
+  .psychAlertRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .cardHeaderRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .distributionRow {
+    grid-template-columns: 1fr;
+  }
+}

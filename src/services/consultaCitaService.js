@@ -1,91 +1,61 @@
 // src/services/consultaCitaService.js
-import api from './api.js'; // Instancia de Axios configurada con baseURL
+import api from "./api.js";
 
-// --- SERVICIOS PARA HISTORIAL CLÍNICO (CONSULTAS) ---
-
-/**
- * Obtiene el historial de consultas de un paciente específico.
- * Llama a: GET /api/consultas/paciente/:pacienteId
- */
-export const getConsultasByPaciente = async (pacienteId) => {
-  try {
-    const response = await api.get(`/consultas/paciente/${pacienteId}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al obtener consultas del paciente ${pacienteId}:`, error);
-    throw error.response?.data || new Error("Error al cargar historial clínico.");
-  }
+export const getCitasByDoctor = async (medicoId) => {
+  const response = await api.get(`/citas/doctor/${medicoId}`);
+  return response.data;
 };
 
-/**
- * Registra una nueva consulta para un paciente.
- * Llama a: POST /api/consultas/paciente/:pacienteId
- */
-export const createConsulta = async (pacienteId, consultaData) => {
-  try {
-    const response = await api.post(`/consultas/paciente/${pacienteId}`, consultaData);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al crear consulta para el paciente ${pacienteId}:`, error);
-    throw error.response?.data || new Error("Error al registrar nueva consulta.");
-  }
-};
-
-/**
- * Obtiene el detalle de una consulta específica.
- * Llama a: GET /api/consultas/:id
- */
-export const getConsultaDetail = async (consultaId) => {
-  try {
-    const response = await api.get(`/consultas/${consultaId}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al obtener detalle de consulta ${consultaId}:`, error);
-    throw error.response?.data || new Error("Error al cargar detalle de consulta.");
-  }
-};
-
-// --- SERVICIOS PARA CITAS ---
-
-/**
- * Obtiene las citas programadas de un paciente (próximas e históricas).
- * Llama a: GET /api/citas/paciente/:pacienteId
- * Devuelve { proximasCitas: [], historialCitas: [] }
- */
 export const getCitasByPaciente = async (pacienteId) => {
-  try {
-    const response = await api.get(`/citas/paciente/${pacienteId}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al obtener citas del paciente ${pacienteId}:`, error);
-    throw error.response?.data || new Error("Error al cargar citas.");
-  }
+  const response = await api.get(`/citas/paciente/${pacienteId}`);
+  return response.data;
 };
 
-/**
- * Agendar una nueva cita.
- * Llama a: POST /api/citas/paciente/:pacienteId
- */
 export const createCita = async (pacienteId, citaData) => {
-  try {
-    const response = await api.post(`/citas/paciente/${pacienteId}`, citaData);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al agendar cita para el paciente ${pacienteId}:`, error);
-    throw error.response?.data || new Error("Error al agendar la cita.");
-  }
+  const response = await api.post(`/citas/paciente/${pacienteId}`, citaData);
+  return response.data;
 };
 
-/**
- * Actualiza el estado de una cita (Confirmada, Cancelada, Completada).
- * Llama a: PUT /api/citas/:id/estado
- */
 export const updateCitaEstado = async (citaId, nuevoEstado) => {
-  try {
-    const response = await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
-    return response.data;
-  } catch (error) {
-    console.error(`Error al actualizar el estado de la cita ${citaId}:`, error);
-    throw error.response?.data || new Error("Error al actualizar el estado.");
-  }
+  const response = await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
+  return response.data;
+};
+
+export const getCitasAmd = async (medicoId) => {
+  const params = medicoId ? { medicoId } : undefined;
+  const response = await api.get("/citas/amd", { params });
+  return response.data;
+};
+
+export const getCitasPortal = async (medicoId) => {
+  const params = medicoId ? { medicoId } : undefined;
+  const response = await api.get("/citas/portal", { params });
+  return response.data;
+};
+
+export const updateCitaPortalEstado = async (citaId, nuevoEstado) => {
+  const response = await api.put(`/citas/portal/${citaId}/estado`, { estado: nuevoEstado });
+  return response.data;
+};
+
+export const createPacienteFromCita = async (citaId, pacienteData) => {
+  const response = await api.post(`/citas/portal/${citaId}/crear-paciente`, pacienteData);
+  return response.data;
+};
+
+
+export const getConsultasByPaciente = async (pacienteId) => {
+  const response = await api.get(`/consultas/paciente/${pacienteId}`);
+  return response.data;
+};
+
+// ✅ ESTE ES EL QUE TE FALTA EN TU ERROR
+export const getConsultaDetail = async (consultaId) => {
+  const response = await api.get(`/consultas/${consultaId}`);
+  return response.data;
+};
+
+export const createConsulta = async (pacienteId, consultaData) => {
+  const response = await api.post(`/consultas/paciente/${pacienteId}`, consultaData);
+  return response.data;
 };

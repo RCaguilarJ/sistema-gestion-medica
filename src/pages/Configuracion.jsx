@@ -7,8 +7,7 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Tag from '../components/ui/Tag.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import { register } from '../services/authService.js';
-import { getUsers, deleteUser, updateUser } from '../services/userService.js';
+import { getUsers, createUser, deleteUser, updateUser } from '../services/userService.js';
 import { useAuth } from "../hooks/AuthContext.jsx";
 import { Navigate } from "react-router-dom";
 import {
@@ -82,11 +81,10 @@ const FormularioNuevoUsuario = ({ onClose, onSuccess }) => {
     e.preventDefault();
     setError('');
     try {
-      const data = await register(nombre, username, email, password, role, { persistSession: false });
-      if (data) onSuccess(); 
-      else setError('No se pudo crear el usuario.');
+      await createUser({ nombre, username, email, password, role });
+      onSuccess();
     } catch (err) {
-      setError('Error al registrar.');
+      setError(err?.message || err?.error || 'Error al registrar.');
     }
   };
 

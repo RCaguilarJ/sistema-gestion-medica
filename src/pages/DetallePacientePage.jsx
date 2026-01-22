@@ -14,7 +14,6 @@ import Nutricion from './Nutricion';
 import Documentos from './Documentos';
 
 // Servicios
-import { getPacienteById, updatePaciente } from '../services/pacienteService';
 import {
     getConsultasByPaciente,
     getConsultaDetail,
@@ -23,6 +22,7 @@ import {
     createCita,
     updateCitaEstado,
 } from '../services/consultaCitaService.js';
+import { getPacienteById, updatePaciente } from '../services/pacienteService.js';
 
 // --- HELPERS ---
 
@@ -264,21 +264,62 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
 };
 
 const CitasSection = ({ pacienteId }) => {
-    const [citas, setCitas] = useState({ proximasCitas: [], historialCitas: [] });
+    const [citas, setCitas] = useState({ proximaCita: null, historialCitas: [] });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { user: currentUser } = useAuth();
 
+    const normalizeCitasResponse = (data) => {
+        if (Array.isArray(data)) return data;
+        if (data && (Array.isArray(data.proximasCitas) || Array.isArray(data.historialCitas))) {
+            return [
+                ...(Array.isArray(data.proximasCitas) ? data.proximasCitas : []),
+                ...(Array.isArray(data.historialCitas) ? data.historialCitas : []),
+            ];
+        }
+        return [];
+    };
+
+    const getCitaDoctorId = (cita) => (
+        cita?.doctor_id
+        ?? cita?.medicoId
+        ?? cita?.Medico?.id
+        ?? cita?.medico?.id
+        ?? null
+    );
+
+    const parseFechaHora = (value) => {
+        if (!value) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
     const load = async () => {
         try {
-            let data = await getCitasByPaciente(pacienteId);
-            // Si el usuario es especialista, filtra las citas por su id
-            if (currentUser && currentUser.id) {
-                data = {
-                    proximasCitas: Array.isArray(data.proximasCitas) ? data.proximasCitas.filter(c => c.doctor_id === currentUser.id) : [],
-                    historialCitas: Array.isArray(data.historialCitas) ? data.historialCitas.filter(c => c.doctor_id === currentUser.id) : [],
-                };
-            }
-            setCitas(data);
+            const data = await getCitasByPaciente(pacienteId);
+            const citasList = normalizeCitasResponse(data);
+            const filteredByDoctor = currentUser?.id
+                ? citasList.filter((c) => getCitaDoctorId(c) === currentUser.id)
+                : citasList;
+
+            const now = new Date();
+            const proximas = filteredByDoctor
+                .filter((c) => {
+                    const fecha = parseFechaHora(c.fechaHora);
+                    return fecha && fecha >= now;
+                })
+                .sort((a, b) => parseFechaHora(a.fechaHora) - parseFechaHora(b.fechaHora));
+
+            const historial = filteredByDoctor
+                .filter((c) => {
+                    const fecha = parseFechaHora(c.fechaHora);
+                    return fecha && fecha < now;
+                })
+                .sort((a, b) => parseFechaHora(b.fechaHora) - parseFechaHora(a.fechaHora));
+
+            setCitas({
+                proximaCita: proximas.length > 0 ? proximas[0] : null,
+                historialCitas: historial,
+            });
         } catch (err) {
             console.error(err);
         }
@@ -313,7 +354,7 @@ const CitasSection = ({ pacienteId }) => {
                 <h3>Próximas Citas</h3>
                 <Button onClick={() => setIsModalOpen(true)}><FaCalendarAlt /> Agendar</Button>
             </div>
-            {citas.proximasCitas.length > 0 ? citas.proximasCitas.map(renderCita) : <p>No hay citas próximas.</p>}
+            {citas.proximaCita ? renderCita(citas.proximaCita) : <p>No hay citas próximas.</p>}
             
             <h3 style={{marginTop:'30px'}}>Historial</h3>
             {citas.historialCitas.map(renderCita)}
@@ -528,3 +569,4 @@ const calcularEdad = (fecha) => {
 };
 
 export default DetallePacientePage;
+

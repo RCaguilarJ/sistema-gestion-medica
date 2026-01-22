@@ -61,11 +61,11 @@ export const register = async (nombre, username, email, password, role, options 
     const { token: tokenFromApi, jwt: jwtFromApi, user } = response.data || {};
     const token = tokenFromApi || jwtFromApi;
 
-    if (!token) {
+    if (!token && persistSession) {
       throw new Error("La respuesta del servidor no incluye un token");
     }
 
-    if (persistSession) {
+    if (persistSession && token) {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
     }
