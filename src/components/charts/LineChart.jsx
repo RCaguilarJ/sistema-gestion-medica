@@ -9,7 +9,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler,
   Filler
 } from 'chart.js';
 import styles from './Chart.module.css';
