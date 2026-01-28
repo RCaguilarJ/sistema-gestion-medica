@@ -13,6 +13,9 @@
   padding: 15px 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .headerLeft {
@@ -56,6 +59,7 @@
   gap: 20px;
   border-bottom: 1px solid #ddd;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .tab {
@@ -142,4 +146,48 @@
 
 .accionIcon:hover {
   color: #007BFF;
+}
+
+.detailGridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.modalFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .contentCard {
+    padding: 18px;
+  }
+
+  .detailGridTwo,
+  .modalFormGrid {
+    grid-template-columns: 1fr;
+  }
 }

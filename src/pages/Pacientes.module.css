@@ -128,6 +128,56 @@
 
 .loadingState, .emptyTable { text-align: center; padding: 3rem; color: #666; }
 
+/* --- Paginacion --- */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.5rem;
+}
+
+.paginationInfo {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.paginationButton {
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  color: #444;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paginationButton:hover {
+  background-color: #f5f5f5;
+  border-color: #d5d5d5;
+}
+
+.paginationButtonActive {
+  background-color: #003366;
+  color: #fff;
+  border-color: #003366;
+}
+
+.paginationButtonDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* --- Estilos del Formulario Modal --- */
 .modalFormContainer { padding: 0 1rem 1rem 1rem; }
 .requiredNote { font-size: 0.85rem; color: #666; margin-bottom: 1rem; }
@@ -179,4 +229,36 @@
   .formGrid { grid-template-columns: 1fr; }
   .filtersRow { flex-direction: column; }
   .tableContainer { overflow-x: auto; }
+}
+
+@media (max-width: 1024px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .filtersRow {
+    flex-direction: column;
+  }
+
+  .searchInputWrapper,
+  .filterSelect {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .table th {
+    padding: 0.75rem 1rem;
+  }
+
+  .table td {
+    padding: 1rem;
+  }
 }

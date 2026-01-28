@@ -234,3 +234,45 @@
   text-align: right;
   margin-top: 1rem;
 }
+
+.selectInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+}
+
+.inlineGridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.programFilters {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 1024px) {
+  .programFilters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .inlineGridTwo {
+    grid-template-columns: 1fr;
+  }
+
+  .programFilters {
+    grid-template-columns: 1fr;
+  }
+}

@@ -90,7 +90,7 @@ const ModalVerConsulta = ({ consultaId, onClose }) => {
     return (
         <div style={{ padding: '20px' }}>
             <h3 style={{fontSize:'1.1rem', borderBottom: '1px solid #eee', paddingBottom:'10px'}}>Consulta del {new Date(consulta.fechaConsulta).toLocaleDateString()}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px' }}>
+            <div className={styles.detailGridTwo}>
                 <div><strong>Motivo:</strong> <p>{consulta.motivo}</p></div>
                 <div><strong>Médico:</strong> <p>{consulta.Medico ? consulta.Medico.nombre : 'N/A'}</p></div>
                 <div><strong>Peso:</strong> <p>{consulta.pesoKg || 'N/A'} kg</p></div>
@@ -136,7 +136,7 @@ const ModalNuevaConsulta = ({ pacienteId, onClose, onConsultaCreated }) => {
 
     return (
         <form onSubmit={handleSubmit} style={{ padding: '15px' }}>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+            <div className={styles.modalFormGrid}>
                 <div className={formStyles.formGroup}>
                     <label>Motivo *</label>
                     <input name="motivo" value={formData.motivo} onChange={handleChange} required style={{width:'100%', padding:'8px'}} />
@@ -350,7 +350,7 @@ const CitasSection = ({ pacienteId }) => {
 
     return (
         <div style={{padding:'20px'}}>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+            <div className={styles.sectionHeaderRow} style={{ marginBottom:'20px' }}>
                 <h3>Próximas Citas</h3>
                 <Button onClick={() => setIsModalOpen(true)}><FaCalendarAlt /> Agendar</Button>
             </div>
@@ -458,7 +458,7 @@ function DetallePacientePage() {
     return (
         <div className={styles.container}>
             {/* Header */}
-            <div className={styles.header} style={{justifyContent:'space-between'}}>
+            <div className={styles.header}>
                 <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
                     <Button onClick={() => navigate('/app/pacientes')} variant="secondary"><FaArrowLeft/></Button>
                     <div>

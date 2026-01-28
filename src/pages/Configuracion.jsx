@@ -155,7 +155,7 @@ const FormularioEditarUsuario = ({ userToEdit, onClose, onSuccess }) => {
       <div className={styles.formGroup}><label>Nombre</label><input id="editar-nombre" name="nombre" value={formData.nombre} onChange={handleChange} required /></div>
       <div className={styles.formGroup}><label>Usuario</label><input id="editar-username" name="username" value={formData.username} onChange={handleChange} required /></div>
       <div className={styles.formGroup}><label>Correo</label><input id="editar-email" name="email" value={formData.email} onChange={handleChange} required /></div>
-      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+      <div className={styles.inlineGridTwo}>
         <div className={styles.formGroup}>
           <label>Rol</label>
           <select id="editar-role" name="role" value={formData.role} onChange={handleChange} className={styles.selectInput}>
@@ -361,7 +361,7 @@ export default function Configuracion() {
             </div>
 
             {/* Barra de Filtros (Estilo Gris) */}
-            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem', border: '1px solid #e5e7eb' }}>
+            <div className={styles.programFilters}>
                 <div className={formStyles.formGroup} style={{ marginBottom: 0, position: 'relative' }}>
                     <FaSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                     <input 

@@ -21,9 +21,13 @@
 
 /* Esta regla se aplica a la <img> */
 .navbarLogo {
-  height: 40px; /* Define la altura del logo. Ajusta a 35px o 45px si es necesario */
-  width: auto;  /* El ancho se ajustará automáticamente */
+  max-height: 40px;
+  max-width: 220px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
 }
+
 
 .menuButton {
   display: none;
@@ -154,7 +158,8 @@
   }
 
   .navbarLogo {
-    height: 36px;
+    max-height: 36px;
+    max-width: 200px;
   }
 
   .navLink,
@@ -190,38 +195,54 @@
 }
 
 /* Layout for medium and large screens
-   - Medium (769px - 1024px): keep nav in document flow to avoid overlap with logo
-   - Large (>=1025px): center nav using absolute positioning */
-@media (min-width: 769px) and (max-width: 1024px) {
+   - Medium (768px - 1199px): keep nav in document flow to avoid overlap with logo
+   - Large (>=1200px): center nav using absolute positioning */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .navbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.8rem 1.5rem;
+  }
+
   .navLinks {
     position: static;
     left: auto;
     top: auto;
     transform: none;
-    margin: 0 auto;
+    margin: 0;
+    justify-content: center;
     display: flex;
-    gap: 0.75rem; 
-    flex-wrap: nowrap; 
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    overflow: visible;
   }
-  .navbar {
-    padding: 0.8rem 1.5rem; 
+
+  .navLinks::-webkit-scrollbar {
+    display: none;
   }
+
   .navbarLogo {
-    height: 34px;
+    max-height: 36px;
+    max-width: 220px;
   }
-  .navLink, .navLinkActive {
-    font-size: 0.95rem;
+
+  .navLink,
+  .navLinkActive {
+    font-size: 0.94rem;
+    padding: 0.45rem 0.6rem;
   }
+
   .navbarUser {
-    display: flex; 
-    gap: 0.75rem;
+    display: flex;
+    gap: 0.6rem;
     align-items: center;
+    justify-content: flex-end;
+    align-self: flex-end;
   }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 1200px) {
   .navLinks {
     position: absolute;
     left: 50%;

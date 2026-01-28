@@ -207,3 +207,30 @@
   .filterRow { grid-template-columns: 1fr; }
   .bottomBar { flex-direction: column; gap: 1rem; align-items: stretch; text-align: center; }
 }
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .templatesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-bottom: 1.5rem;
+  }
+
+  .bottomBar {
+    position: static;
+    margin-top: 1.5rem;
+    box-shadow: none;
+    padding: 1rem;
+  }
+}

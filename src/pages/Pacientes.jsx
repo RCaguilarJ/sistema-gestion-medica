@@ -310,6 +310,8 @@ function Pacientes() {
   const [filterEstatus, setFilterEstatus] = useState("");
   const [filterRiesgo, setFilterRiesgo] = useState("");
   const [filterMunicipio, setFilterMunicipio] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState(null);
@@ -368,6 +370,23 @@ function Pacientes() {
       return matchesSearch && matchesEstatus && matchesRiesgo && matchesMunicipio;
     });
   }, [pacientes, searchTerm, filterEstatus, filterRiesgo, filterMunicipio]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterEstatus, filterRiesgo, filterMunicipio]);
+
+  const totalPages = Math.max(1, Math.ceil(pacientesFiltrados.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const pacientesPaginados = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return pacientesFiltrados.slice(startIndex, startIndex + itemsPerPage);
+  }, [pacientesFiltrados, currentPage, itemsPerPage]);
 
   const getEspecialistasAsignados = (paciente) => {
     if (!paciente) return "-";
@@ -527,7 +546,7 @@ function Pacientes() {
               </tr>
             </thead>
             <tbody>
-              {pacientesFiltrados.map((p) => (
+              {pacientesPaginados.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <div className={styles.cellNameMain}>{p.nombre}</div>
@@ -560,6 +579,44 @@ function Pacientes() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!isLoading && pacientesFiltrados.length > itemsPerPage && (
+        <div className={styles.pagination}>
+          <div className={styles.paginationInfo}>
+            Mostrando {pacientesFiltrados.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+            {" - "}
+            {Math.min(currentPage * itemsPerPage, pacientesFiltrados.length)} de {pacientesFiltrados.length}
+          </div>
+          <div className={styles.paginationControls}>
+            <button
+              className={`${styles.paginationButton} ${currentPage === 1 ? styles.paginationButtonDisabled : ""}`}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </button>
+            {Array.from({ length: totalPages }).map((_, index) => {
+              const pageNumber = index + 1;
+              return (
+                <button
+                  key={pageNumber}
+                  className={`${styles.paginationButton} ${currentPage === pageNumber ? styles.paginationButtonActive : ""}`}
+                  onClick={() => setCurrentPage(pageNumber)}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+            <button
+              className={`${styles.paginationButton} ${currentPage === totalPages ? styles.paginationButtonDisabled : ""}`}
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       )}
 
