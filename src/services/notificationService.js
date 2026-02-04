@@ -3,7 +3,7 @@ import api from "./api.js";
 const ensureLeadingSlash = (path) => (path.startsWith("/") ? path : `/${path}`);
 
 const buildUrl = (path) => {
-  const base = api.defaults.baseURL || "http://localhost:4000/api"; // Ensure fallback to localhost
+  const base = api.defaults.baseURL;
   const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
   return `${normalizedBase}${ensureLeadingSlash(path)}`;
 };
