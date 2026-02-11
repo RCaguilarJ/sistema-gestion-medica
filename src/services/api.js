@@ -13,12 +13,13 @@ const normalizeApiBaseUrl = (rawUrl) => {
 const prodBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 const api = axios.create({
-  // DEV: usa proxy de Vite
-  // PROD: usa VITE_API_URL y fuerza sufijo /api; si falta, cae a /api en mismo origen
+  // DEV: usa proxy de Vite (/api)
+  // PROD en cPanel: VITE_API_URL vacío → cae a /api (mismo dominio)
+  // PROD con dominio externo: usa VITE_API_URL
   baseURL: import.meta.env.DEV ? "/api" : prodBaseUrl || "/api",
 });
 
-// Interceptor para token
+// Interceptor para agregar token JWT
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -27,5 +28,19 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para manejo de errores
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido - redirigir a login
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

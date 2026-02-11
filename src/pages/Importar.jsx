@@ -521,15 +521,6 @@ function Importar() {
           <h1 className={styles.title}>Importar Datos desde Excel</h1>
           <p className={styles.subtitle}>Carga y valida informacion de beneficiarios desde archivo Excel</p>
         </div>
-        <label className={styles.demoToggle}>
-          <span>Modo demo</span>
-          <input
-            type="checkbox"
-            checked={demoMode}
-            onChange={(event) => setDemoMode(event.target.checked)}
-          />
-          <span className={styles.demoToggleSlider} aria-hidden="true" />
-        </label>
       </div>
 
       <Stepper currentStep={currentStep} totalSteps={5} />

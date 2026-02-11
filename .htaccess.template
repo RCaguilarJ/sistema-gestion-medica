@@ -1,0 +1,27 @@
+<IfModule mod_proxy.c>
+  ProxyRequests Off
+  ProxyPreserveHost On
+
+  # Proxy /api hacia Node.js en localhost:3000
+  ProxyPass /api http://127.0.0.1:3000/
+  ProxyPassReverse /api http://127.0.0.1:3000/
+</IfModule>
+
+# Comprime respuestas
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
+</IfModule>
+
+# Caching de estáticos
+<FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# SPA Routing
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
