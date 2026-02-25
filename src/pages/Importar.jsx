@@ -4,6 +4,8 @@ import styles from './Importar.module.css';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Stepper from '../components/ui/Stepper.jsx';
+import api from '../services/api.js';
+import { getUsers } from '../services/userService.js';
 
 import {
   FaFileUpload,
@@ -24,6 +26,25 @@ const REQUIRED_COLUMNS = [
   'CELULAR',
   'FECHA_DIAGNOSTICO',
   'FECHA_CONSULTA',
+];
+
+const OPTIONAL_SPECIALIST_COLUMNS = [
+  'MEDICO_ID',
+  'NUTRIOLOGO_ID',
+  'PSICOLOGO_ID',
+  'ENDOCRINOLOGO_ID',
+  'PODOLOGO_ID',
+];
+
+const ALL_SPECIALISTS_OPTION = 'ALL';
+
+const SPECIALIST_ROLES = [
+  { value: ALL_SPECIALISTS_OPTION, label: 'Todos (IDs en Excel)' },
+  { value: 'DOCTOR', label: 'Doctor' },
+  { value: 'NUTRI', label: 'Nutriólogo' },
+  { value: 'PSICOLOGO', label: 'Psicólogo' },
+  { value: 'ENDOCRINOLOGO', label: 'Endocrinólogo' },
+  { value: 'PODOLOGO', label: 'Podólogo' },
 ];
 
 const COLUMN_LABELS = {
@@ -130,6 +151,13 @@ const Step1 = ({
   fileMeta,
   uploadProgress,
   canContinue,
+  specialistRole,
+  onSpecialistRoleChange,
+  specialistId,
+  onSpecialistChange,
+  specialistOptions,
+  loadingUsers,
+  requiresExcelIds,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -152,9 +180,70 @@ const Step1 = ({
 
       <div className={styles.infoBox}>
         <FaInfoCircle />
-        <span>
-          El archivo debe contener las siguientes columnas: {REQUIRED_COLUMNS.join(', ')}
-        </span>
+        <div className={styles.infoText}>
+          <p>
+            El archivo debe contener las siguientes columnas: {REQUIRED_COLUMNS.join(', ')}
+          </p>
+          <p>
+            Columnas opcionales para asignar especialista por fila: {OPTIONAL_SPECIALIST_COLUMNS.join(', ')}.
+          </p>
+          <p>
+            Si eliges "Todos (IDs en Excel)", debes incluir IDs de especialista por fila.
+          </p>
+          <p>
+            Si no incluyes IDs en el Excel, selecciona un especialista abajo y se asignará a todos los registros.
+          </p>
+        </div>
+      </div>
+
+      <div className={styles.specialistBox}>
+        <div className={styles.fieldRow}>
+          <label className={styles.fieldLabel}>Especialidad</label>
+          <select
+            className={styles.fieldControl}
+            value={specialistRole}
+            onChange={(e) => onSpecialistRoleChange(e.target.value)}
+          >
+            <option value="">Selecciona una especialidad</option>
+            {SPECIALIST_ROLES.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.fieldRow}>
+          <label className={styles.fieldLabel}>Especialista</label>
+          <select
+            className={styles.fieldControl}
+            value={specialistId}
+            onChange={(e) => onSpecialistChange(e.target.value)}
+            disabled={!specialistRole || specialistRole === ALL_SPECIALISTS_OPTION || loadingUsers}
+          >
+            <option value="">
+              {loadingUsers ? 'Cargando especialistas...' : 'Selecciona un especialista'}
+            </option>
+            {specialistOptions.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.nombre} ({user.email})
+              </option>
+            ))}
+          </select>
+        </div>
+        {specialistRole === ALL_SPECIALISTS_OPTION ? (
+          <div className={styles.helperText}>
+            Se usará el ID de especialista que venga en cada fila del Excel.
+          </div>
+        ) : !specialistId ? (
+          <div className={styles.helperText}>
+            Este especialista se asignará a todos los pacientes importados si el Excel no incluye IDs.
+          </div>
+        ) : null}
+        {requiresExcelIds && (
+          <div className={styles.helperTextWarning}>
+            Falta seleccionar especialista o agregar IDs en el Excel.
+          </div>
+        )}
       </div>
 
       <div className={styles.dropzone} onClick={() => fileInputRef.current.click()}>
@@ -269,7 +358,7 @@ const Step3 = ({ total }) => (
   </Card>
 );
 
-const Step4 = ({ onBack, onNext, summary, preview, canImport }) => (
+const Step4 = ({ onBack, onNext, summary, preview, canImport, missingSpecialist, importError, importing, missingSpecialistReason }) => (
   <Card>
     <h2 className={styles.stepTitle}>Paso 4: Resumen de Validacion</h2>
     <p className={styles.stepSubtitle}>Revisa los resultados antes de importar</p>
@@ -297,6 +386,11 @@ const Step4 = ({ onBack, onNext, summary, preview, canImport }) => (
       <div className={styles.infoBox}>
         <FaTimesCircle style={{ color: '#de350b' }} />
         <span>No se puede importar hasta corregir errores o advertencias.</span>
+      </div>
+    ) : missingSpecialist ? (
+      <div className={styles.infoBox}>
+        <FaTimesCircle style={{ color: '#de350b' }} />
+        <span>{missingSpecialistReason || 'Selecciona un especialista antes de importar.'}</span>
       </div>
     ) : (
       <div className={styles.infoBox}>
@@ -350,10 +444,16 @@ const Step4 = ({ onBack, onNext, summary, preview, canImport }) => (
 
     <div className={styles.navigation}>
       <Button onClick={onBack} variant="secondary">Volver</Button>
-      <Button onClick={onNext} disabled={!canImport}>
-        Importar {summary.valid} Registros
+      <Button onClick={onNext} disabled={!canImport || importing}>
+        {importing ? 'Importando...' : `Importar ${summary.valid} Registros`}
       </Button>
     </div>
+
+    {importError && (
+      <div className={styles.errorBox}>
+        <FaTimesCircle /> {importError}
+      </div>
+    )}
   </Card>
 );
 
@@ -371,14 +471,19 @@ const Step5 = ({ onFinish, importedCount }) => (
 function Importar() {
   const [currentStep, setCurrentStep] = useState(1);
   const [fileMeta, setFileMeta] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [headers, setHeaders] = useState([]);
   const [normalizedHeaders, setNormalizedHeaders] = useState([]);
   const [rows, setRows] = useState([]);
-  const [demoMode, setDemoMode] = useState(() => {
-    const stored = localStorage.getItem('demoImportMode');
-    return stored ? stored === 'true' : true;
-  });
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importedCount, setImportedCount] = useState(0);
+  const [demoMode] = useState(false);
   const [validation, setValidation] = useState({
     total: 0,
     valid: 0,
@@ -401,14 +506,56 @@ function Importar() {
     setCurrentStep(1);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (demoMode) {
       localStorage.setItem('demoImportRows', JSON.stringify(rows));
+      setImportedCount(validation.valid);
+      handleNext();
+      return;
     }
-    handleNext();
+
+    setImportError('');
+    if (!selectedFile) {
+      setImportError('Selecciona un archivo para importar.');
+      return;
+    }
+    if (!selectedRole) {
+      setImportError('Selecciona una especialidad antes de importar.');
+      return;
+    }
+    if (selectedRole !== ALL_SPECIALISTS_OPTION && !selectedSpecialistId) {
+      setImportError('Selecciona un especialista antes de importar.');
+      return;
+    }
+    if (selectedRole === ALL_SPECIALISTS_OPTION && !hasSpecialistColumns) {
+      setImportError('El Excel debe incluir IDs de especialista por fila.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('archivo', selectedFile);
+    if (selectedRole !== ALL_SPECIALISTS_OPTION) {
+      formData.append('especialistaRole', selectedRole);
+      formData.append('especialistaId', selectedSpecialistId);
+    }
+
+    try {
+      setImporting(true);
+      const response = await api.post('/pacientes/importar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportedCount(response.data?.importados ?? validation.valid);
+      handleNext();
+    } catch (error) {
+      const message = error.response?.data?.error || error.response?.data?.message || 'Error al importar.';
+      setImportError(message);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleFileLoaded = (file) => {
+    setSelectedFile(file);
     setUploadProgress(10);
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -466,12 +613,45 @@ function Importar() {
   }, [currentStep]);
 
   useEffect(() => {
-    localStorage.setItem('demoImportMode', String(demoMode));
-  }, [demoMode]);
+    let isMounted = true;
+    setLoadingUsers(true);
+    getUsers()
+      .then((data) => {
+        if (!isMounted) return;
+        setUsers(Array.isArray(data) ? data : []);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingUsers(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.removeItem('demoImportMode');
+  }, []);
 
   const mappingRows = buildMappingRows(headers, normalizedHeaders);
-  const canContinue = Boolean(fileMeta);
-  const canImport = validation.errors === 0 && validation.warnings === 0 && validation.total > 0;
+  const hasSpecialistColumns = OPTIONAL_SPECIALIST_COLUMNS.some((col) =>
+    normalizedHeaders.includes(col)
+  );
+  const requiresExcelIds = Boolean(fileMeta) && selectedRole === ALL_SPECIALISTS_OPTION && !hasSpecialistColumns;
+  const canContinue = Boolean(fileMeta) && (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : Boolean(selectedSpecialistId));
+  const canImport =
+    validation.errors === 0 &&
+    validation.warnings === 0 &&
+    validation.total > 0 &&
+    (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : Boolean(selectedSpecialistId));
+  const missingSpecialist =
+    !selectedRole ||
+    (selectedRole === ALL_SPECIALISTS_OPTION ? !hasSpecialistColumns : !selectedSpecialistId);
+  const missingSpecialistReason = !selectedRole
+    ? 'Selecciona una especialidad antes de importar.'
+    : selectedRole === ALL_SPECIALISTS_OPTION
+      ? 'El Excel debe incluir IDs de especialista por fila.'
+      : 'Selecciona un especialista antes de importar.';
+  const specialistOptions = users.filter((user) => user.role === selectedRole);
 
   const renderStep = () => {
     switch (currentStep) {
@@ -483,6 +663,16 @@ function Importar() {
             fileMeta={fileMeta}
             uploadProgress={uploadProgress}
             canContinue={canContinue}
+            specialistRole={selectedRole}
+            onSpecialistRoleChange={(value) => {
+              setSelectedRole(value);
+              setSelectedSpecialistId('');
+            }}
+            specialistId={selectedSpecialistId}
+            onSpecialistChange={setSelectedSpecialistId}
+            specialistOptions={specialistOptions}
+            loadingUsers={loadingUsers}
+            requiresExcelIds={requiresExcelIds}
           />
         );
       case 2:
@@ -505,10 +695,14 @@ function Importar() {
             summary={validation}
             preview={validation.preview}
             canImport={canImport}
+            missingSpecialist={missingSpecialist}
+            missingSpecialistReason={missingSpecialistReason}
+            importError={importError}
+            importing={importing}
           />
         );
       case 5:
-        return <Step5 onFinish={handleFinish} importedCount={validation.valid} />;
+        return <Step5 onFinish={handleFinish} importedCount={importedCount} />;
       default:
         return null;
     }
@@ -521,6 +715,7 @@ function Importar() {
           <h1 className={styles.title}>Importar Datos desde Excel</h1>
           <p className={styles.subtitle}>Carga y valida informacion de beneficiarios desde archivo Excel</p>
         </div>
+        <span />
       </div>
 
       <Stepper currentStep={currentStep} totalSteps={5} />

@@ -7,6 +7,7 @@ import LineChart from '../components/charts/LineChart.jsx';
 import { useAuth } from '../hooks/AuthContext.jsx';
 import { getAllPacientesByDoctor, getPacientes } from '../services/pacienteService.js';
 import { getCitasPortal } from '../services/consultaCitaService.js';
+import { getDashboardStats } from '../services/dashboardService.js';
 import { 
   FaUsers, 
   FaHeartbeat, 
@@ -203,24 +204,52 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isAdmin = useMemo(() => (user?.role || '').toUpperCase() === 'ADMIN', [user]);
+  const isPsych = useMemo(() => {
+    const role = (user?.role || '').toUpperCase();
+    return role === 'PSICOLOGO' || role === 'PSY';
+  }, [user]);
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const pacientesPromise = isAdmin
-          ? getPacientes()
-          : user?.id
-            ? getAllPacientesByDoctor(user.id)
-            : Promise.resolve([]);
-        const citasPromise = isAdmin
-          ? getCitasPortal()
-          : user?.id
-            ? getCitasPortal(user.id)
-            : Promise.resolve([]);
+        if (isPsych) {
+          const data = await getDashboardStats();
+          const normalized = {
+            kpis: {
+              total: data?.kpis?.total || 0,
+              controlGlucemico: data?.adherencia || 0,
+              controlGlucemicoCount: 0,
+              asistencia: data?.adherencia || 0,
+              asistenciaCount: 0,
+              citasProgramadas: 0,
+              riesgo: (data?.imc?.labels || []).includes('Alto')
+                ? data.imc.data[data.imc.labels.indexOf('Alto')] || 0
+                : 0,
+              riesgoTrend: 0,
+            },
+            hba1c: data?.hba1c || { labels: [], data: [] },
+            imc: data?.imc || { labels: [], data: [] },
+            municipios: data?.municipios || { labels: [], data: [] },
+            tendencias: data?.tendencias || { labels: [], riesgo: [], adherencia: [] },
+            alertas: Array.isArray(data?.alertas) ? data.alertas : [],
+          };
+          setStats(normalized);
+        } else {
+          const pacientesPromise = isAdmin
+            ? getPacientes()
+            : user?.id
+              ? getAllPacientesByDoctor(user.id)
+              : Promise.resolve([]);
+          const citasPromise = isAdmin
+            ? getCitasPortal()
+            : user?.id
+              ? getCitasPortal(user.id)
+              : Promise.resolve([]);
 
-        const [pacientesData, citasData] = await Promise.all([pacientesPromise, citasPromise]);
-        setStats(buildAdminStats(pacientesData, citasData));
+          const [pacientesData, citasData] = await Promise.all([pacientesPromise, citasPromise]);
+          setStats(buildAdminStats(pacientesData, citasData));
+        }
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       } finally {
@@ -242,7 +271,7 @@ function Dashboard() {
   return (
     <div className={styles.responsiveWrapper}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>Panel de Control Administrativo</h1>
+        <h1 className={styles.title}>{isPsych ? 'Panel Psicologico' : 'Panel de Control Administrativo'}</h1>
         <p className={styles.subtitle}>
           Vista general basada en {stats.kpis.total} beneficiarios registrados
         </p>
@@ -250,15 +279,59 @@ function Dashboard() {
 
       <div className={styles.gridContainer}>
         {/* KPIs */}
-        {[{
-          icon: <FaUsers size={24} color="#007bff" />, bg: '#e6f7ff', value: stats.kpis.total, label: 'Total Beneficiarios', style: styles.kpi1
-        }, {
-          icon: <FaHeartbeat size={24} color="#10b981" />, bg: '#ecfdf3', value: `${stats.kpis.controlGlucemico}%`, label: 'Control Glucemico', sub: `${stats.kpis.controlGlucemicoCount} controlados`, style: styles.kpi2
-        }, {
-          icon: <FaCalendarAlt size={24} color="#f97316" />, bg: '#fff7ed', value: `${stats.kpis.asistencia}%`, label: 'Asistencia a citas programadas', sub: `${stats.kpis.asistenciaCount} de ${stats.kpis.citasProgramadas}`, style: styles.kpi3
-        }, {
-          icon: <FaExclamationTriangle size={22} color="#ef4444" />, bg: '#fee2e2', value: stats.kpis.riesgo, label: 'Pacientes en Riesgo', sub: `${stats.kpis.riesgoTrend >= 0 ? `+${stats.kpis.riesgoTrend}` : stats.kpis.riesgoTrend} vs semana anterior`, style: styles.kpi4
-        }].map((kpi, idx) => (
+        {[
+          {
+            icon: <FaUsers size={24} color="#007bff" />,
+            bg: '#e6f7ff',
+            value: stats.kpis.total,
+            label: 'Total Beneficiarios',
+            style: styles.kpi1,
+          },
+          isPsych
+            ? {
+                icon: <FaHeartbeat size={24} color="#10b981" />,
+                bg: '#ecfdf3',
+                value: `${stats.kpis.asistencia}%`,
+                label: 'Adherencia Promedio',
+                sub: 'Sesiones psicologicas',
+                style: styles.kpi2,
+              }
+            : {
+                icon: <FaHeartbeat size={24} color="#10b981" />,
+                bg: '#ecfdf3',
+                value: `${stats.kpis.controlGlucemico}%`,
+                label: 'Control Glucemico',
+                sub: `${stats.kpis.controlGlucemicoCount} controlados`,
+                style: styles.kpi2,
+              },
+          isPsych
+            ? {
+                icon: <FaCalendarAlt size={24} color="#f97316" />,
+                bg: '#fff7ed',
+                value: stats.hba1c.data?.reduce((a, b) => a + b, 0) || 0,
+                label: 'Sesiones Registradas',
+                sub: 'Ultimos meses',
+                style: styles.kpi3,
+              }
+            : {
+                icon: <FaCalendarAlt size={24} color="#f97316" />,
+                bg: '#fff7ed',
+                value: `${stats.kpis.asistencia}%`,
+                label: 'Asistencia a citas programadas',
+                sub: `${stats.kpis.asistenciaCount} de ${stats.kpis.citasProgramadas}`,
+                style: styles.kpi3,
+              },
+          {
+            icon: <FaExclamationTriangle size={22} color="#ef4444" />,
+            bg: '#fee2e2',
+            value: stats.kpis.riesgo,
+            label: isPsych ? 'Estrés Alto' : 'Pacientes en Riesgo',
+            sub: isPsych
+              ? 'Sesiones con estrés elevado'
+              : `${stats.kpis.riesgoTrend >= 0 ? `+${stats.kpis.riesgoTrend}` : stats.kpis.riesgoTrend} vs semana anterior`,
+            style: styles.kpi4,
+          },
+        ].map((kpi, idx) => (
           <div className={kpi.style} key={kpi.label}>
             <Card>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -279,8 +352,8 @@ function Dashboard() {
         <div className={styles.pie1}>
           <Card>
             <PieChart
-              title="Distribucion Control Glucemico"
-              subtitle="Clasificacion HbA1c"
+              title={isPsych ? 'Distribucion Estado de Animo' : 'Distribucion Control Glucemico'}
+              subtitle={isPsych ? 'Sesiones psicologicas' : 'Clasificacion HbA1c'}
               data={{
                 labels: stats.hba1c.labels,
                 datasets: [
@@ -297,8 +370,8 @@ function Dashboard() {
         <div className={styles.pie2}>
           <Card>
             <PieChart
-              title="Distribucion IMC"
-              subtitle="Estado nutricional"
+              title={isPsych ? 'Distribucion Estres' : 'Distribucion IMC'}
+              subtitle={isPsych ? 'Niveles de estres' : 'Estado nutricional'}
               data={{
                 labels: stats.imc.labels,
                 datasets: [
@@ -315,7 +388,7 @@ function Dashboard() {
         <div className={styles.barChart}>
           <Card>
             <BarChart
-              title="Beneficiarios por Municipio"
+              title={isPsych ? 'Pacientes por Municipio' : 'Beneficiarios por Municipio'}
               subtitle="Top 5"
               data={{
                 labels: stats.municipios.labels,
@@ -336,12 +409,12 @@ function Dashboard() {
           <Card>
             <LineChart
               title="Tendencias Mensuales"
-              subtitle="HbA1c y Adherencia"
+              subtitle={isPsych ? 'Estres y Adherencia' : 'HbA1c y Adherencia'}
               data={{
                 labels: stats.tendencias.labels,
                 datasets: [
                   {
-                    label: 'Riesgo Alto',
+                    label: isPsych ? 'Estres Alto' : 'Riesgo Alto',
                     data: stats.tendencias.riesgo,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.2)',

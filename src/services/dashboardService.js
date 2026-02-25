@@ -1,4 +1,4 @@
-import api from './api.js';
+import api from "./api.js";
 
 export const getDashboardStats = async () => {
   try {
@@ -9,9 +9,12 @@ export const getDashboardStats = async () => {
     // Retornar estructura vacía para evitar crash
     return {
       kpis: { total: 0, activos: 0 },
-      hba1c: [0, 0, 0],
-      imc: [0, 0, 0],
-      municipios: { labels: [], data: [] }
+      adherencia: 0,
+      hba1c: { labels: [], data: [] },
+      imc: { labels: [], data: [] },
+      municipios: { labels: [], data: [] },
+      tendencias: { labels: [], riesgo: [], adherencia: [] },
+      alertas: [],
     };
   }
 };

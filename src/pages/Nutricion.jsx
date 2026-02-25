@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "./Nutricion.module.css";
 import api from "../services/api";
+import { getUsers } from "../services/userService.js";
 import { FaRegFileAlt, FaPlus, FaSave, FaSpinner, FaEye, FaEdit, FaTimes } from "react-icons/fa";
 import Modal from "../components/ui/Modal";
 import Button from "../components/ui/Button";
@@ -74,6 +75,7 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
     const [data, setData] = useState(null); // Datos completos (planes + info)
     const [infoForm, setInfoForm] = useState({ nutriologo: '', estado: '' }); // Estado local para edición
     const [loading, setLoading] = useState(true);
+    const [nutriologos, setNutriologos] = useState([]);
     
     const [isEditingInfo, setIsEditingInfo] = useState(false); // Modo edición activado?
     const [isSavingInfo, setIsSavingInfo] = useState(false);
@@ -102,6 +104,23 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
         setLoading(true);
         if (pacienteId) fetchData();
     }, [pacienteId]);
+
+    useEffect(() => {
+        let isMounted = true;
+        getUsers()
+            .then((users) => {
+                if (!isMounted) return;
+                const list = Array.isArray(users) ? users : [];
+                setNutriologos(list.filter((u) => u.role === "NUTRI"));
+            })
+            .catch((err) => {
+                console.error("Error cargando nutriologos:", err);
+                if (isMounted) setNutriologos([]);
+            });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     // --- MANEJO DE EDICIÓN DE INFORMACIÓN (Nutriólogo y Estado) ---
     const handleInfoChange = (e) => {
@@ -188,14 +207,22 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                     </div>
                     <div className={styles.inputGroup}>
                         <label className={styles.label}>Nutriólogo Asignado</label>
-                        <input 
+                        <select
                             name="nutriologo"
-                            className={isEditingInfo ? styles.editableInput : styles.readOnlyInput} 
+                            className={isEditingInfo ? styles.editableInput : styles.readOnlyInput}
                             value={infoForm.nutriologo}
                             onChange={handleInfoChange}
-                            readOnly={!isEditingInfo}
-                            placeholder={isEditingInfo ? "Escribe el nombre..." : "Sin asignar"}
-                        />
+                            disabled={!isEditingInfo}
+                        >
+                            <option value="">
+                                {isEditingInfo ? "Selecciona un nutriólogo" : "Sin asignar"}
+                            </option>
+                            {nutriologos.map((u) => (
+                                <option key={u.id} value={u.nombre}>
+                                    {u.nombre} ({u.email})
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className={styles.inputGroup}>
                         <label className={styles.label}>Estado Nutricional</label>

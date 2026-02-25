@@ -10,13 +10,13 @@ const normalizeApiBaseUrl = (rawUrl) => {
   return `${withoutTrailingSlash}/api`;
 };
 
-const prodBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
+const envBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 const api = axios.create({
   // DEV: usa proxy de Vite (/api)
   // PROD en cPanel: VITE_API_URL vacío → cae a /api (mismo dominio)
   // PROD con dominio externo: usa VITE_API_URL
-  baseURL: import.meta.env.DEV ? "/api" : prodBaseUrl || "/api",
+  baseURL: envBaseUrl || "/api",
 });
 
 // Interceptor para agregar token JWT

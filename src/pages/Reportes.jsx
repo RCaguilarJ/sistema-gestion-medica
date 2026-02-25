@@ -3,7 +3,8 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import styles from './Reportes.module.css';
 import { FaFileAlt, FaFileMedical, FaCalendarCheck, FaMapMarkedAlt, FaExclamationTriangle, FaDownload } from 'react-icons/fa';
-import { getPacientes } from '../services/pacienteService.js';
+import { useAuth } from "../hooks/AuthContext.jsx";
+import { getAllPacientesByDoctor, getPacientes } from '../services/pacienteService.js';
 import { getCitasPortal } from '../services/consultaCitaService.js';
 
 // --- Definicion de Plantillas ---
@@ -18,6 +19,8 @@ const templates = [
 const municipiosJalisco = ["Guadalajara", "Zapopan", "Tlaquepaque", "Tonala", "Tlajomulco de Zuniga", "El Salto"]; // (Puedes importar la lista completa si quieres)
 
 function Reportes() {
+  const { user: currentUser } = useAuth();
+  const isAdmin = (currentUser?.role || "").toUpperCase() === "ADMIN";
   const [selectedTemplate, setSelectedTemplate] = useState('general');
   const [pacientes, setPacientes] = useState([]);
   const [citas, setCitas] = useState([]);
@@ -32,9 +35,18 @@ function Reportes() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const pacientesPromise =
+          currentUser?.id && !isAdmin
+            ? getAllPacientesByDoctor(currentUser.id)
+            : getPacientes();
+        const citasPromise =
+          currentUser?.id && !isAdmin
+            ? getCitasPortal(currentUser.id)
+            : getCitasPortal();
+
         const [pacientesData, citasData] = await Promise.all([
-          getPacientes(),
-          getCitasPortal(),
+          pacientesPromise,
+          citasPromise,
         ]);
         setPacientes(pacientesData);
         setCitas(citasData);
@@ -53,8 +65,8 @@ function Reportes() {
       }
     };
     loadData();
-  }, []);
-
+  }, [currentUser?.id, isAdmin]);
+                                                                                                                                                                                                                                                                        
   const getPacienteDate = (paciente) => paciente?.fechaConsulta;
 
   const getCitaDate = (cita) => (
@@ -91,6 +103,54 @@ function Reportes() {
         Beneficiarios: count,
         Porcentaje: `${Math.round((count / total) * 100)}%`,
       }));
+  };
+
+  const getTemplateHeaders = (templateId) => {
+    switch (templateId) {
+      case 'general':
+        return ['ID', 'Nombre', 'CURP', 'Edad', 'Genero', 'Municipio', 'Telefono', 'Estatus'];
+      case 'glucemico':
+        return ['ID', 'Nombre', 'TipoDiabetes', 'HbA1c Actual (%)', 'Ultima Medicion', 'Estado'];
+      case 'adherencia':
+        return ['ID', 'Paciente', 'Especialista', 'Fecha', 'Estado'];
+      case 'municipio':
+        return ['Municipio', 'Beneficiarios', 'Porcentaje'];
+      case 'riesgo':
+        return ['ID', 'Nombre', 'Riesgo', 'HbA1c', 'Telefono', 'Motivo Alerta'];
+      default:
+        return ['ID', 'Nombre', 'CURP'];
+    }
+  };
+
+  const getTemplateSampleRow = (templateId) => {
+    switch (templateId) {
+      case 'general':
+        return [1, 'Juan Perez', 'PEPJ900101HDFRRN01', 34, 'Masculino', 'Guadalajara', '3312345678', 'Activo'];
+      case 'glucemico':
+        return [1, 'Juan Perez', 'Tipo 2', 7.2, '2025-01-20', 'Descontrolado'];
+      case 'adherencia':
+        return [101, 'Juan Perez', 'Dr. Juan Carlos', '2025-02-10 10:30', 'Asistio'];
+      case 'municipio':
+        return ['Guadalajara', 120, '35%'];
+      case 'riesgo':
+        return [1, 'Juan Perez', 'Alto', 10.5, '3312345678', 'Glucosa Critica'];
+      default:
+        return [1, 'Juan Perez', 'PEPJ900101HDFRRN01'];
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = getTemplateHeaders(selectedTemplate);
+    const sampleRow = getTemplateSampleRow(selectedTemplate);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+    const templateName = templates.find((t) => t.id === selectedTemplate)?.title || 'Plantilla';
+    saveAs(dataBlob, `Plantilla_${templateName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   // --- LOGICA DE GENERACION DE EXCEL ---
@@ -230,12 +290,6 @@ function Reportes() {
                     </div>
                 </div>
                 
-                <div className={styles.formGroup} style={{maxWidth: '300px'}}>
-                    <label className={styles.label}>Formato de Exportacion</label>
-                    <select className={styles.select} disabled>
-                        <option>Excel (.xlsx)</option>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -271,9 +325,11 @@ function Reportes() {
             <h4>{templates.find(t => t.id === selectedTemplate)?.title}</h4>
             <p>Formato: .XLSX | {municipio === 'Todos' ? 'Todos los municipios' : municipio} | Datos actuales</p>
         </div>
-        <button className={styles.downloadBtn} onClick={handleDownload}>
+        <div className={styles.bottomActions}>
+          <button className={styles.downloadBtn} onClick={handleDownload}>
             <FaDownload /> Generar y Descargar
-        </button>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -126,6 +126,15 @@
 }
 .actionButton:hover { background-color: #f5f5f5; border-color: #ddd; }
 
+.deleteButton {
+  color: #b91c1c;
+  border-color: transparent;
+}
+.deleteButton:hover {
+  background-color: #fee2e2;
+  border-color: #fecaca;
+}
+
 .loadingState, .emptyTable { text-align: center; padding: 3rem; color: #666; }
 
 /* --- Paginacion --- */

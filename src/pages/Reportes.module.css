@@ -185,6 +185,30 @@
 .barInfo h4 { margin: 0; font-size: 1rem; }
 .barInfo p { margin: 0; font-size: 0.85rem; color: #666; }
 
+.bottomActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.downloadOutlineBtn {
+  background-color: #ffffff;
+  color: #007bff;
+  border: 1px solid #007bff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.downloadOutlineBtn:hover {
+  background-color: #f0f7ff;
+}
+
 .downloadBtn {
   background-color: #007bff;
   color: white;
@@ -206,6 +230,7 @@
   .templatesGrid { grid-template-columns: 1fr; }
   .filterRow { grid-template-columns: 1fr; }
   .bottomBar { flex-direction: column; gap: 1rem; align-items: stretch; text-align: center; }
+  .bottomActions { flex-direction: column; }
 }
 
 @media (max-width: 1024px) {

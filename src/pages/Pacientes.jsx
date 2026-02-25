@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "./Pacientes.module.css";
 import Button from "../components/ui/Button.jsx";
 import Tag from "../components/ui/Tag.jsx";
-import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave } from "react-icons/fa";
+import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave, FaTrash } from "react-icons/fa";
 import Modal from "../components/ui/Modal.jsx";
 import DetallePacienteModal from "../components/ui/DetallePacienteModal.jsx";
 
@@ -12,6 +12,7 @@ import {
   getPacientes,
   createPaciente,
   getAllPacientesByDoctor,
+  deletePaciente,
 } from "../services/pacienteService.js";
 import { getCitasPortal, createPacienteFromCita } from "../services/consultaCitaService.js";
 
@@ -429,6 +430,20 @@ function Pacientes() {
     }
   };
 
+  const handleDeletePaciente = async (pacienteId, nombre) => {
+    const confirmed = window.confirm(
+      `¿Seguro que deseas eliminar al paciente${nombre ? ` \"${nombre}\"` : ""}? Esta acción no se puede deshacer.`
+    );
+    if (!confirmed) return;
+    try {
+      await deletePaciente(pacienteId);
+      setPacientes((prev) => prev.filter((p) => p.id !== pacienteId));
+    } catch (err) {
+      console.error("Error eliminando paciente:", err);
+      alert("No se pudo eliminar el paciente. Intenta de nuevo.");
+    }
+  };
+
   return (
     <div>
       <div className={styles.header}>
@@ -567,6 +582,13 @@ function Pacientes() {
                   <td style={{ textAlign: "right" }}>
                     <button className={styles.actionButton} onClick={() => handleVerDetalle(p.id)}>
                       <FaEye /> Ver
+                    </button>
+                    <button
+                      className={`${styles.actionButton} ${styles.deleteButton}`}
+                      onClick={() => handleDeletePaciente(p.id, p.nombre)}
+                      style={{ marginLeft: "0.5rem" }}
+                    >
+                      <FaTrash /> Borrar
                     </button>
                   </td>
                 </tr>
