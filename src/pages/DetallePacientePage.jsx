@@ -1039,7 +1039,7 @@ function DetallePacientePage() {
     }, [isPsych, paciente?.id]);
 
     const tabs = isPsych
-        ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
+        ? ['sesiones', 'evaluaciones', 'plan', 'notas']
         : isDoctor
             ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
             : ['generales', 'clinico', 'citas', 'nutricion', 'documentos'];
@@ -1050,7 +1050,6 @@ function DetallePacientePage() {
         if (tab === 'evaluaciones') return 'Evaluaciones';
         if (tab === 'plan') return 'Plan de Intervención';
         if (tab === 'notas' && isPsych) return 'Notas Clínicas';
-        if (tab === 'documentos' && isPsych) return 'Documentos';
         return tab;
     };
 
@@ -1136,15 +1135,13 @@ function DetallePacientePage() {
                 <div>
                     <Tag label={paciente.estatus} />
                     <span style={{margin:'0 10px'}}></span>
-                    {!isPsych && (
-                        isEditing ? (
-                            <div style={{display:'inline-flex', gap:'10px'}}>
-                                <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
-                                <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
-                            </div>
-                        ) : (
-                            <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
-                        )
+                    {isEditing ? (
+                        <div style={{display:'inline-flex', gap:'10px'}}>
+                            <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
+                            <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
+                        </div>
+                    ) : (
+                        <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
                     )}
                 </div>
             </div>
@@ -1211,46 +1208,6 @@ function DetallePacientePage() {
             <div className={styles.contentCard}>
                 {isPsych ? (
                     <>
-                        {activeTab === 'generales' && (
-                            <form className={formStyles.formGrid} style={{display:'block'}}>
-                                <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
-                                <div className={formStyles.formGrid}>
-                                    {renderField('Nombre Completo', 'nombre')}
-                                    {renderField('CURP', 'curp')}
-                                    {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
-                                    {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
-                                    {renderField('Celular', 'celular')}
-                                    {renderField('Email', 'email', 'email')}
-                                </div>
-
-                                <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
-                                <div className={formStyles.formGrid}>
-                                    {renderField('Calle y Numero', 'calleNumero')}
-                                    {renderField('Colonia', 'colonia')}
-                                    {renderField('Municipio', 'municipio')}
-                                    {renderField('Estado', 'estado')}
-                                    {renderField('CP', 'codigoPostal')}
-                                </div>
-
-                                <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
-                                <div className={formStyles.formGrid}>
-                                    {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
-                                    {renderField('Fecha Diagnostico', 'fechaDiagnostico', 'date')}
-                                    {renderField('Estatura (metros)', 'estatura', 'number', [], {step:'0.01', placeholder:'Ej: 1.65'})}
-                                    {renderField('Peso (kg)', 'pesoKg', 'number', [], {step:'0.1'})}
-                                    {renderField('HbA1c', 'hba1c', 'number', [], {step:'0.1'})}
-                                    {renderField('IMC (Auto)', 'imc', 'number', [], {readOnly: true, placeholder:'Automatico'})}
-                                </div>
-
-                                <h3 className={formStyles.formSectionTitle}>Configuracion</h3>
-                                <div className={formStyles.formGrid}>
-                                    {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
-                                    {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
-                                    {renderField('Grupo/Programa', 'grupo')}
-                                    {renderField('Tipo Terapia', 'tipoTerapia')}
-                                </div>
-                            </form>
-                        )}
                         {activeTab === 'sesiones' && (
                             <PsicologiaSesionesSection
                                 pacienteId={paciente.id}
@@ -1280,9 +1237,6 @@ function DetallePacientePage() {
                                 onRefresh={loadPsicologia}
                             />
                         )}
-                        {activeTab === 'documentos' && (
-                            <Documentos pacienteId={paciente.id} />
-                        )}
                     </>
                 ) : (
                     <>
@@ -1310,7 +1264,7 @@ function DetallePacientePage() {
                                 <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
-                                    {renderField('Fecha Diagnostico', 'fechaDiagnostico', 'date')}
+                                    {renderField('Fecha Diagnóstico', 'fechaDiagnostico', 'date')}
                                     {renderField('Estatura (metros)', 'estatura', 'number', [], {step:'0.01', placeholder:'Ej: 1.65'})}
                                     {renderField('Peso (kg)', 'pesoKg', 'number', [], {step:'0.1'})}
                                     {renderField('HbA1c', 'hba1c', 'number', [], {step:'0.1'})}

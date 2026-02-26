@@ -156,10 +156,10 @@ export default function useNotificationStream(options = {}) {
       };
     }
 
-    // ✅ siempre inicia polling para que haya fallback
+    //  siempre inicia polling para que haya fallback
     startPolling();
 
-    // ✅ intenta SSE (si existe), si falla queda polling funcionando
+    // intenta SSE (si existe), si falla queda polling funcionando
     startSse();
 
     return () => {
@@ -170,7 +170,7 @@ export default function useNotificationStream(options = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, pollIntervalMs]);
 
-  // ✅ retorno blindado SIEMPRE
+  //  retorno blindado SIEMPRE
   return useMemo(() => {
     return {
       notifications: Array.isArray(notifications) ? notifications : [],
