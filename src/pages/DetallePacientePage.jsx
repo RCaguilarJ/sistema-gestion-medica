@@ -247,7 +247,7 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
             </div>
             <div className={styles.tableContainer}>
                 <table className={styles.table}>
-                    <thead><tr><th>Fecha</th><th>Motivo</th><th>MÃ©dico</th><th>Acciones</th></tr></thead>
+                    <thead><tr><th>Fecha</th><th>Motivo</th><th>Médico</th><th>Acciones</th></tr></thead>
                     <tbody>
                         {consultas.map(c => (
                             <tr key={c.id}>
@@ -466,7 +466,7 @@ const DoctorNotasSection = ({ pacienteId }) => {
         <div className={styles.notasContainer}>
             <div className={styles.seguimientoHeaderRow}>
                 <div>
-                    <h3 className={styles.sectionTitle}>Notas Clinicas</h3>
+                    <h3 className={styles.sectionTitle}>Notas Clínicas</h3>
                     <p className={styles.sectionSubtitle}>Observaciones registradas en consultas</p>
                 </div>
             </div>
@@ -541,10 +541,10 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh }) => {
         <div className={styles.psicoSection}>
             <div className={styles.seguimientoHeaderRow}>
                 <div>
-                    <h3 className={styles.sectionTitle}>Historial de Sesiones Psicologicas</h3>
+                    <h3 className={styles.sectionTitle}>Historial de Sesiones Psicológicas</h3>
                     <p className={styles.sectionSubtitle}>Registro de sesiones y seguimiento del paciente</p>
                 </div>
-                <Button onClick={() => setIsModalOpen(true)}><FaPlus /> Nueva Sesion</Button>
+                <Button onClick={() => setIsModalOpen(true)}><FaPlus /> Nueva Sesión</Button>
             </div>
 
             {sesiones.length === 0 ? (
@@ -556,10 +556,10 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh }) => {
                             <div className={styles.psicoSessionHeader}>
                                 <div className={styles.psicoSessionTitle}>
                                     <span>Sesion #{sesiones.length - index}</span>
-                                    <span className={styles.psicoTag}>{sesion.estadoAnimo || 'Sesion'}</span>
+                                    <span className={styles.psicoTag}>{sesion.estadoAnimo || 'Sesión'}</span>
                                 </div>
                                 <div className={styles.psicoSessionMeta}>
-                                    {formatDate(sesion.fecha)} • {sesion.psicologoNombre || 'Psicologo'}
+                                    {formatDate(sesion.fecha)} • {sesion.psicologoNombre || 'Psicólogo'}
                                 </div>
                             </div>
                             <div className={styles.psicoSessionMetrics}>
@@ -568,7 +568,7 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh }) => {
                                     <strong>{sesion.adherencia ? `${sesion.adherencia}%` : '-'}</strong>
                                 </div>
                                 <div>
-                                    <span>Nivel de Estres</span>
+                                    <span>Nivel de Estrés</span>
                                     <strong>{sesion.estres ? `${sesion.estres}/10` : '-'}</strong>
                                 </div>
                             </div>
@@ -580,7 +580,7 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh }) => {
                 </div>
             )}
 
-            <Modal title="Nueva Sesion" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal title="Nueva Sesión" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form onSubmit={handleSubmit} style={{ padding: '15px' }}>
                     <div className={styles.modalFormGrid}>
                         <div className={formStyles.formGroup}>
@@ -596,7 +596,7 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh }) => {
                             <input type="number" name="adherencia" value={formData.adherencia} onChange={handleChange} style={{width:'100%', padding:'8px'}} />
                         </div>
                         <div className={formStyles.formGroup}>
-                            <label>Estres (1-10)</label>
+                            <label>Estrés (1-10)</label>
                             <input type="number" name="estres" value={formData.estres} onChange={handleChange} style={{width:'100%', padding:'8px'}} />
                         </div>
                     </div>
@@ -673,7 +673,7 @@ const PsicologiaEvaluacionesSection = ({ pacienteId, evaluaciones, onRefresh }) 
         <div className={styles.psicoSection}>
             <div className={styles.seguimientoHeaderRow}>
                 <div>
-                    <h3 className={styles.sectionTitle}>Evaluaciones Psicologicas</h3>
+                    <h3 className={styles.sectionTitle}>Evaluaciones Psicológicas</h3>
                     <p className={styles.sectionSubtitle}>Instrumentos y pruebas aplicadas</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)}><FaPlus /> Nueva Evaluacion</Button>
@@ -813,7 +813,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh }
     return (
         <div className={styles.psicoSection}>
             <div>
-                <h3 className={styles.sectionTitle}>Plan de Intervencion Psicologica</h3>
+                <h3 className={styles.sectionTitle}>Plan de Intervencion Psicológica</h3>
                 <p className={styles.sectionSubtitle}>Objetivos terapeuticos y estrategias de intervencion</p>
             </div>
 
@@ -836,7 +836,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh }
 
             <div className={styles.psicoStrategies}>
                 <div className={styles.seguimientoHeaderRow}>
-                    <h4>Estrategias de Intervencion</h4>
+                    <h4>Estrategias de Intervención</h4>
                     <Button onClick={() => setStrategyOpen(true)}><FaPlus /> Nueva Estrategia</Button>
                 </div>
                 <div className={styles.psicoTable}>
@@ -944,8 +944,8 @@ const PsicologiaNotasSection = ({ pacienteId, notas, onRefresh }) => {
     return (
         <div className={styles.psicoSection}>
             <div>
-                <h3 className={styles.sectionTitle}>Notas Clinicas Psicologicas</h3>
-                <p className={styles.sectionSubtitle}>Observaciones generales y evolucion del paciente</p>
+                <h3 className={styles.sectionTitle}>Notas Clinicas Psicológicas</h3>
+                <p className={styles.sectionSubtitle}>Observaciones generales y evolución del paciente</p>
             </div>
 
             <div className={styles.psicoNotesBox}>
@@ -1039,17 +1039,18 @@ function DetallePacientePage() {
     }, [isPsych, paciente?.id]);
 
     const tabs = isPsych
-        ? ['sesiones', 'evaluaciones', 'plan', 'notas']
+        ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
         : isDoctor
             ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
             : ['generales', 'clinico', 'citas', 'nutricion', 'documentos'];
 
     const tabLabel = (tab) => {
         if (tab === 'generales') return 'Datos Generales';
-        if (tab === 'sesiones') return 'Sesiones Psicologicas';
+        if (tab === 'sesiones') return 'Sesiones Psicológicas';
         if (tab === 'evaluaciones') return 'Evaluaciones';
-        if (tab === 'plan') return 'Plan de Intervencion';
-        if (tab === 'notas' && isPsych) return 'Notas Clinicas';
+        if (tab === 'plan') return 'Plan de Intervención';
+        if (tab === 'notas' && isPsych) return 'Notas Clínicas';
+        if (tab === 'documentos' && isPsych) return 'Documentos';
         return tab;
     };
 
@@ -1135,13 +1136,15 @@ function DetallePacientePage() {
                 <div>
                     <Tag label={paciente.estatus} />
                     <span style={{margin:'0 10px'}}></span>
-                    {isEditing ? (
-                        <div style={{display:'inline-flex', gap:'10px'}}>
-                            <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
-                            <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
-                        </div>
-                    ) : (
-                        <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
+                    {!isPsych && (
+                        isEditing ? (
+                            <div style={{display:'inline-flex', gap:'10px'}}>
+                                <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
+                                <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
+                            </div>
+                        ) : (
+                            <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
+                        )
                     )}
                 </div>
             </div>
@@ -1149,7 +1152,7 @@ function DetallePacientePage() {
             {isPsych ? (
                 <div className={styles.psicoHeader}>
                     <div>
-                        <h2>Expediente Psicologico</h2>
+                        <h2>Expediente Psicológico</h2>
                         <p>{paciente.nombre} • {calcularEdad(paciente.fechaNacimiento)} años</p>
                     </div>
                     <Tag label={paciente.riesgo || 'Riesgo Alto'} />
@@ -1162,7 +1165,7 @@ function DetallePacientePage() {
                         <div className={styles.psicoMetricCard}>
                             <div className={styles.psicoMetricTitle}>Estado de Animo</div>
                             <h3>{latestSesion?.estadoAnimo || '-'}</h3>
-                            <small>Ultima sesion</small>
+                            <small>Ultima sesiósn</small>
                         </div>
                         <div className={styles.psicoMetricCard}>
                             <div className={styles.psicoMetricTitle}>Adherencia</div>
@@ -1170,7 +1173,7 @@ function DetallePacientePage() {
                             <small>Al tratamiento</small>
                         </div>
                         <div className={styles.psicoMetricCard}>
-                            <div className={styles.psicoMetricTitle}>Nivel de Estres</div>
+                            <div className={styles.psicoMetricTitle}>Nivel de Estrés</div>
                             <h3>{latestSesion?.estres ? `${latestSesion.estres}/10` : '-'}</h3>
                             <small>Escala subjetiva</small>
                         </div>
@@ -1183,7 +1186,7 @@ function DetallePacientePage() {
                 ) : (
                     <>
                         <div className={styles.metricCard}><h4>HbA1c</h4><h2>{paciente.hba1c || '-'}%</h2><small>{paciente.riesgo}</small></div>
-                        <div className={styles.metricCard}><h4>Ultima Consulta</h4><h3>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</h3></div>
+                        <div className={styles.metricCard}><h4>Última Consulta</h4><h3>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</h3></div>
                         <div className={styles.metricCard}><h4>IMC</h4><h2>{paciente.imc || '-'}</h2><small>{paciente.pesoKg}kg / {paciente.estatura}m</small></div>
                         <div className={styles.metricCard}><h4>Edad</h4><h2>{calcularEdad(paciente.fechaNacimiento)}</h2><small>{paciente.fechaNacimiento}</small></div>
                     </>
@@ -1208,6 +1211,46 @@ function DetallePacientePage() {
             <div className={styles.contentCard}>
                 {isPsych ? (
                     <>
+                        {activeTab === 'generales' && (
+                            <form className={formStyles.formGrid} style={{display:'block'}}>
+                                <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Nombre Completo', 'nombre')}
+                                    {renderField('CURP', 'curp')}
+                                    {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
+                                    {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
+                                    {renderField('Celular', 'celular')}
+                                    {renderField('Email', 'email', 'email')}
+                                </div>
+
+                                <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Calle y Numero', 'calleNumero')}
+                                    {renderField('Colonia', 'colonia')}
+                                    {renderField('Municipio', 'municipio')}
+                                    {renderField('Estado', 'estado')}
+                                    {renderField('CP', 'codigoPostal')}
+                                </div>
+
+                                <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
+                                    {renderField('Fecha Diagnostico', 'fechaDiagnostico', 'date')}
+                                    {renderField('Estatura (metros)', 'estatura', 'number', [], {step:'0.01', placeholder:'Ej: 1.65'})}
+                                    {renderField('Peso (kg)', 'pesoKg', 'number', [], {step:'0.1'})}
+                                    {renderField('HbA1c', 'hba1c', 'number', [], {step:'0.1'})}
+                                    {renderField('IMC (Auto)', 'imc', 'number', [], {readOnly: true, placeholder:'Automatico'})}
+                                </div>
+
+                                <h3 className={formStyles.formSectionTitle}>Configuracion</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
+                                    {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
+                                    {renderField('Grupo/Programa', 'grupo')}
+                                    {renderField('Tipo Terapia', 'tipoTerapia')}
+                                </div>
+                            </form>
+                        )}
                         {activeTab === 'sesiones' && (
                             <PsicologiaSesionesSection
                                 pacienteId={paciente.id}
@@ -1237,17 +1280,20 @@ function DetallePacientePage() {
                                 onRefresh={loadPsicologia}
                             />
                         )}
+                        {activeTab === 'documentos' && (
+                            <Documentos pacienteId={paciente.id} />
+                        )}
                     </>
                 ) : (
                     <>
                         {activeTab === 'generales' && (
                             <form className={formStyles.formGrid} style={{display:'block'}}>
-                                <h3 className={formStyles.formSectionTitle}>Informacion Personal</h3>
+                                <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Nombre Completo', 'nombre')}
                                     {renderField('CURP', 'curp')}
                                     {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
-                                    {renderField('Genero', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
+                                    {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
                                     {renderField('Celular', 'celular')}
                                     {renderField('Email', 'email', 'email')}
                                 </div>
@@ -1261,7 +1307,7 @@ function DetallePacientePage() {
                                     {renderField('CP', 'codigoPostal')}
                                 </div>
 
-                                <h3 className={formStyles.formSectionTitle}>Informacion Clinica</h3>
+                                <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
                                     {renderField('Fecha Diagnostico', 'fechaDiagnostico', 'date')}

@@ -192,7 +192,7 @@ const buildAdminStats = (pacientes, citas) => {
       const hba1c = parseHba1c(paciente?.hba1c);
       return {
         nombre: paciente?.nombre || `Paciente #${paciente?.id ?? 'N/A'}`,
-        mensaje: hba1c !== null && hba1c > 9 ? 'HbA1c critica' : 'Riesgo alto',
+        mensaje: hba1c !== null && hba1c > 9 ? 'HbA1c crítica' : 'Riesgo alto',
         tipo: 'Alta',
       };
     }),
@@ -271,7 +271,7 @@ function Dashboard() {
   return (
     <div className={styles.responsiveWrapper}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>{isPsych ? 'Panel Psicologico' : 'Panel de Control Administrativo'}</h1>
+        <h1 className={styles.title}>{isPsych ? 'Panel Psicológico' : 'Panel de Control Administrativo'}</h1>
         <p className={styles.subtitle}>
           Vista general basada en {stats.kpis.total} beneficiarios registrados
         </p>
@@ -293,14 +293,14 @@ function Dashboard() {
                 bg: '#ecfdf3',
                 value: `${stats.kpis.asistencia}%`,
                 label: 'Adherencia Promedio',
-                sub: 'Sesiones psicologicas',
+                sub: 'Sesiones psicológicas',
                 style: styles.kpi2,
               }
             : {
                 icon: <FaHeartbeat size={24} color="#10b981" />,
                 bg: '#ecfdf3',
                 value: `${stats.kpis.controlGlucemico}%`,
-                label: 'Control Glucemico',
+                label: 'Control Glucémico',
                 sub: `${stats.kpis.controlGlucemicoCount} controlados`,
                 style: styles.kpi2,
               },
@@ -352,8 +352,8 @@ function Dashboard() {
         <div className={styles.pie1}>
           <Card>
             <PieChart
-              title={isPsych ? 'Distribucion Estado de Animo' : 'Distribucion Control Glucemico'}
-              subtitle={isPsych ? 'Sesiones psicologicas' : 'Clasificacion HbA1c'}
+              title={isPsych ? 'Distribución Estado de Ánimo' : 'Distribución Control Glucémico'}
+              subtitle={isPsych ? 'Sesiones psicológicas' : 'Clasificación HbA1c'}
               data={{
                 labels: stats.hba1c.labels,
                 datasets: [
@@ -370,8 +370,8 @@ function Dashboard() {
         <div className={styles.pie2}>
           <Card>
             <PieChart
-              title={isPsych ? 'Distribucion Estres' : 'Distribucion IMC'}
-              subtitle={isPsych ? 'Niveles de estres' : 'Estado nutricional'}
+              title={isPsych ? 'Distribución Estrés' : 'Distribución IMC'}
+              subtitle={isPsych ? 'Niveles de estrés' : 'Estado nutricional'}
               data={{
                 labels: stats.imc.labels,
                 datasets: [
@@ -409,12 +409,12 @@ function Dashboard() {
           <Card>
             <LineChart
               title="Tendencias Mensuales"
-              subtitle={isPsych ? 'Estres y Adherencia' : 'HbA1c y Adherencia'}
+              subtitle={isPsych ? 'Estrés y Adherencia' : 'HbA1c y Adherencia'}
               data={{
                 labels: stats.tendencias.labels,
                 datasets: [
                   {
-                    label: isPsych ? 'Estres Alto' : 'Riesgo Alto',
+                    label: isPsych ? 'Estrés Alto' : 'Riesgo Alto',
                     data: stats.tendencias.riesgo,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.2)',

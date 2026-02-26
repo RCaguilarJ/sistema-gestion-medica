@@ -98,6 +98,35 @@ const Documentos = ({ pacienteId }) => {
 
   const openPicker = () => fileInputRef.current?.click();
 
+  const getFilenameFromDisposition = (headerValue, fallback) => {
+    if (!headerValue) return fallback;
+    const match = /filename\*=UTF-8''([^;]+)|filename="?([^\";]+)"?/i.exec(headerValue);
+    const name = decodeURIComponent(match?.[1] || match?.[2] || "").trim();
+    return name || fallback;
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      const url = doc.downloadUrl || `/documentos/${doc.id}/descargar`;
+      const res = await api.get(url, { responseType: "blob" });
+      const filename = getFilenameFromDisposition(
+        res.headers?.["content-disposition"],
+        doc.nombre || "documento"
+      );
+      const blobUrl = window.URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Error descargando documento:", err);
+      setError("No se pudo descargar el documento.");
+    }
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
@@ -192,14 +221,13 @@ const Documentos = ({ pacienteId }) => {
                 <span className={styles.docMeta}>{doc.cargado_por || "—"}</span>
                 <span className={styles.docMeta}>{formatSize(doc.tamano)}</span>
                 <div className={styles.rowActions}>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
                     className={styles.linkButton}
+                    onClick={() => handleDownload(doc)}
                   >
                     <FiDownload /> Descargar
-                  </a>
+                  </button>
                   <button
                     className={styles.dangerButton}
                     onClick={() => handleDelete(doc.id)}

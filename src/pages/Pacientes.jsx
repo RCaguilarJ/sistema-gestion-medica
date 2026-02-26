@@ -116,7 +116,11 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
       }
       onSuccess();
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || "Error al guardar el paciente.");
+      setError(
+        err?.response?.data?.error ||
+          err?.message ||
+          "Los datos ingresados no coinciden. Verifique y vuelva a intentar. Error al guardar."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -556,7 +560,7 @@ function Pacientes() {
                 <th>CURP</th>
                 <th>Estatus</th>
                 {isAdmin && <th>Especialista</th>}
-                <th>Ultima Visita</th>
+                <th>Última Visita</th>
                 <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
             </thead>
@@ -583,13 +587,16 @@ function Pacientes() {
                     <button className={styles.actionButton} onClick={() => handleVerDetalle(p.id)}>
                       <FaEye /> Ver
                     </button>
-                    <button
-                      className={`${styles.actionButton} ${styles.deleteButton}`}
-                      onClick={() => handleDeletePaciente(p.id, p.nombre)}
-                      style={{ marginLeft: "0.5rem" }}
-                    >
-                      <FaTrash /> Borrar
-                    </button>
+                    {/* Mostrar eliminar solo para ADMIN. Comentado para especialistas por ahora. */}
+                    {isAdmin && (
+                      <button
+                        className={`${styles.actionButton} ${styles.deleteButton}`}
+                        onClick={() => handleDeletePaciente(p.id, p.nombre)}
+                        style={{ marginLeft: "0.5rem" }}
+                      >
+                        <FaTrash /> Borrar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
