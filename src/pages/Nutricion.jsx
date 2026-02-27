@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./Nutricion.module.css";
 import api from "../services/api";
-import { getUsers } from "../services/userService.js";
 import { FaRegFileAlt, FaPlus, FaSave, FaSpinner, FaEye, FaEdit, FaTimes } from "react-icons/fa";
 import Modal from "../components/ui/Modal";
 import Button from "../components/ui/Button";
-import formStyles from "./Configuracion.module.css"; 
+import formStyles from "./Configuracion.module.css";
+import { useAuth } from "../hooks/AuthContext.jsx";
 
 // --- MODAL VER DETALLE DEL PLAN ---
 const ModalVerPlan = ({ plan, onClose }) => {
@@ -76,6 +76,38 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
     const [infoForm, setInfoForm] = useState({ nutriologo: '', estado: '' }); // Estado local para edición
     const [loading, setLoading] = useState(true);
     const [nutriologos, setNutriologos] = useState([]);
+    const [selectedRole, setSelectedRole] = useState("");
+    const { user } = useAuth();
+
+    const userRole = useMemo(() => (user?.role || "").toUpperCase(), [user]);
+    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+
+    const roleFilters = useMemo(() => {
+        if (userRole === "PSICOLOGO" || userRole === "PSY") return ["PSICOLOGO", "PSY"];
+        if (["NUTRI", "ENDOCRINOLOGO", "PODOLOGO", "DOCTOR"].includes(userRole)) {
+            return [userRole];
+        }
+        return [];
+    }, [userRole]);
+
+    const adminRoleOptions = useMemo(() => ([
+        { value: "", label: "Todos" },
+        { value: "NUTRI", label: "Nutriólogo" },
+        { value: "PSICOLOGO", label: "Psicólogo" },
+        { value: "PSY", label: "Psych (PSY)" },
+        { value: "ENDOCRINOLOGO", label: "Endocrinólogo" },
+        { value: "PODOLOGO", label: "Podólogo" },
+        { value: "DOCTOR", label: "Doctor" },
+    ]), []);
+
+    const especialistaLabel = useMemo(() => {
+        if (userRole === "NUTRI") return "Nutriólogo asignado";
+        if (userRole === "ENDOCRINOLOGO") return "Endocrinólogo asignado";
+        if (userRole === "PODOLOGO") return "Podólogo asignado";
+        if (userRole === "DOCTOR") return "Doctor asignado";
+        if (userRole === "PSICOLOGO" || userRole === "PSY") return "Psicólogo asignado";
+        return "Especialista asignado";
+    }, [userRole]);
     
     const [isEditingInfo, setIsEditingInfo] = useState(false); // Modo edición activado?
     const [isSavingInfo, setIsSavingInfo] = useState(false);
@@ -107,20 +139,30 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
 
     useEffect(() => {
         let isMounted = true;
-        getUsers()
-            .then((users) => {
-                if (!isMounted) return;
-                const list = Array.isArray(users) ? users : [];
-                setNutriologos(list.filter((u) => u.role === "NUTRI"));
-            })
-            .catch((err) => {
-                console.error("Error cargando nutriologos:", err);
+        const fetchEspecialistas = async () => {
+            try {
+                const params = isAdmin
+                    ? (selectedRole ? { role: selectedRole } : undefined)
+                    : (roleFilters.length === 1 ? { role: roleFilters[0] } : undefined);
+                const res = await api.get("/users/especialistas", params ? { params } : undefined);
+                const list = Array.isArray(res.data?.especialistas) ? res.data.especialistas : [];
+
+                const filtered = isAdmin
+                    ? list
+                    : list.filter((u) => roleFilters.includes((u.role || "").toUpperCase()));
+
+                if (isMounted) setNutriologos(filtered);
+            } catch (err) {
+                console.error("Error cargando especialistas:", err);
                 if (isMounted) setNutriologos([]);
-            });
+            }
+        };
+
+        fetchEspecialistas();
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [isAdmin, roleFilters, selectedRole]);
 
     // --- MANEJO DE EDICIÓN DE INFORMACIÓN (Nutriólogo y Estado) ---
     const handleInfoChange = (e) => {
@@ -205,8 +247,24 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                         {/* El IMC siempre es solo lectura porque viene de Datos Generales */}
                         <input className={styles.readOnlyInput} value={pacienteData?.imc || '-'} readOnly />
                     </div>
+                    {isAdmin && (
+                        <div className={styles.inputGroup}>
+                            <label className={styles.label}>Filtrar por rol</label>
+                            <select
+                                className={styles.editableInput}
+                                value={selectedRole}
+                                onChange={(e) => setSelectedRole(e.target.value)}
+                            >
+                                {adminRoleOptions.map((opt) => (
+                                    <option key={opt.value || "all"} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div className={styles.inputGroup}>
-                        <label className={styles.label}>Nutriólogo Asignado</label>
+                        <label className={styles.label}>{especialistaLabel}</label>
                         <select
                             name="nutriologo"
                             className={isEditingInfo ? styles.editableInput : styles.readOnlyInput}
@@ -215,7 +273,7 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                             disabled={!isEditingInfo}
                         >
                             <option value="">
-                                {isEditingInfo ? "Selecciona un nutriólogo" : "Sin asignar"}
+                                {isEditingInfo ? "Selecciona un especialista" : "Sin asignar"}
                             </option>
                             {nutriologos.map((u) => (
                                 <option key={u.id} value={u.nombre}>

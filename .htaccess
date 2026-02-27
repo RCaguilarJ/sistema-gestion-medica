@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# Habilitar rewrite
+<IfModule mod_rewrite.c>
+RewriteEngine On
+</IfModule>
+
 # Redirigir todas las peticiones de API al backend Node.js
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -7,6 +12,20 @@ RewriteCond %{REQUEST_URI} ^/api/(.*)$
 RewriteRule ^api/(.*)$ http://localhost:4000/api/$1 [P,L]
 
 # Manejar enrutamiento de React (SPA)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.html [L,QSA]
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# No reescribir assets ni favicon
+RewriteRule ^assets/ - [L]
+RewriteRule ^app/assets/ - [L]
+RewriteRule ^favicon\.png$ - [L]
+
+# Dejar pasar archivos/carpetas reales
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Fallback SPA
+RewriteRule ^ index.html [L]
+</IfModule>

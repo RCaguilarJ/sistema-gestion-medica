@@ -993,7 +993,7 @@ function DetallePacientePage() {
     const { user: currentUser } = useAuth();
     const role = (currentUser?.role || '').toUpperCase();
     const isDoctor = role === 'DOCTOR';
-    const isPsych = role === 'PSICOLOGO';
+    const isPsych = role === 'PSICOLOGO' || role === 'PSY';
     const [psicoData, setPsicoData] = useState({
         sesiones: [],
         evaluaciones: [],
@@ -1039,7 +1039,7 @@ function DetallePacientePage() {
     }, [isPsych, paciente?.id]);
 
     const tabs = isPsych
-        ? ['sesiones', 'evaluaciones', 'plan', 'notas']
+        ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas']
         : isDoctor
             ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
             : ['generales', 'clinico', 'citas', 'nutricion', 'documentos'];
@@ -1208,6 +1208,36 @@ function DetallePacientePage() {
             <div className={styles.contentCard}>
                 {isPsych ? (
                     <>
+                        {activeTab === 'generales' && (
+                            <form className={formStyles.formGrid} style={{display:'block'}}>
+                                <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Nombre Completo', 'nombre')}
+                                    {renderField('CURP', 'curp')}
+                                    {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
+                                    {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
+                                    {renderField('Celular', 'celular')}
+                                    {renderField('Email', 'email', 'email')}
+                                </div>
+
+                                <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Calle y Numero', 'calleNumero')}
+                                    {renderField('Colonia', 'colonia')}
+                                    {renderField('Municipio', 'municipio')}
+                                    {renderField('Estado', 'estado')}
+                                    {renderField('CP', 'codigoPostal')}
+                                </div>
+
+                                <h3 className={formStyles.formSectionTitle}>Configuracion</h3>
+                                <div className={formStyles.formGrid}>
+                                    {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
+                                    {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
+                                    {renderField('Grupo/Programa', 'grupo')}
+                                    {renderField('Tipo Terapia', 'tipoTerapia')}
+                                </div>
+                            </form>
+                        )}
                         {activeTab === 'sesiones' && (
                             <PsicologiaSesionesSection
                                 pacienteId={paciente.id}
