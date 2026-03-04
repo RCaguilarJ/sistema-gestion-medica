@@ -41,9 +41,9 @@ function Login() {
     } else {
       setError('Correo electrónico o contraseña incorrectos.');
     }
-  };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              };
 
-  return (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              return (
     <div className={styles.loginPage}>
       <div className={styles.loginCard}>
         <img src={logo} alt="Logo" className={styles.logo} />

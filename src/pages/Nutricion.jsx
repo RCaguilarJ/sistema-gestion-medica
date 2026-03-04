@@ -14,7 +14,7 @@ const ModalVerPlan = ({ plan, onClose }) => {
         <div style={{ padding: '15px' }}>
             <div style={{ marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
                 <h3 style={{ margin: 0, color: '#333' }}>{plan.nombre}</h3>
-                <small style={{ color: '#666' }}>Fecha de inicio: {new Date(plan.fecha).toLocaleDateString()}</small>
+                <small style={{ color: '#666' }}>Fecha de inicio: {new Date(plan.fecha).toLocaleDateString('es-MX')}</small>
             </div>
             <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#555' }}>Detalles del Menú:</label>
@@ -29,12 +29,12 @@ const ModalVerPlan = ({ plan, onClose }) => {
     );
 };
 
-// --- MODAL NUEVO PLAN ---
-const FormularioPlan = ({ onClose, onSave }) => {
+// --- MODAL NUEVO / EDITAR PLAN ---
+const FormularioPlan = ({ onClose, onSave, initialData }) => {
     const [form, setForm] = useState({
-        nombre: "",
-        fecha: new Date().toISOString().slice(0, 10),
-        detalles: ""
+        nombre: initialData?.nombre || "",
+        fecha: initialData?.fecha ? initialData.fecha.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        detalles: initialData?.detalles || ""
     });
     const [saving, setSaving] = useState(false);
 
@@ -113,6 +113,7 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
     const [isSavingInfo, setIsSavingInfo] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState(null);
     const [selectedPlan, setSelectedPlan] = useState(null);
 
     const fetchData = async () => {
@@ -201,107 +202,34 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
 
     // --- MANEJO DE PLANES ---
     const handleSavePlan = async (formData) => {
-        await api.post(`/nutricion/${pacienteId}/planes`, formData);
+        if (editingPlan?.id) {
+            await api.put(`/nutricion/${pacienteId}/planes/${editingPlan.id}`, formData);
+        } else {
+            await api.post(`/nutricion/${pacienteId}/planes`, formData);
+        }
         await fetchData();
         setIsModalOpen(false);
+        setEditingPlan(null);
+    };
+
+    const handleDeletePlan = async (plan) => {
+        if (!isAdmin) return;
+        if (!window.confirm("¿Eliminar este seguimiento?")) return;
+        await api.delete(`/nutricion/${pacienteId}/planes/${plan.id}`);
+        await fetchData();
     };
 
     if (loading) return <div style={{padding:'2rem', textAlign:'center'}}>Cargando...</div>;
 
     return (
         <div className={styles.card}>
-            
-            {/* SECCIÓN 1: INFO NUTRICIONAL EDITABLE */}
-            <div style={{marginBottom: '2rem'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem'}}>
-                    <div>
-                        <h2 className={styles.title}>Información Nutricional</h2>
-                        <p className={styles.subtitle}>Antropometría y planes alimenticios</p>
-                    </div>
-                    
-                    {/* Botón de Editar / Guardar */}
-                    <div>
-                        {isEditingInfo ? (
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <Button size="small" variant="secondary" onClick={toggleEdit} disabled={isSavingInfo}>
-                                    <FaTimes /> Cancelar
-                                </Button>
-                                <Button size="small" onClick={handleSaveInfo} disabled={isSavingInfo}>
-                                    {isSavingInfo ? <FaSpinner className="fa-spin"/> : <FaSave />} Guardar
-                                </Button>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={toggleEdit}
-                                style={{background:'transparent', border:'1px solid #ddd', borderRadius:'6px', padding:'5px 10px', cursor:'pointer', color:'#555', fontWeight:'600', display:'flex', alignItems:'center', gap:'5px'}}
-                            >
-                                <FaEdit /> Editar Info
-                            </button>
-                        )}
-                    </div>
-                </div>
 
-                <div className={styles.gridRow}>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>IMC Actual</label>
-                        {/* El IMC siempre es solo lectura porque viene de Datos Generales */}
-                        <input className={styles.readOnlyInput} value={pacienteData?.imc || '-'} readOnly />
-                    </div>
-                    {isAdmin && (
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Filtrar por rol</label>
-                            <select
-                                className={styles.editableInput}
-                                value={selectedRole}
-                                onChange={(e) => setSelectedRole(e.target.value)}
-                            >
-                                {adminRoleOptions.map((opt) => (
-                                    <option key={opt.value || "all"} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>{especialistaLabel}</label>
-                        <select
-                            name="nutriologo"
-                            className={isEditingInfo ? styles.editableInput : styles.readOnlyInput}
-                            value={infoForm.nutriologo}
-                            onChange={handleInfoChange}
-                            disabled={!isEditingInfo}
-                        >
-                            <option value="">
-                                {isEditingInfo ? "Selecciona un especialista" : "Sin asignar"}
-                            </option>
-                            {nutriologos.map((u) => (
-                                <option key={u.id} value={u.nombre}>
-                                    {u.nombre} ({u.email})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>Estado Nutricional</label>
-                        <input 
-                            name="estado"
-                            className={isEditingInfo ? styles.editableInput : styles.readOnlyInput} 
-                            value={infoForm.estado}
-                            onChange={handleInfoChange}
-                            readOnly={!isEditingInfo}
-                            placeholder={isEditingInfo ? "Ej. Obesidad, Normal..." : "-"}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* SECCIÓN 2: PLANES (Con botón azul Nuevo Plan a la derecha) */}
+            {/* SECCIÓN 2: PLANES (Seguimientos) */}
             <div style={{marginTop: '30px'}}>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-                    <h3 className={styles.sectionTitle} style={{margin:0}}>Planes de Alimentación</h3>
-                    <Button size="small" onClick={() => setIsModalOpen(true)}>
-                        <FaPlus /> Nuevo Plan
+                    <h3 className={styles.sectionTitle} style={{margin:0}}>Seguimientos</h3>
+                    <Button size="small" onClick={() => { setEditingPlan(null); setIsModalOpen(true); }}>
+                        <FaPlus /> Nuevo seguimiento
                     </Button>
                 </div>
                 
@@ -320,11 +248,11 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                                 {data.planes.map((plan, idx) => (
                                     <tr key={idx} style={{borderTop: '1px solid #eee'}}>
                                         <td style={{padding:'12px', fontWeight:'600'}}>{plan.nombre}</td>
-                                        <td style={{padding:'12px'}}>{new Date(plan.fecha).toLocaleDateString()}</td>
+                                        <td style={{padding:'12px'}}>{new Date(plan.fecha).toLocaleDateString('es-MX')}</td>
                                         <td style={{padding:'12px', color:'#666', fontSize:'0.9rem', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                                             {plan.detalles || '-'}
                                         </td>
-                                        <td style={{padding:'12px', textAlign:'center'}}>
+                                        <td style={{padding:'12px', textAlign:'center', display:'flex', justifyContent:'center', gap:'12px'}}>
                                             <button 
                                                 onClick={() => setSelectedPlan(plan)}
                                                 style={{background:'none', border:'none', cursor:'pointer', color:'#007bff', fontSize:'1.1rem'}}
@@ -332,6 +260,22 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                                             >
                                                 <FaEye />
                                             </button>
+                                            <button
+                                                onClick={() => { setEditingPlan(plan); setIsModalOpen(true); }}
+                                                style={{background:'none', border:'none', cursor:'pointer', color:'#28a745', fontSize:'1.05rem'}}
+                                                title="Editar seguimiento"
+                                            >
+                                                <FaEdit />
+                                            </button>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={() => handleDeletePlan(plan)}
+                                                    style={{background:'none', border:'none', cursor:'pointer', color:'#dc3545', fontSize:'1.05rem'}}
+                                                    title="Borrar"
+                                                >
+                                                    <FaTimes />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -341,14 +285,14 @@ const Nutricion = ({ pacienteId, pacienteData }) => {
                 ) : (
                     <div className={styles.emptyState}>
                         <FaRegFileAlt className={styles.emptyIcon} />
-                        <p className={styles.emptyText}>No hay planes nutricionales registrados</p>
+                        <p className={styles.emptyText}>No hay seguimientos registrados</p>
                     </div>
                 )}
             </div>
 
             {/* Modales */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nuevo Plan Nutricional">
-                <FormularioPlan onClose={() => setIsModalOpen(false)} onSave={handleSavePlan} />
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingPlan(null); }} title={editingPlan ? "Editar Plan Nutricional" : "Nuevo Plan Nutricional"}>
+                <FormularioPlan onClose={() => { setIsModalOpen(false); setEditingPlan(null); }} onSave={handleSavePlan} initialData={editingPlan} />
             </Modal>
 
             <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title="Detalle del Plan">

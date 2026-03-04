@@ -7,6 +7,7 @@ import Tag from "../components/ui/Tag.jsx";
 import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave, FaTrash } from "react-icons/fa";
 import Modal from "../components/ui/Modal.jsx";
 import DetallePacienteModal from "../components/ui/DetallePacienteModal.jsx";
+import api from "../services/api.js";
 
 import {
   getPacientes,
@@ -77,6 +78,16 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [specialistRole, setSpecialistRole] = useState("");
+  const [specialistId, setSpecialistId] = useState("");
+  const [specialistOptions, setSpecialistOptions] = useState([]);
+  const [loadingSpecialists, setLoadingSpecialists] = useState(false);
+  const formRef = useRef(null);
+  const nombreRef = useRef(null);
+  const curpRef = useRef(null);
+  const emailRef = useRef(null);
+  const telefonoRef = useRef(null);
+  const celularRef = useRef(null);
 
   useEffect(() => {
     if (formData.fechaNacimiento) {
@@ -97,6 +108,52 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
+  const clearField = (name) => setFormData((prev) => ({ ...prev, [name]: "" }));
+  const renderClearButton = (name) =>
+    isAdmin && formData[name]
+      ? (
+        <button
+          type="button"
+          onClick={() => clearField(name)}
+          className={styles.clearButton}
+          title="Borrar campo"
+        >
+          ×
+        </button>
+      )
+      : null;
+
+  const focusProblemField = (err) => {
+    const backendField =
+      err?.response?.data?.field ||
+      err?.response?.data?.errors?.[0]?.path ||
+      (/curp/i.test(err?.response?.data?.error || "") ? "curp" : null) ||
+      (/curp/i.test(err?.response?.data?.message || "") ? "curp" : null);
+
+    const refMap = {
+      nombre: nombreRef,
+      curp: curpRef,
+      email: emailRef,
+      telefono: telefonoRef,
+      celular: celularRef,
+    };
+
+    const targetName = backendField || formRef.current?.querySelector(":invalid")?.name;
+    const targetRef = targetName && refMap[targetName];
+
+    if (targetRef?.current) {
+      targetRef.current.focus();
+      targetRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    const fallback = formRef.current?.querySelector(":invalid");
+    if (fallback) {
+      fallback.focus();
+      fallback.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -109,6 +166,22 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
         medicoId: formData.medicoId || citaOrigen?.medicoId,
       });
 
+      // Reset all specialist ids before setting selected one
+      delete payload.medicoId;
+      delete payload.nutriologoId;
+      delete payload.psicologoId;
+      delete payload.endocrinologoId;
+      delete payload.podologoId;
+
+      if (specialistRole && specialistId) {
+        const idNum = Number(specialistId);
+        if (specialistRole === "DOCTOR") payload.medicoId = idNum;
+        else if (specialistRole === "NUTRI") payload.nutriologoId = idNum;
+        else if (specialistRole === "PSICOLOGO" || specialistRole === "PSY") payload.psicologoId = idNum;
+        else if (specialistRole === "ENDOCRINOLOGO") payload.endocrinologoId = idNum;
+        else if (specialistRole === "PODOLOGO") payload.podologoId = idNum;
+      }
+
       if (citaOrigen?.id) {
         await createPacienteFromCita(citaOrigen.id, payload);
       } else {
@@ -116,11 +189,8 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
       }
       onSuccess();
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.message ||
-          "Los datos ingresados no coinciden. Verifique y vuelva a intentar. Error al guardar."
-      );
+      setError("Datos inválidos o repetidos. Verifique y vuelva a intentar.");
+      focusProblemField(err);
     } finally {
       setIsSaving(false);
     }
@@ -128,8 +198,31 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
   const redStar = <span style={{ color: "red" }}>*</span>;
 
+  // carga especialistas según rol
+  useEffect(() => {
+    const loadSpecialists = async () => {
+      if (!specialistRole) {
+        setSpecialistOptions([]);
+        setSpecialistId("");
+        return;
+      }
+      setLoadingSpecialists(true);
+      try {
+        const res = await api.get("/users/especialistas", { params: { role: specialistRole } });
+        const list = Array.isArray(res.data?.especialistas) ? res.data.especialistas : [];
+        setSpecialistOptions(list);
+      } catch (err) {
+        console.error("Error cargando especialistas:", err);
+        setSpecialistOptions([]);
+      } finally {
+        setLoadingSpecialists(false);
+      }
+    };
+    loadSpecialists();
+  }, [specialistRole]);
+
   return (
-    <form onSubmit={handleSubmit} className={styles.modalFormContainer}>
+    <form ref={formRef} onSubmit={handleSubmit} className={styles.modalFormContainer}>
       <p className={styles.requiredNote}>Los campos marcados con {redStar} son obligatorios</p>
 
       <div>
@@ -138,7 +231,12 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
         <div style={{ marginBottom: "1rem" }}>
           <label className={styles.label}>Nombre del Paciente {redStar}</label>
-          <input className={styles.inputFull} name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" required />
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input ref={nombreRef} className={styles.inputFull} name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" required />
+            {isAdmin && formData.nombre && (
+              <button type="button" onClick={() => clearField("nombre")} className={styles.clearButton}>×</button>
+            )}
+          </div>
         </div>
 
         <div className={styles.formGrid}>
@@ -161,7 +259,12 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
           </div>
           <div>
             <label className={styles.label}>CURP {redStar}</label>
-            <input className={styles.inputFull} name="curp" value={formData.curp} onChange={handleChange} placeholder="18 caracteres" maxLength={18} required />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input ref={curpRef} className={styles.inputFull} name="curp" value={formData.curp} onChange={handleChange} placeholder="18 caracteres" maxLength={18} required />
+              {isAdmin && formData.curp && (
+                <button type="button" onClick={() => clearField("curp")} className={styles.clearButton}>×</button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -193,11 +296,21 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
           </div>
           <div>
             <label className={styles.label}>Teléfono (Opcional)</label>
-            <input className={styles.inputFull} name="telefono" value={formData.telefono} onChange={handleChange} placeholder="Teléfono fijo" />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input ref={telefonoRef} className={styles.inputFull} name="telefono" value={formData.telefono} onChange={handleChange} placeholder="Teléfono fijo" />
+              {isAdmin && formData.telefono && (
+                <button type="button" onClick={() => clearField("telefono")} className={styles.clearButton}>×</button>
+              )}
+            </div>
           </div>
           <div>
             <label className={styles.label}>Celular {redStar}</label>
-            <input className={styles.inputFull} name="celular" value={formData.celular} onChange={handleChange} placeholder="10 dígitos" required />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input ref={celularRef} className={styles.inputFull} name="celular" value={formData.celular} onChange={handleChange} placeholder="10 dígitos" required />
+              {isAdmin && formData.celular && (
+                <button type="button" onClick={() => clearField("celular")} className={styles.clearButton}>×</button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -230,7 +343,12 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
           </div>
           <div>
             <label className={styles.label}>Responsable {redStar}</label>
-            <input className={styles.inputFull} name="responsable" value={formData.responsable} onChange={handleChange} placeholder="Nombre del tutor o contacto" required />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input className={styles.inputFull} name="responsable" value={formData.responsable} onChange={handleChange} placeholder="Nombre del tutor o contacto" required />
+              {isAdmin && formData.responsable && (
+                <button type="button" onClick={() => clearField("responsable")} className={styles.clearButton}>×</button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -247,7 +365,52 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
             required
             style={{ resize: "none", fontFamily: "inherit" }}
           />
+          {isAdmin && formData.motivoConsulta && (
+            <div style={{ textAlign: "right", marginTop: "6px" }}>
+              <button type="button" onClick={() => clearField("motivoConsulta")} className={styles.clearButtonInline}>Borrar</button>
+            </div>
+          )}
           <div className={styles.charCount}>{formData.motivoConsulta.length}/500 caracteres</div>
+        </div>
+      </div>
+
+      <div className={styles.divider}></div>
+
+      <div>
+        <h3 className={styles.sectionHeader}>Asignación de especialista</h3>
+        <p className={styles.sectionSub}>Define quién llevará el seguimiento principal.</p>
+
+        <div className={styles.formGrid}>
+          <div>
+            <label className={styles.label}>Especialidad</label>
+            <select
+              className={styles.inputFull}
+              value={specialistRole}
+              onChange={(e) => { setSpecialistRole(e.target.value); setSpecialistId(""); }}
+            >
+              <option value="">Selecciona una especialidad</option>
+              <option value="DOCTOR">Médico</option>
+              <option value="NUTRI">Nutriólogo</option>
+              <option value="PSICOLOGO">Psicólogo</option>
+              <option value="PSY">Psych (PSY)</option>
+              <option value="ENDOCRINOLOGO">Endocrinólogo</option>
+              <option value="PODOLOGO">Podólogo</option>
+            </select>
+          </div>
+          <div>
+            <label className={styles.label}>Especialista asignado</label>
+            <select
+              className={styles.inputFull}
+              value={specialistId}
+              onChange={(e) => setSpecialistId(e.target.value)}
+              disabled={!specialistRole || loadingSpecialists}
+            >
+              <option value="">{loadingSpecialists ? "Cargando..." : "Selecciona un especialista"}</option>
+              {specialistOptions.map((u) => (
+                <option key={u.id} value={u.id}>{u.nombre} ({u.email})</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -309,7 +472,10 @@ function Pacientes() {
   const [citasPortal, setCitasPortal] = useState([]);
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const isAdmin = (currentUser?.role || "").toUpperCase() === "ADMIN";
+  const isAdmin = (() => {
+    const role = (currentUser?.role || "").toUpperCase();
+    return role === "ADMIN" || role === "SUPER_ADMIN";
+  })();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstatus, setFilterEstatus] = useState("");

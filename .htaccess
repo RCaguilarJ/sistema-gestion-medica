@@ -1,31 +1,29 @@
-RewriteEngine On
-
-# Habilitar rewrite
 <IfModule mod_rewrite.c>
-RewriteEngine On
+    RewriteEngine On
+    RewriteBase /
+
+
+    Header always set Access-Control-Allow-Origin "https://amdj.desingsgdl.app"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Signature, X-Source"
+    Header always set Access-Control-Allow-Credentials "true"
+
+
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+
+
+    RewriteCond %{REQUEST_URI} ^/api/
+    RewriteRule ^api/(.*)$ http://127.0.0.1:4000/api/$1 [P,L]
+
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+
+    RewriteRule ^ index.html [L]
 </IfModule>
 
-# Redirigir todas las peticiones de API al backend Node.js
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} ^/api/(.*)$
-RewriteRule ^api/(.*)$ http://localhost:4000/api/$1 [P,L]
 
-# Manejar enrutamiento de React (SPA)
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-
-# No reescribir assets ni favicon
-RewriteRule ^assets/ - [L]
-RewriteRule ^app/assets/ - [L]
-RewriteRule ^favicon\.png$ - [L]
-
-# Dejar pasar archivos/carpetas reales
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# Fallback SPA
-RewriteRule ^ index.html [L]
-</IfModule>
+Options -Indexes

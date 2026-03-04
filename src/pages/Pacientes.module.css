@@ -234,6 +234,25 @@
 }
 .toggleActive .toggleKnob { left: 22px; }
 
+.clearButton {
+  min-width: 32px;
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+  border-radius: 6px;
+  cursor: pointer;
+  height: 42px;
+  line-height: 1;
+}
+
+.clearButtonInline {
+  border: none;
+  background: transparent;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 640px) {
   .formGrid { grid-template-columns: 1fr; }
   .filtersRow { flex-direction: column; }

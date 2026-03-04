@@ -183,15 +183,7 @@ const Documentos = ({ pacienteId }) => {
       )}
 
       <div className={styles.tableWrapper}>
-        <div className={styles.tableHead}>
-          <span>Nombre</span>
-          <span>Categoría</span>
-          <span>Fecha</span>
-          <span>Cargado por</span>
-          <span>Tamaño</span>
-          <span className={styles.actionsCol}>Acciones</span>
-        </div>
-
+        {/* Encabezados ocultos según solicitud del usuario */}
         {loading ? (
           <div className={styles.skeletonList}>
             {[1, 2, 3].map((key) => (
@@ -216,10 +208,6 @@ const Documentos = ({ pacienteId }) => {
                   <p className={styles.docName}>{doc.nombre}</p>
                   <p className={styles.docMeta}>{doc.descripcion || "Sin descripción"}</p>
                 </div>
-                <span className={styles.docTag}>{doc.categoria || "General"}</span>
-                <span className={styles.docMeta}>{formatDate(doc.fecha)}</span>
-                <span className={styles.docMeta}>{doc.cargado_por || "—"}</span>
-                <span className={styles.docMeta}>{formatSize(doc.tamano)}</span>
                 <div className={styles.rowActions}>
                   <button
                     type="button"

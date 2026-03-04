@@ -16,8 +16,18 @@ export const createCita = async (pacienteId, citaData) => {
   return response.data;
 };
 
+export const deleteCita = async (citaId) => {
+  const response = await api.delete(`/citas/${citaId}`);
+  return response.data;
+};
+
 export const updateCitaEstado = async (citaId, nuevoEstado) => {
   const response = await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
+  return response.data;
+};
+
+export const updateCita = async (citaId, data) => {
+  const response = await api.put(`/citas/${citaId}`, data);
   return response.data;
 };
 
@@ -46,6 +56,16 @@ export const createPacienteFromCita = async (citaId, pacienteData) => {
 
 export const getConsultasByPaciente = async (pacienteId) => {
   const response = await api.get(`/consultas/paciente/${pacienteId}`);
+  return response.data;
+};
+
+export const updateConsulta = async (consultaId, data) => {
+  const response = await api.put(`/consultas/${consultaId}`, data);
+  return response.data;
+};
+
+export const deleteConsulta = async (consultaId) => {
+  const response = await api.delete(`/consultas/${consultaId}`);
   return response.data;
 };
 
