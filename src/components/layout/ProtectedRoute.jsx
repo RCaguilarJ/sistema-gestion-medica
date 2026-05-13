@@ -31,7 +31,7 @@ export function AdminRoute({ children }) {
   }
 
   const role = (user?.role || '').toUpperCase();
-  if (role !== 'ADMIN') {
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
     return <Navigate to="/app" replace />;
   }
 

@@ -5,6 +5,8 @@
   # Proxy /api hacia Node.js en localhost:3000
   ProxyPass /api http://127.0.0.1:3000/
   ProxyPassReverse /api http://127.0.0.1:3000/
+  ProxyPass /uploads http://127.0.0.1:3000/uploads
+  ProxyPassReverse /uploads http://127.0.0.1:3000/uploads
 </IfModule>
 
 # Comprime respuestas
@@ -21,6 +23,8 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+  RewriteCond %{REQUEST_URI} !^/api(/|$)
+  RewriteCond %{REQUEST_URI} !^/uploads(/|$)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.html [L]

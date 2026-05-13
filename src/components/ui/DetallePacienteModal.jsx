@@ -42,6 +42,8 @@ function DetallePacienteModal({ pacienteId, isOpen, onClose }) {
           <div><strong>Correo:</strong> {paciente.email || 'N/A'}</div>
           <div><strong>Teléfono:</strong> {paciente.telefono || 'N/A'}</div>
           <div><strong>Municipio:</strong> {paciente.municipio || 'N/A'}</div>
+          <div><strong>Estatura:</strong> {paciente.estatura ? `${paciente.estatura} m` : 'N/A'}</div>
+          <div><strong>Talla de cintura:</strong> {paciente.talla || 'N/A'}</div>
           <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <Button onClick={handleOpenFull} variant="secondary"><FaExternalLinkAlt /> Ver completo</Button>
             <Button onClick={onClose}>Cerrar</Button>

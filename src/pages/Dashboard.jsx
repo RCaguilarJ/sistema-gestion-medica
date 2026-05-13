@@ -203,7 +203,10 @@ function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isAdmin = useMemo(() => (user?.role || '').toUpperCase() === 'ADMIN', [user]);
+  const isAdmin = useMemo(() => {
+    const role = (user?.role || '').toUpperCase();
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  }, [user]);
   const isPsych = useMemo(() => {
     const role = (user?.role || '').toUpperCase();
     return role === 'PSICOLOGO' || role === 'PSY';
@@ -258,7 +261,7 @@ function Dashboard() {
     };
 
     fetchStats();
-  }, [isAdmin, user]);
+  }, [isAdmin, isPsych, user]);
 
   if (loading || !stats) {
     return (

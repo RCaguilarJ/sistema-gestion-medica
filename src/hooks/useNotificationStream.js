@@ -84,7 +84,7 @@ export default function useNotificationStream(options = {}) {
         pushMany(items);
         // Si solo estás en polling, marca estado
         if (status !== "connected") setStatus("polling");
-      } catch (err) {
+      } catch {
         if (!mountedRef.current) return;
         // No tronar: solo marcar error
         setStatus("error");

@@ -5,9 +5,12 @@ function Tag({ label }) {
   const getColor = () => {
     const lowerLabel = label.toLowerCase();
     if (lowerLabel === 'activo') return styles.green;
+    if (lowerLabel === 'pagado') return styles.green;
     if (lowerLabel === 'inactivo') return styles.grey;
     if (lowerLabel === 'alto') return styles.red;
+    if (['vencido', 'atrasado', 'moroso', 'cancelado'].includes(lowerLabel)) return styles.red;
     if (lowerLabel === 'medio') return styles.yellow;
+    if (['pendiente', 'parcial'].includes(lowerLabel)) return styles.yellow;
     if (lowerLabel === 'bajo') return styles.green;
     return styles.grey;
   };

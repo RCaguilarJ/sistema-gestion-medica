@@ -3,26 +3,6 @@ import { FiUpload, FiTrash2, FiDownload, FiFileText, FiRefreshCw } from "react-i
 import api from "../services/api";
 import styles from "./Documentos.module.css";
 
-const formatDate = (value) => {
-  if (!value) return "-";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleDateString("es-MX", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const formatSize = (value) => {
-  if (!value && value !== 0) return "-";
-  const size = typeof value === "number" ? value : parseFloat(value);
-  if (Number.isNaN(size)) return value;
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-};
-
 const Documentos = ({ pacienteId }) => {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +80,7 @@ const Documentos = ({ pacienteId }) => {
 
   const getFilenameFromDisposition = (headerValue, fallback) => {
     if (!headerValue) return fallback;
-    const match = /filename\*=UTF-8''([^;]+)|filename="?([^\";]+)"?/i.exec(headerValue);
+    const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(headerValue);
     const name = decodeURIComponent(match?.[1] || match?.[2] || "").trim();
     return name || fallback;
   };

@@ -29,7 +29,7 @@ const UserRoleManager = ({ token }) => {
       // Recargar usuarios
       const data = await fetchUsers(token);
       setUsers(data);
-    } catch (err) {
+    } catch {
       setError('Error al crear usuario');
     } finally {
       setCreating(false);
@@ -42,7 +42,7 @@ const UserRoleManager = ({ token }) => {
         setLoading(true);
         const data = await fetchUsers(token);
         setUsers(data);
-      } catch (err) {
+      } catch {
         setError('Error al cargar usuarios');
       } finally {
         setLoading(false);
@@ -56,7 +56,7 @@ const UserRoleManager = ({ token }) => {
       setUpdating(true);
       await updateUserRole(userId, newRole, token);
       setUsers(users => users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    } catch (err) {
+    } catch {
       setError('Error al actualizar rol');
     } finally {
       setUpdating(false);

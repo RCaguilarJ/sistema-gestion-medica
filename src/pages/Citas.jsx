@@ -27,6 +27,15 @@ const normalizeStatus = (value) => {
   return value.toString();
 };
 
+const ROLE_LABELS = {
+  DOCTOR: "Doctor",
+  NUTRI: "Nutriólogo",
+  PSICOLOGO: "Psicólogo",
+  ENDOCRINOLOGO: "Endocrinólogo",
+  PODOLOGO: "Podólogo",
+  OTRO: "Otros",
+};
+
 function Citas() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -37,20 +46,15 @@ function Citas() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const isAdmin = useMemo(() => {
-    const role = (user?.role || "").toUpperCase();
-    return role === "ADMIN" || role === "SUPER_ADMIN";
-  }, [user]);
-
   const medicoId = useMemo(() => {
     if (!user?.id) return null;
     const role = (user?.role || "").toUpperCase();
-    return role === "ADMIN" ? null : user.id;
+    return role === "ADMIN" || role === "SUPER_ADMIN" ? null : user.id;
   }, [user]);
 
   const canManage = useMemo(() => {
     const role = (user?.role || "").toUpperCase();
-    return role === "ADMIN" || role === "DOCTOR" || role === "NUTRI" || role === "ENDOCRINOLOGO" || role === "PODOLOGO" || role === "PSICOLOGO";
+    return role === "ADMIN" || role === "SUPER_ADMIN" || role === "DOCTOR" || role === "NUTRI" || role === "ENDOCRINOLOGO" || role === "PODOLOGO" || role === "PSICOLOGO";
   }, [user]);
 
   useEffect(() => {
@@ -138,16 +142,9 @@ function Citas() {
     return "OTRO";
   };
 
-  const roleColors = {
-    DOCTOR: "#2563eb",
-    NUTRI: "#10b981",
-    PSICOLOGO: "#f59e0b",
-    ENDOCRINOLOGO: "#8b5cf6",
-    PODOLOGO: "#ef4444",
-    OTRO: "#64748b",
-  };
+  const roleLabels = useMemo(() => ROLE_LABELS, []);
 
-  const roleLabels = {
+  const _ROLE_LABELS_UNUSED = {
     DOCTOR: "Doctor",
     NUTRI: "Nutriólogo",
     PSICOLOGO: "Psicólogo",
@@ -204,15 +201,6 @@ function Citas() {
 
   const weekdayLabels = ["L", "M", "M", "J", "V", "S", "D"];
 
-  const legendItems = useMemo(
-    () =>
-      Object.keys(roleColors).map((roleKey) => ({
-        label: roleLabels[roleKey] || roleKey,
-        color: roleColors[roleKey],
-      })),
-    []
-  );
-
   const chips = useMemo(() => {
     const totals = new Map();
     citas.forEach((cita) => {
@@ -225,7 +213,7 @@ function Citas() {
     return Array.from(totals.entries()).map(
       ([roleKey, count]) => `${roleLabels[roleKey] || "Otros"}: ${count}`
     );
-  }, [citas, currentYear, currentMonth]);
+  }, [citas, currentYear, currentMonth, roleLabels]);
 
   const weeksData = useMemo(
     () =>
@@ -381,4 +369,3 @@ function Citas() {
 }
 
 export default Citas;
-

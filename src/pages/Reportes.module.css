@@ -1,7 +1,5 @@
-/* src/pages/Reportes.module.css */
-
 .container {
-  padding-bottom: 80px; /* Espacio para la barra inferior */
+  padding-bottom: 96px;
 }
 
 .header {
@@ -19,29 +17,111 @@
   font-size: 1rem;
   color: #666;
   margin: 0.5rem 0 0 0;
+  max-width: 880px;
 }
 
-/* Layout Principal */
 .layout {
+  display: block;
+}
+
+.mainColumn {
   display: grid;
-  grid-template-columns: 2.5fr 1fr; /* Izquierda amplia, Derecha resumen */
   gap: 2rem;
 }
 
-/* Grid de Plantillas */
-.templatesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+.filtersCard,
+.summaryCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
 }
 
-/* Tarjeta de Reporte */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.sectionText {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.clearFiltersBtn {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.clearFiltersBtn:hover {
+  background: #f8fafc;
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.input,
+.select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #111827;
+  background: #fff;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.templatesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .reportCard {
   background: #fff;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 1.35rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -51,12 +131,12 @@
 
 .reportCard:hover {
   border-color: #b0b0b0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .activeCard {
   border-color: #007bff;
-  background-color: #f0f7ff; /* Azul muy claro */
+  background-color: #f0f7ff;
   box-shadow: 0 0 0 1px #007bff;
 }
 
@@ -74,69 +154,14 @@
   font-weight: 600;
   font-size: 1rem;
   color: #333;
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.35rem 0;
 }
 
 .cardDesc {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: #666;
   margin: 0;
-  line-height: 1.4;
-}
-
-/* Filtros */
-.filtersCard {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.sectionTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-}
-
-.sectionText {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-
-.filterRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #444;
-}
-
-.input, .select {
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-/* Barra Lateral (Resumen) */
-.summaryCard {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  height: fit-content;
+  line-height: 1.45;
 }
 
 .summaryList {
@@ -148,21 +173,57 @@
 .summaryItem {
   display: flex;
   justify-content: space-between;
+  gap: 1rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid #f0f0f0;
   font-size: 0.95rem;
 }
 
-.summaryItem:last-child { border-bottom: none; }
+.summaryItem:last-child {
+  border-bottom: none;
+}
 
-.summaryVal { font-weight: 700; }
-.redText { color: #de350b; }
+.summaryVal {
+  font-weight: 700;
+}
 
-/* Barra Inferior Flotante */
+.redText {
+  color: #de350b;
+}
+
+.activeFiltersCard {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #eef2f7;
+}
+
+.smallTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.activeFiltersList {
+  margin: 0;
+  padding-left: 1rem;
+  color: #475569;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.emptyStateText {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .bottomBar {
   position: fixed;
   bottom: 0;
-  left: 0; /* Ajustar si tienes sidebar fija */
+  left: 0;
   right: 0;
   background: #fff;
   border-top: 1px solid #ddd;
@@ -170,20 +231,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  gap: 1rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   z-index: 100;
-  /* Ajuste para que no tape el sidebar si existe, o usar margin-left */
-  margin-left: 0; 
 }
 
-/* Ajuste responsive */
-@media (min-width: 768px) {
-    /* Si tienes un sidebar de 240px, ajusta esto */
-    .bottomBar { margin-left: 0; } 
+.barInfo h4 {
+  margin: 0;
+  font-size: 1rem;
 }
 
-.barInfo h4 { margin: 0; font-size: 1rem; }
-.barInfo p { margin: 0; font-size: 0.85rem; color: #666; }
+.barInfo p {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.85rem;
+  color: #666;
+}
 
 .bottomActions {
   display: flex;
@@ -191,30 +253,12 @@
   align-items: center;
 }
 
-.downloadOutlineBtn {
-  background-color: #ffffff;
-  color: #007bff;
-  border: 1px solid #007bff;
-  padding: 0.7rem 1.2rem;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.downloadOutlineBtn:hover {
-  background-color: #f0f7ff;
-}
-
 .downloadBtn {
   background-color: #007bff;
-  color: white;
+  color: #fff;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  padding: 0.8rem 1.4rem;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -223,33 +267,26 @@
   font-size: 1rem;
 }
 
-.downloadBtn:hover { background-color: #0056b3; }
-
-@media (max-width: 768px) {
-  .layout { grid-template-columns: 1fr; }
-  .templatesGrid { grid-template-columns: 1fr; }
-  .filterRow { grid-template-columns: 1fr; }
-  .bottomBar { flex-direction: column; gap: 1rem; align-items: stretch; text-align: center; }
-  .bottomActions { flex-direction: column; }
+.downloadBtn:hover {
+  background-color: #0056b3;
 }
 
-@media (max-width: 1024px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 900px) {
+  .filtersGrid,
   .templatesGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .filterRow {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .container {
     padding-bottom: 1.5rem;
+  }
+
+  .sectionHeader,
+  .bottomBar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .bottomBar {
@@ -257,5 +294,21 @@
     margin-top: 1.5rem;
     box-shadow: none;
     padding: 1rem;
+  }
+
+  .bottomActions {
+    justify-content: stretch;
+  }
+
+  .downloadBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .filtersGrid,
+  .templatesGrid {
+    grid-template-columns: 1fr;
   }
 }

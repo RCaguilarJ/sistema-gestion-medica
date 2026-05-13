@@ -9,13 +9,13 @@ import Tag from '../components/ui/Tag.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { getUsers, createUser, deleteUser, updateUser } from '../services/userService.js';
 import { useAuth } from "../hooks/AuthContext.jsx";
-import { Navigate } from "react-router-dom";
 import {
   FaUsers, FaBook, FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaSearch
 } from 'react-icons/fa';
 
 const ROLE_OPTIONS = [
   { value: 'ADMIN', label: 'Administrador' },
+  { value: 'RECEPCION', label: 'Recepción' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'NUTRI', label: 'Nutriólogo' },
   { value: 'ENDOCRINOLOGO', label: 'Endocrinólogo' },
@@ -223,8 +223,6 @@ const ModalAgregarCatalogo = ({ title, onClose, onSave }) => {
 // --- 5. COMPONENTE PRINCIPAL ---
 export default function Configuracion() {
   const { user: currentUser } = useAuth();
-
-  if (currentUser?.role !== 'ADMIN') return <Navigate to="/app" replace />;
 
   const [activeTab, setActiveTab] = useState('usuarios');
   

@@ -22,7 +22,8 @@ function Layout() {
   const navigate = useNavigate();
   const isLaptopUp = useMediaQuery("(min-width: 769px)");
 
-  const isAdmin = (user?.role || "").toUpperCase() === "ADMIN";
+  const role = (user?.role || "").toUpperCase();
+  const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
   const displayName =
     isAdmin && isLaptopUp ? "Admin" : user?.nombre || "Usuario";
 

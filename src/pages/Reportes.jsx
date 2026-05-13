@@ -1,332 +1,771 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import {
+  FaCalendarCheck,
+  FaDownload,
+  FaExclamationTriangle,
+  FaFileAlt,
+  FaFileMedical,
+  FaMapMarkedAlt,
+} from 'react-icons/fa';
 import styles from './Reportes.module.css';
-import { FaFileAlt, FaFileMedical, FaCalendarCheck, FaMapMarkedAlt, FaExclamationTriangle, FaDownload } from 'react-icons/fa';
-import { useAuth } from "../hooks/AuthContext.jsx";
+import { useAuth } from '../hooks/AuthContext.jsx';
 import { getAllPacientesByDoctor, getPacientes } from '../services/pacienteService.js';
-import { getCitasPortal } from '../services/consultaCitaService.js';
+import {
+  getCanonicalMunicipioJalisco,
+  matchesMunicipioJalisco,
+  municipiosJalisco,
+} from '../constants/municipiosJalisco.js';
 
-// --- Definicion de Plantillas ---
 const templates = [
-  { id: 'general', title: 'Reporte General de Beneficiarios', desc: 'Lista completa con datos demograficos y clinicos.', icon: <FaFileAlt /> },
-  { id: 'glucemico', title: 'Reporte de Control Glucemico', desc: 'HbA1c y metas de control por paciente.', icon: <FaFileMedical /> },
-  { id: 'adherencia', title: 'Reporte de Adherencia', desc: 'Asistencia a citas y seguimiento de tratamiento.', icon: <FaCalendarCheck /> },
-  { id: 'municipio', title: 'Reporte por Municipio', desc: 'Distribucion geografica de beneficiarios.', icon: <FaMapMarkedAlt /> },
-  { id: 'riesgo', title: 'Reporte de Pacientes en Riesgo', desc: 'Listado de pacientes que requieren atencion prioritaria.', icon: <FaExclamationTriangle /> },
+  {
+    id: 'general',
+    title: 'Reporte General de Beneficiarios',
+    desc: 'Exporta pacientes con el encabezado completo segun los filtros seleccionados.',
+    icon: <FaFileAlt />,
+    sheetName: 'General',
+  },
+  {
+    id: 'glucemico',
+    title: 'Reporte de Control Glucemico',
+    desc: 'Mantiene el mismo encabezado y prioriza pacientes con datos glucemicos al ordenar.',
+    icon: <FaFileMedical />,
+    sheetName: 'Control Glucemico',
+  },
+  {
+    id: 'adherencia',
+    title: 'Reporte de Adherencia',
+    desc: 'Mantiene el mismo encabezado y ordena por fecha de consulta mas reciente.',
+    icon: <FaCalendarCheck />,
+    sheetName: 'Adherencia',
+  },
+  {
+    id: 'municipio',
+    title: 'Reporte por Municipio',
+    desc: 'Exporta pacientes del municipio filtrado con el mismo encabezado del reporte.',
+    icon: <FaMapMarkedAlt />,
+    sheetName: 'Municipio',
+  },
+  {
+    id: 'riesgo',
+    title: 'Reporte de Pacientes en Riesgo',
+    desc: 'Mantiene el mismo encabezado y prioriza pacientes con mayor riesgo al ordenar.',
+    icon: <FaExclamationTriangle />,
+    sheetName: 'Pacientes en Riesgo',
+  },
 ];
 
-const municipiosJalisco = ["Guadalajara", "Zapopan", "Tlaquepaque", "Tonala", "Tlajomulco de Zuniga", "El Salto"]; // (Puedes importar la lista completa si quieres)
+const ALL_OPTION = 'Todos';
+const DEFAULT_FILTERS = {
+  fechaDesde: '',
+  fechaHasta: '',
+  municipio: ALL_OPTION,
+  anoNacimiento: ALL_OPTION,
+  rangoEdad: ALL_OPTION,
+  genero: ALL_OPTION,
+  grupo: ALL_OPTION,
+  motivoConsulta: ALL_OPTION,
+  rangoMes: ALL_OPTION,
+};
+
+const AGE_RANGES = [
+  { id: '0-17', label: '0 a 17 anos', min: 0, max: 17 },
+  { id: '18-29', label: '18 a 29 anos', min: 18, max: 29 },
+  { id: '30-39', label: '30 a 39 anos', min: 30, max: 39 },
+  { id: '40-49', label: '40 a 49 anos', min: 40, max: 49 },
+  { id: '50-59', label: '50 a 59 anos', min: 50, max: 59 },
+  { id: '60-69', label: '60 a 69 anos', min: 60, max: 69 },
+  { id: '70+', label: '70 anos o mas', min: 70, max: Infinity },
+];
+
+const MONTHS = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
+
+const BIMESTER_OPTIONS = [
+  { id: '1-2', label: 'Enero a Febrero', months: [0, 1] },
+  { id: '3-4', label: 'Marzo a Abril', months: [2, 3] },
+  { id: '5-6', label: 'Mayo a Junio', months: [4, 5] },
+  { id: '7-8', label: 'Julio a Agosto', months: [6, 7] },
+  { id: '9-10', label: 'Septiembre a Octubre', months: [8, 9] },
+  { id: '11-12', label: 'Noviembre a Diciembre', months: [10, 11] },
+];
+
+const MONTH_INDEX_BY_KEY = MONTHS.reduce((acc, month, index) => {
+  acc[normalizeText(month)] = index;
+  return acc;
+}, {});
+
+const REPORT_COLUMNS = [
+  { header: 'CURP', width: 22, value: (paciente) => getCellValue(paciente.curp) },
+  { header: 'NOMBRE DEL PACIENTE', width: 34, value: (paciente) => getCellValue(paciente.nombre) },
+  { header: 'EDAD', width: 10, value: (paciente) => getNumericCellValue(getPatientAge(paciente.fechaNacimiento)) },
+  { header: 'ANO DE NACIMIENTO', width: 20, value: (paciente) => getNumericCellValue(getBirthYear(paciente.fechaNacimiento)) },
+  { header: 'GENERO', width: 16, value: (paciente) => getCellValue(paciente.genero) },
+  { header: 'DOMICILIO', width: 28, value: (paciente) => getCellValue(paciente.calleNumero) },
+  { header: 'COLONIA', width: 22, value: (paciente) => getCellValue(paciente.colonia) },
+  { header: 'MUNICIPIO', width: 24, value: (paciente) => getCellValue(getCanonicalMunicipioJalisco(paciente.municipio) || paciente.municipio) },
+  { header: 'CP', width: 12, value: (paciente) => getCellValue(paciente.codigoPostal) },
+  { header: 'TELEFONO', width: 18, value: (paciente) => getCellValue(paciente.telefono) },
+  { header: 'CELULAR', width: 18, value: (paciente) => getCellValue(paciente.celular) },
+  { header: 'GRUPO AL QUE PERTENECE', width: 28, value: (paciente) => getCellValue(paciente.grupo) },
+  { header: 'TIPO DE SERVICIO', width: 20, value: (paciente) => getCellValue(paciente.tipoServicio) },
+  { header: 'MOTIVO DE CONSULTA', width: 26, value: (paciente) => getCellValue(paciente.motivoConsulta) },
+  { header: 'RESPONSABLE', width: 22, value: (paciente) => getCellValue(paciente.responsable) },
+  { header: 'TIPO DE TERAPIA', width: 18, value: (paciente) => getCellValue(paciente.tipoTerapia) },
+  { header: 'MES', width: 16, value: (paciente) => getCellValue(paciente.mesEstadistico) },
+  { header: 'FECHA DE DIAGNOSTICO', width: 18, value: (paciente) => formatDateValue(paciente.fechaDiagnostico) },
+  { header: 'FECHA DE CONSULTA', width: 18, value: (paciente) => formatDateValue(getPacienteDate(paciente)) },
+];
+
+const collator = new Intl.Collator('es-MX', { sensitivity: 'base' });
+
+function normalizeText(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function getCellValue(value, fallback = '-') {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+}
+
+function getNumericCellValue(value) {
+  return Number.isFinite(value) ? value : '-';
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+  if (typeof value === 'string') {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return null;
+
+    const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)
+      ? `${trimmedValue}T00:00:00`
+      : trimmedValue;
+    const parsedDate = new Date(normalizedValue);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function formatDateValue(value) {
+  const parsedDate = parseDate(value);
+  return parsedDate ? parsedDate.toLocaleDateString('es-MX') : '-';
+}
+
+function getPacienteDate(paciente) {
+  return (
+    paciente?.ultimaVisita
+    || paciente?.fechaConsulta
+    || paciente?.fechaDiagnostico
+    || paciente?.updatedAt
+    || paciente?.updated_at
+    || ''
+  );
+}
+
+function getPatientAge(fechaNacimiento) {
+  const birthDate = parseDate(fechaNacimiento);
+  if (!birthDate) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+
+  return age >= 0 ? age : null;
+}
+
+function getBirthYear(fechaNacimiento) {
+  const birthDate = parseDate(fechaNacimiento);
+  return birthDate ? birthDate.getFullYear() : null;
+}
+
+function getBirthMonthIndex(fechaNacimiento) {
+  const birthDate = parseDate(fechaNacimiento);
+  return birthDate ? birthDate.getMonth() : null;
+}
+
+function getMesEstadisticoIndex(value) {
+  const normalizedValue = normalizeText(value);
+  return normalizedValue in MONTH_INDEX_BY_KEY ? MONTH_INDEX_BY_KEY[normalizedValue] : null;
+}
+
+function parseNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numericValue = Number.parseFloat(String(value).replace(',', '.'));
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function isWithinRange(date, from, to) {
+  if (!date) return false;
+  if (from && date < from) return false;
+  if (to && date > to) return false;
+  return true;
+}
+
+function matchesOption(value, selectedValue) {
+  if (selectedValue === ALL_OPTION) return true;
+  return normalizeText(value) === normalizeText(selectedValue);
+}
+
+function compareText(firstValue, secondValue) {
+  return collator.compare(firstValue || '', secondValue || '');
+}
+
+function compareNumberDesc(firstValue, secondValue) {
+  if (firstValue === secondValue) return 0;
+  if (firstValue === null || firstValue === undefined) return 1;
+  if (secondValue === null || secondValue === undefined) return -1;
+  return secondValue - firstValue;
+}
+
+function compareDateDesc(firstValue, secondValue) {
+  const firstTime = parseDate(firstValue)?.getTime() || 0;
+  const secondTime = parseDate(secondValue)?.getTime() || 0;
+  return secondTime - firstTime;
+}
+
+function getRiskWeight(paciente) {
+  const riesgo = normalizeText(paciente?.riesgo);
+  if (riesgo === 'alto') return 3;
+  if (riesgo === 'medio') return 2;
+  if (riesgo === 'bajo') return 1;
+
+  const hba1c = parseNumber(paciente?.hba1c);
+  if (hba1c !== null && hba1c > 9) return 3;
+  if (hba1c !== null && hba1c >= 7) return 2;
+  if (hba1c !== null) return 1;
+
+  return 0;
+}
+
+function sortReportPacientes(data, templateId) {
+  const sortedData = [...data];
+
+  sortedData.sort((firstPaciente, secondPaciente) => {
+    if (templateId === 'municipio') {
+      const municipioCompare = compareText(
+        getCanonicalMunicipioJalisco(firstPaciente?.municipio) || firstPaciente?.municipio,
+        getCanonicalMunicipioJalisco(secondPaciente?.municipio) || secondPaciente?.municipio
+      );
+      if (municipioCompare !== 0) return municipioCompare;
+    }
+
+    if (templateId === 'glucemico') {
+      const hba1cCompare = compareNumberDesc(
+        parseNumber(firstPaciente?.hba1c),
+        parseNumber(secondPaciente?.hba1c)
+      );
+      if (hba1cCompare !== 0) return hba1cCompare;
+    }
+
+    if (templateId === 'adherencia') {
+      const dateCompare = compareDateDesc(getPacienteDate(firstPaciente), getPacienteDate(secondPaciente));
+      if (dateCompare !== 0) return dateCompare;
+    }
+
+    if (templateId === 'riesgo') {
+      const riskCompare = compareNumberDesc(getRiskWeight(firstPaciente), getRiskWeight(secondPaciente));
+      if (riskCompare !== 0) return riskCompare;
+    }
+
+    return compareText(firstPaciente?.nombre, secondPaciente?.nombre);
+  });
+
+  return sortedData;
+}
+
+function buildUniqueOptionList(values) {
+  const uniqueValues = new Map();
+
+  values.forEach((value) => {
+    const rawValue = String(value ?? '').trim();
+    if (!rawValue) return;
+
+    const normalizedValue = normalizeText(rawValue);
+    if (!uniqueValues.has(normalizedValue)) {
+      uniqueValues.set(normalizedValue, rawValue);
+    }
+  });
+
+  return [...uniqueValues.values()].sort((firstValue, secondValue) => compareText(firstValue, secondValue));
+}
+
+function buildBirthYearRangeOptions(data) {
+  const years = data
+    .map((paciente) => getBirthYear(paciente?.fechaNacimiento))
+    .filter((year) => Number.isInteger(year));
+
+  if (!years.length) return [];
+
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  const firstRangeYear = Math.floor(minYear / 10) * 10;
+  const lastRangeYear = Math.floor(maxYear / 10) * 10;
+  const options = [];
+
+  for (let currentYear = lastRangeYear; currentYear >= firstRangeYear; currentYear -= 10) {
+    options.push({
+      value: `${currentYear}-${currentYear + 9}`,
+      label: `${currentYear} a ${currentYear + 9}`,
+    });
+  }
+
+  return options;
+}
+
+function sanitizeFileName(value) {
+  return normalizeText(value).replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+}
 
 function Reportes() {
   const { user: currentUser } = useAuth();
-  const isAdmin = (currentUser?.role || "").toUpperCase() === "ADMIN";
+  const role = String(currentUser?.role || '').toUpperCase();
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+
   const [selectedTemplate, setSelectedTemplate] = useState('general');
   const [pacientes, setPacientes] = useState([]);
-  const [citas, setCitas] = useState([]);
-  const [stats, setStats] = useState({ total: 0, activos: 0, altoRiesgo: 0, municipios: 0 });
-  
-  // Filtros
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
-  const [municipio, setMunicipio] = useState('Todos');
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS }));
 
-  // Cargar datos reales
   useEffect(() => {
+    let ignore = false;
+
     const loadData = async () => {
       try {
-        const pacientesPromise =
+        const pacientesData =
           currentUser?.id && !isAdmin
-            ? getAllPacientesByDoctor(currentUser.id)
-            : getPacientes();
-        const citasPromise =
-          currentUser?.id && !isAdmin
-            ? getCitasPortal(currentUser.id)
-            : getCitasPortal();
+            ? await getAllPacientesByDoctor(currentUser.id)
+            : await getPacientes();
 
-        const [pacientesData, citasData] = await Promise.all([
-          pacientesPromise,
-          citasPromise,
-        ]);
-        setPacientes(pacientesData);
-        setCitas(citasData);
-        
-        // Calcular Resumen
-        const activos = pacientesData.filter(p => p.estatus === 'Activo').length;
-        const altoRiesgo = pacientesData.filter(p => {
-            const hba1c = parseFloat(p.hba1c);
-            return p.riesgo === 'Alto' || (!isNaN(hba1c) && hba1c > 9);
-        }).length;
-        const munis = new Set(pacientesData.map(p => p.municipio).filter(Boolean)).size;
-
-        setStats({ total: pacientesData.length, activos, altoRiesgo, municipios: munis });
-      } catch (err) {
-        console.error("Error cargando datos para reportes:", err);
+        if (!ignore) {
+          setPacientes(Array.isArray(pacientesData) ? pacientesData : []);
+        }
+      } catch (error) {
+        console.error('Error cargando datos para reportes:', error);
+        if (!ignore) {
+          setPacientes([]);
+        }
       }
     };
+
     loadData();
+
+    return () => {
+      ignore = true;
+    };
   }, [currentUser?.id, isAdmin]);
-                                                                                                                                                                                                                                                                        
-  const getPacienteDate = (paciente) => paciente?.fechaConsulta;
 
-  const getCitaDate = (cita) => (
-    cita?.fechaHora
-    || cita?.fecha_cita
-    || cita?.fechaCita
-    || cita?.fecha
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({ ...DEFAULT_FILTERS });
+  };
+
+  const dateFromFilter = useMemo(
+    () => (filters.fechaDesde ? new Date(`${filters.fechaDesde}T00:00:00`) : null),
+    [filters.fechaDesde]
   );
+  const dateToFilter = useMemo(
+    () => (filters.fechaHasta ? new Date(`${filters.fechaHasta}T23:59:59`) : null),
+    [filters.fechaHasta]
+  );
+  const hasDateFilter = Boolean(dateFromFilter || dateToFilter);
 
-  const parseDate = (value) => {
-    if (!value) return null;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date;
-  };
-
-  const isWithinRange = (date, from, to) => {
-    if (!date) return false;
-    if (from && date < from) return false;
-    if (to && date > to) return false;
-    return true;
-  };
-
-  const buildMunicipioSummary = (data) => {
-    const counts = data.reduce((acc, paciente) => {
-      const muni = paciente?.municipio || 'Sin municipio';
-      acc[muni] = (acc[muni] || 0) + 1;
-      return acc;
-    }, {});
-    const total = data.length || 1;
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([muni, count]) => ({
-        Municipio: muni,
-        Beneficiarios: count,
-        Porcentaje: `${Math.round((count / total) * 100)}%`,
-      }));
-  };
-
-  const getTemplateHeaders = (templateId) => {
-    switch (templateId) {
-      case 'general':
-        return ['ID', 'Nombre', 'CURP', 'Edad', 'Genero', 'Municipio', 'Telefono', 'Estatus'];
-      case 'glucemico':
-        return ['ID', 'Nombre', 'TipoDiabetes', 'HbA1c Actual (%)', 'Ultima Medicion', 'Estado'];
-      case 'adherencia':
-        return ['ID', 'Paciente', 'Especialista', 'Fecha', 'Estado'];
-      case 'municipio':
-        return ['Municipio', 'Beneficiarios', 'Porcentaje'];
-      case 'riesgo':
-        return ['ID', 'Nombre', 'Riesgo', 'HbA1c', 'Telefono', 'Motivo Alerta'];
-      default:
-        return ['ID', 'Nombre', 'CURP'];
-    }
-  };
-
-  const getTemplateSampleRow = (templateId) => {
-    switch (templateId) {
-      case 'general':
-        return [1, 'Juan Perez', 'PEPJ900101HDFRRN01', 34, 'Masculino', 'Guadalajara', '3312345678', 'Activo'];
-      case 'glucemico':
-        return [1, 'Juan Perez', 'Tipo 2', 7.2, '2025-01-20', 'Descontrolado'];
-      case 'adherencia':
-        return [101, 'Juan Perez', 'Dr. Juan Carlos', '2025-02-10 10:30', 'Asistio'];
-      case 'municipio':
-        return ['Guadalajara', 120, '35%'];
-      case 'riesgo':
-        return [1, 'Juan Perez', 'Alto', 10.5, '3312345678', 'Glucosa Critica'];
-      default:
-        return [1, 'Juan Perez', 'PEPJ900101HDFRRN01'];
-    }
-  };
-
-  const handleDownloadTemplate = () => {
-    const headers = getTemplateHeaders(selectedTemplate);
-    const sampleRow = getTemplateSampleRow(selectedTemplate);
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
-
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-
-    const templateName = templates.find((t) => t.id === selectedTemplate)?.title || 'Plantilla';
-    saveAs(dataBlob, `Plantilla_${templateName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  };
-
-  // --- LOGICA DE GENERACION DE EXCEL ---
-  const handleDownload = () => {
-    const fromDate = fechaDesde ? new Date(`${fechaDesde}T00:00:00`) : null;
-    const toDate = fechaHasta ? new Date(`${fechaHasta}T23:59:59`) : null;
-    const hasDateFilter = Boolean(fromDate || toDate);
-
-    const filteredData = pacientes.filter(p => {
-        if (municipio !== 'Todos' && p.municipio !== municipio) return false;
-        if (!hasDateFilter) return true;
-        const date = parseDate(getPacienteDate(p));
-        return isWithinRange(date, fromDate, toDate);
-    });
-
-    const pacientesById = new Map(
-      pacientes.map((paciente) => [String(paciente.id), paciente])
+  const municipioOptions = useMemo(() => {
+    const catalogKeys = new Set(municipiosJalisco.map((municipio) => normalizeText(municipio)));
+    const extraMunicipios = buildUniqueOptionList(
+      pacientes
+        .map((paciente) => getCanonicalMunicipioJalisco(paciente?.municipio) || paciente?.municipio)
+        .filter((municipio) => municipio && !catalogKeys.has(normalizeText(municipio)))
     );
 
-    // 2. Mapear columnas segun la plantilla seleccionada
-    let excelData = [];
-    
-    switch (selectedTemplate) {
-        case 'general':
-            excelData = filteredData.map(p => ({
-                ID: p.id, Nombre: p.nombre, CURP: p.curp, Edad: p.edad || '-', 
-                Genero: p.genero, Municipio: p.municipio, Telefono: p.celular || p.telefono, 
-                Estatus: p.estatus
-            }));
-            break;
-        case 'glucemico':
-            excelData = filteredData.map(p => ({
-                ID: p.id, Nombre: p.nombre, TipoDiabetes: p.tipoDiabetes, 
-                'HbA1c Actual (%)': p.hba1c, 'Ultima Medicion': p.ultimaVisita || '-',
-                Estado: parseFloat(p.hba1c) < 7 ? 'Controlado' : 'Descontrolado'
-            }));
-            break;
-        case 'adherencia':
-            excelData = citas
-              .filter((cita) => {
-                const date = parseDate(getCitaDate(cita));
-                if (hasDateFilter && !isWithinRange(date, fromDate, toDate)) return false;
-                if (municipio === 'Todos') return true;
-                const pacienteId = cita.pacienteId || cita.usuarioId;
-                const paciente = pacientesById.get(String(pacienteId));
-                return paciente?.municipio === municipio;
-              })
-              .map((cita) => ({
-                ID: cita.id,
-                Paciente: cita.pacienteNombre || cita.pacienteEmail || `Paciente #${cita.pacienteId ?? 'N/A'}`,
-                Especialista: cita.medicoNombre || `Especialista #${cita.medicoId ?? 'N/A'}`,
-                Fecha: getCitaDate(cita) ? new Date(getCitaDate(cita)).toLocaleString('es-MX') : '-',
-                Estado: cita.estado || 'Pendiente',
-              }));
-            break;
-        case 'municipio':
-            excelData = buildMunicipioSummary(filteredData);
-            break;
-        case 'riesgo':
-            excelData = filteredData
-                .filter(p => p.riesgo === 'Alto' || parseFloat(p.hba1c) > 9)
-                .map(p => ({
-                    ID: p.id, Nombre: p.nombre, Riesgo: p.riesgo, 'HbA1c': p.hba1c,
-                    Telefono: p.celular, 'Motivo Alerta': parseFloat(p.hba1c) > 9 ? 'Glucosa Critica' : 'Valoracion Medica'
-                }));
-            break;
-        default:
-            excelData = filteredData.map(p => ({ ID: p.id, Nombre: p.nombre, CURP: p.curp }));
+    return [...municipiosJalisco, ...extraMunicipios];
+  }, [pacientes]);
+
+  const generoOptions = useMemo(
+    () => buildUniqueOptionList(pacientes.map((paciente) => paciente?.genero)),
+    [pacientes]
+  );
+
+  const grupoOptions = useMemo(
+    () => buildUniqueOptionList(pacientes.map((paciente) => paciente?.grupo)),
+    [pacientes]
+  );
+
+  const motivoConsultaOptions = useMemo(
+    () => buildUniqueOptionList(pacientes.map((paciente) => paciente?.motivoConsulta)),
+    [pacientes]
+  );
+
+  const anoNacimientoOptions = useMemo(() => buildBirthYearRangeOptions(pacientes), [pacientes]);
+
+  const filteredPacientes = useMemo(() => {
+    return pacientes.filter((paciente) => {
+      if (hasDateFilter) {
+        const referenciaDate = parseDate(getPacienteDate(paciente));
+        if (!isWithinRange(referenciaDate, dateFromFilter, dateToFilter)) {
+          return false;
+        }
+      }
+
+      if (filters.municipio !== ALL_OPTION && !matchesMunicipioJalisco(paciente?.municipio, filters.municipio)) {
+        return false;
+      }
+
+      if (filters.anoNacimiento !== ALL_OPTION) {
+        const birthYear = getBirthYear(paciente?.fechaNacimiento);
+        const [rangeStart, rangeEnd] = filters.anoNacimiento
+          .split('-')
+          .map((value) => Number.parseInt(value, 10));
+
+        if (!Number.isInteger(birthYear) || birthYear < rangeStart || birthYear > rangeEnd) {
+          return false;
+        }
+      }
+
+      if (filters.rangoEdad !== ALL_OPTION) {
+        const age = getPatientAge(paciente?.fechaNacimiento);
+        const selectedAgeRange = AGE_RANGES.find((range) => range.id === filters.rangoEdad);
+
+        if (!selectedAgeRange || age === null || age < selectedAgeRange.min || age > selectedAgeRange.max) {
+          return false;
+        }
+      }
+
+      if (!matchesOption(paciente?.genero, filters.genero)) return false;
+      if (!matchesOption(paciente?.grupo, filters.grupo)) return false;
+      if (!matchesOption(paciente?.motivoConsulta, filters.motivoConsulta)) return false;
+
+      if (filters.rangoMes !== ALL_OPTION) {
+        const selectedBimester = BIMESTER_OPTIONS.find((range) => range.id === filters.rangoMes);
+        const mesIndex = getMesEstadisticoIndex(paciente?.mesEstadistico);
+        const birthMonthIndex = getBirthMonthIndex(paciente?.fechaNacimiento);
+        const comparableMonth = mesIndex ?? birthMonthIndex;
+
+        if (!selectedBimester || comparableMonth === null || !selectedBimester.months.includes(comparableMonth)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [dateFromFilter, dateToFilter, filters, hasDateFilter, pacientes]);
+
+  const reportPacientes = useMemo(
+    () => sortReportPacientes(filteredPacientes, selectedTemplate),
+    [filteredPacientes, selectedTemplate]
+  );
+
+  const activeFilterLabels = useMemo(() => {
+    const labels = [];
+
+    if (filters.fechaDesde) labels.push(`Fecha desde: ${formatDateValue(filters.fechaDesde)}`);
+    if (filters.fechaHasta) labels.push(`Fecha hasta: ${formatDateValue(filters.fechaHasta)}`);
+    if (filters.municipio !== ALL_OPTION) labels.push(`Municipio: ${filters.municipio}`);
+
+    if (filters.anoNacimiento !== ALL_OPTION) {
+      const yearLabel = anoNacimientoOptions.find((option) => option.value === filters.anoNacimiento)?.label || filters.anoNacimiento;
+      labels.push(`Ano de nacimiento: ${yearLabel}`);
     }
 
-    if (excelData.length === 0) {
-        alert("No hay datos para generar este reporte con los filtros actuales.");
-        return;
+    if (filters.rangoEdad !== ALL_OPTION) {
+      const ageLabel = AGE_RANGES.find((option) => option.id === filters.rangoEdad)?.label || filters.rangoEdad;
+      labels.push(`Rango de edad: ${ageLabel}`);
     }
 
-    // 3. Crear Libro de Excel
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    if (filters.genero !== ALL_OPTION) labels.push(`Genero: ${filters.genero}`);
+    if (filters.grupo !== ALL_OPTION) labels.push(`Grupo: ${filters.grupo}`);
+    if (filters.motivoConsulta !== ALL_OPTION) labels.push(`Motivo de consulta: ${filters.motivoConsulta}`);
+
+    if (filters.rangoMes !== ALL_OPTION) {
+      const monthLabel = BIMESTER_OPTIONS.find((option) => option.id === filters.rangoMes)?.label || filters.rangoMes;
+      labels.push(`Rango en mes: ${monthLabel}`);
+    }
+
+    return labels;
+  }, [anoNacimientoOptions, filters]);
+
+  const selectedTemplateMeta = templates.find((template) => template.id === selectedTemplate) || templates[0];
+
+  const handleDownload = () => {
+    if (!reportPacientes.length) {
+      alert('No hay pacientes para generar este reporte con los filtros actuales.');
+      return;
+    }
+
+    const rows = reportPacientes.map((paciente) => REPORT_COLUMNS.map((column) => column.value(paciente)));
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      REPORT_COLUMNS.map((column) => column.header),
+      ...rows,
+    ]);
+
+    worksheet['!cols'] = REPORT_COLUMNS.map((column) => ({ wch: column.width }));
+    worksheet['!autofilter'] = {
+      ref: XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: rows.length, c: REPORT_COLUMNS.length - 1 },
+      }),
+    };
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+    XLSX.utils.book_append_sheet(workbook, worksheet, selectedTemplateMeta.sheetName.slice(0, 31));
 
-    // 4. Descargar
+    const resumenRows = [
+      ['Plantilla', selectedTemplateMeta.title],
+      ['Registros exportados', reportPacientes.length],
+      ['Fecha de exportacion', new Date().toLocaleString('es-MX')],
+      ['Filtros activos', activeFilterLabels.length ? activeFilterLabels.join(' | ') : 'Sin filtros'],
+    ];
+    const resumenSheet = XLSX.utils.aoa_to_sheet(resumenRows);
+    resumenSheet['!cols'] = [{ wch: 20 }, { wch: 100 }];
+    XLSX.utils.book_append_sheet(workbook, resumenSheet, 'Resumen');
+
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    
-    const templateName = templates.find(t => t.id === selectedTemplate).title;
-    saveAs(dataBlob, `${templateName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    const fileDate = new Date().toISOString().slice(0, 10);
+    const safeFileName = sanitizeFileName(selectedTemplateMeta.title) || 'reporte_pacientes';
+
+    saveAs(dataBlob, `${safeFileName}_${fileDate}.xlsx`);
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Generacion de Reportes</h1>
-        <p className={styles.subtitle}>Exporta datos y estadisticas en formato Excel</p>
+        <p className={styles.subtitle}>Exporta pacientes filtrados en formato Excel con el mismo encabezado en todas las plantillas</p>
       </div>
 
       <div className={styles.layout}>
-        {/* COLUMNA IZQUIERDA: Plantillas y Filtros */}
-        <div>
-            {/* Grid de Plantillas */}
+        <div className={styles.mainColumn}>
+          <div className={styles.filtersCard}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>Filtros de Reporte</h2>
+                <p className={styles.sectionText}>Primero filtra los pacientes; despues elige la plantilla para descargar el mismo encabezado con ese resultado.</p>
+              </div>
+              <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
+                Limpiar filtros
+              </button>
+            </div>
+
+            <div className={styles.filtersGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="fechaDesde">Fecha Desde</label>
+                <input
+                  id="fechaDesde"
+                  name="fechaDesde"
+                  type="date"
+                  lang="es-MX"
+                  className={styles.input}
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="fechaHasta">Fecha Hasta</label>
+                <input
+                  id="fechaHasta"
+                  name="fechaHasta"
+                  type="date"
+                  lang="es-MX"
+                  className={styles.input}
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="municipio">Municipio</label>
+                <select
+                  id="municipio"
+                  name="municipio"
+                  className={styles.select}
+                  value={filters.municipio}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los municipios</option>
+                  {municipioOptions.map((municipio) => (
+                    <option key={municipio} value={municipio}>
+                      {municipio}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="anoNacimiento">Ano de Nacimiento</label>
+                <select
+                  id="anoNacimiento"
+                  name="anoNacimiento"
+                  className={styles.select}
+                  value={filters.anoNacimiento}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los años</option>
+                  {anoNacimientoOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="rangoEdad">Rango de Edad</label>
+                <select
+                  id="rangoEdad"
+                  name="rangoEdad"
+                  className={styles.select}
+                  value={filters.rangoEdad}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todas las edades</option>
+                  {AGE_RANGES.map((range) => (
+                    <option key={range.id} value={range.id}>
+                      {range.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="genero">Genero</label>
+                <select
+                  id="genero"
+                  name="genero"
+                  className={styles.select}
+                  value={filters.genero}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los generos</option>
+                  {generoOptions.map((genero) => (
+                    <option key={genero} value={genero}>
+                      {genero}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="grupo">Grupo al que Pertenece</label>
+                <select
+                  id="grupo"
+                  name="grupo"
+                  className={styles.select}
+                  value={filters.grupo}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los grupos</option>
+                  {grupoOptions.map((grupo) => (
+                    <option key={grupo} value={grupo}>
+                      {grupo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="motivoConsulta">Motivo de Consulta</label>
+                <select
+                  id="motivoConsulta"
+                  name="motivoConsulta"
+                  className={styles.select}
+                  value={filters.motivoConsulta}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los motivos</option>
+                  {motivoConsultaOptions.map((motivo) => (
+                    <option key={motivo} value={motivo}>
+                      {motivo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="rangoMes">Rango en Mes</label>
+                <select
+                  id="rangoMes"
+                  name="rangoMes"
+                  className={styles.select}
+                  value={filters.rangoMes}
+                  onChange={handleFilterChange}
+                >
+                  <option value={ALL_OPTION}>Todos los meses</option>
+                  {BIMESTER_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
             <h2 className={styles.sectionTitle}>Plantillas de Reportes</h2>
             <div className={styles.templatesGrid}>
-                {templates.map(t => (
-                    <div 
-                        key={t.id} 
-                        className={`${styles.reportCard} ${selectedTemplate === t.id ? styles.activeCard : ''}`}
-                        onClick={() => setSelectedTemplate(t.id)}
-                    >
-                        <div className={styles.iconWrapper}>{t.icon}</div>
-                        <div>
-                            <h4 className={styles.cardTitle}>{t.title}</h4>
-                            <p className={styles.cardDesc}>{t.desc}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Filtros */}
-            <div className={styles.filtersCard}>
-                <h2 className={styles.sectionTitle}>Filtros de Reporte</h2>
-                <p className={styles.sectionText}>Personaliza el contenido del reporte</p>
-                
-                <div className={styles.filterRow}>
-                    <div className={styles.formGroup}>
-                        <label className={styles.label}>Fecha Desde</label>
-                        <input type="date" className={styles.input} value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label className={styles.label}>Fecha Hasta</label>
-                        <input type="date" className={styles.input} value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label className={styles.label}>Municipio</label>
-                        <select className={styles.select} value={municipio} onChange={e => setMunicipio(e.target.value)}>
-                            <option value="Todos">Todos los municipios</option>
-                            {municipiosJalisco.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                    </div>
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className={`${styles.reportCard} ${selectedTemplate === template.id ? styles.activeCard : ''}`}
+                  onClick={() => setSelectedTemplate(template.id)}
+                >
+                  <div className={styles.iconWrapper}>{template.icon}</div>
+                  <div>
+                    <h4 className={styles.cardTitle}>{template.title}</h4>
+                    <p className={styles.cardDesc}>{template.desc}</p>
+                  </div>
                 </div>
-                
+              ))}
             </div>
-        </div>
-
-        {/* COLUMNA DERECHA: Resumen */}
-        <div>
-            <div className={styles.summaryCard}>
-                <h2 className={styles.sectionTitle}>Resumen de Datos</h2>
-                <ul className={styles.summaryList}>
-                    <li className={styles.summaryItem}>
-                        <span>Total Pacientes</span>
-                        <span className={styles.summaryVal}>{stats.total}</span>
-                    </li>
-                    <li className={styles.summaryItem}>
-                        <span>Activos</span>
-                        <span className={styles.summaryVal}>{stats.activos}</span>
-                    </li>
-                    <li className={styles.summaryItem}>
-                        <span>Alto Riesgo</span>
-                        <span className={`${styles.summaryVal} ${styles.redText}`}>{stats.altoRiesgo}</span>
-                    </li>
-                    <li className={styles.summaryItem}>
-                        <span>Municipios</span>
-                        <span className={styles.summaryVal}>{stats.municipios}</span>
-                    </li>
-                </ul>
-            </div>
+          </div>
         </div>
       </div>
 
-      {/* BARRA FLOTANTE INFERIOR */}
       <div className={styles.bottomBar}>
         <div className={styles.barInfo}>
-            <h4>{templates.find(t => t.id === selectedTemplate)?.title}</h4>
-            <p>Formato: .XLSX | {municipio === 'Todos' ? 'Todos los municipios' : municipio} | Datos actuales</p>
+          <h4>{selectedTemplateMeta.title}</h4>
+          <p>
+            Formato: .XLSX | {reportPacientes.length} pacientes listos para exportar
+            {activeFilterLabels.length ? ` | ${activeFilterLabels.length} filtros activos` : ' | Sin filtros adicionales'}
+          </p>
         </div>
+
         <div className={styles.bottomActions}>
-          <button className={styles.downloadBtn} onClick={handleDownload}>
+          <button type="button" className={styles.downloadBtn} onClick={handleDownload}>
             <FaDownload /> Generar y Descargar
           </button>
         </div>

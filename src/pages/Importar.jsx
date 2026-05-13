@@ -17,15 +17,11 @@ import {
 } from 'react-icons/fa';
 
 const REQUIRED_COLUMNS = [
-  'NOMBRE',
-  'CURP',
-  'EDAD',
+  'NOMBRE_DEL_PACIENTE',
+  'FECHA_DE_NACIMIENTO',
   'GENERO',
   'MUNICIPIO',
-  'TELEFONO',
-  'CELULAR',
-  'FECHA_DIAGNOSTICO',
-  'FECHA_CONSULTA',
+  'FECHA_DE_CONSULTA',
 ];
 
 const OPTIONAL_SPECIALIST_COLUMNS = [
@@ -40,6 +36,7 @@ const ALL_SPECIALISTS_OPTION = 'ALL';
 
 const SPECIALIST_ROLES = [
   { value: ALL_SPECIALISTS_OPTION, label: 'Todos (IDs en Excel)' },
+  { value: 'ADMIN', label: 'Admin / Migración' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'NUTRI', label: 'Nutriólogo' },
   { value: 'PSICOLOGO', label: 'Psicólogo' },
@@ -48,15 +45,16 @@ const SPECIALIST_ROLES = [
 ];
 
 const COLUMN_LABELS = {
-  NOMBRE: 'Nombre del Paciente',
+  NOMBRE_DEL_PACIENTE: 'Nombre del Paciente',
+  FECHA_DE_NACIMIENTO: 'Fecha de Nacimiento',
   CURP: 'CURP',
   EDAD: 'Edad',
   GENERO: 'Genero',
   MUNICIPIO: 'Municipio',
   TELEFONO: 'Telefono',
   CELULAR: 'Celular',
-  FECHA_DIAGNOSTICO: 'Fecha de Diagnostico',
-  FECHA_CONSULTA: 'Fecha de Consulta',
+  FECHA_DE_DIAGNOSTICO: 'Fecha de Diagnostico',
+  FECHA_DE_CONSULTA: 'Fecha de Consulta',
 };
 
 const normalizeHeader = (value) => {
@@ -123,7 +121,7 @@ const buildValidation = (rows, normalizedHeaders) => {
     if (preview.length < 4) {
       preview.push({
         fila: rowNumber,
-        nombre: row.NOMBRE || '-',
+        nombre: row.NOMBRE_DEL_PACIENTE || row.NOMBRE || '-',
         curp: row.CURP || '-',
         status,
         observaciones: observations[0] || '-',
@@ -218,7 +216,7 @@ const Step1 = ({
             className={styles.fieldControl}
             value={specialistId}
             onChange={(e) => onSpecialistChange(e.target.value)}
-            disabled={!specialistRole || specialistRole === ALL_SPECIALISTS_OPTION || loadingUsers}
+            disabled={!specialistRole || specialistRole === ALL_SPECIALISTS_OPTION || specialistRole === 'ADMIN' || loadingUsers}
           >
             <option value="">
               {loadingUsers ? 'Cargando especialistas...' : 'Selecciona un especialista'}
@@ -233,6 +231,10 @@ const Step1 = ({
         {specialistRole === ALL_SPECIALISTS_OPTION ? (
           <div className={styles.helperText}>
             Se usará el ID de especialista que venga en cada fila del Excel.
+          </div>
+        ) : specialistRole === 'ADMIN' ? (
+          <div className={styles.helperText}>
+            Se usará modo migración administrativa: el backend consolidará pacientes repetidos y no exigirá un especialista fijo.
           </div>
         ) : !specialistId ? (
           <div className={styles.helperText}>
@@ -494,9 +496,9 @@ function Importar() {
   });
   const [showToast, setShowToast] = useState(false);
 
-  const handleNext = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
-  };
+  const handleNext = React.useCallback(() => {
+    setCurrentStep((step) => (step < 5 ? step + 1 : step));
+  }, []);
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
@@ -505,6 +507,18 @@ function Importar() {
   const handleFinish = () => {
     setCurrentStep(1);
   };
+
+  const buildRequestFormData = React.useCallback(() => {
+    const formData = new FormData();
+    formData.append('archivo', selectedFile);
+    if (selectedRole !== ALL_SPECIALISTS_OPTION) {
+      formData.append('especialistaRole', selectedRole);
+      if (selectedRole !== 'ADMIN') {
+        formData.append('especialistaId', selectedSpecialistId);
+      }
+    }
+    return formData;
+  }, [selectedFile, selectedRole, selectedSpecialistId]);
 
   const handleImport = async () => {
     if (demoMode) {
@@ -523,7 +537,7 @@ function Importar() {
       setImportError('Selecciona una especialidad antes de importar.');
       return;
     }
-    if (selectedRole !== ALL_SPECIALISTS_OPTION && !selectedSpecialistId) {
+    if (selectedRole !== ALL_SPECIALISTS_OPTION && selectedRole !== 'ADMIN' && !selectedSpecialistId) {
       setImportError('Selecciona un especialista antes de importar.');
       return;
     }
@@ -532,16 +546,9 @@ function Importar() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('archivo', selectedFile);
-    if (selectedRole !== ALL_SPECIALISTS_OPTION) {
-      formData.append('especialistaRole', selectedRole);
-      formData.append('especialistaId', selectedSpecialistId);
-    }
-
     try {
       setImporting(true);
-      const response = await api.post('/pacientes/importar', formData, {
+      const response = await api.post('/pacientes/importar', buildRequestFormData(), {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImportedCount(response.data?.importados ?? validation.valid);
@@ -605,12 +612,82 @@ function Importar() {
 
   useEffect(() => {
     if (currentStep === 3) {
-      const timer = setTimeout(() => {
-        handleNext();
-      }, 2000);
-      return () => clearTimeout(timer);
+      let cancelled = false;
+
+      const validateImport = async () => {
+        if (!selectedFile) {
+          if (!cancelled) handleNext();
+          return;
+        }
+
+        try {
+          const response = await api.post('/pacientes/importar/validar', buildRequestFormData(), {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+
+          if (cancelled) return;
+
+          const data = response.data || {};
+          const errorPreview = Array.isArray(data.errors) && data.errors.length > 0
+            ? data.errors.slice(0, 4).map((item) => ({
+                fila: item.row ?? '-',
+                nombre: '-',
+                curp: item.field === 'curp' ? item.message.match(/\(([^)]+)\)/)?.[1] || '-' : '-',
+                status: 'error',
+                observaciones: item.message || '-',
+              }))
+            : [];
+
+          const validPreview = Array.isArray(data.preview)
+            ? data.preview.slice(0, 4).map((row, index) => ({
+                fila: row.rowNumber ?? index + 2,
+                nombre: row.nombre || '-',
+                curp: row.curp || '-',
+                status: 'valid',
+                observaciones: data.migracionAdmin
+                  ? 'Listo para importar en modo migración.'
+                  : 'Listo para importar.',
+              }))
+            : [];
+
+          setValidation({
+            total: data.total ?? 0,
+            valid: data.validos ?? 0,
+            warnings: 0,
+            errors: Array.isArray(data.errors) ? data.errors.length : 0,
+            missingHeaders: [],
+            preview: errorPreview.length > 0 ? errorPreview : validPreview,
+          });
+        } catch (error) {
+          if (cancelled) return;
+          const message = error.response?.data?.error || error.response?.data?.message || 'Error al validar el archivo.';
+          setImportError(message);
+          setValidation((prev) => ({
+            ...prev,
+            valid: 0,
+            errors: prev.total || 1,
+            preview: [
+              {
+                fila: '-',
+                nombre: '-',
+                curp: '-',
+                status: 'error',
+                observaciones: message,
+              },
+            ],
+          }));
+        } finally {
+          if (!cancelled) handleNext();
+        }
+      };
+
+      validateImport();
+
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [currentStep]);
+  }, [buildRequestFormData, currentStep, handleNext, selectedFile, selectedRole, selectedSpecialistId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -637,19 +714,22 @@ function Importar() {
     normalizedHeaders.includes(col)
   );
   const requiresExcelIds = Boolean(fileMeta) && selectedRole === ALL_SPECIALISTS_OPTION && !hasSpecialistColumns;
-  const canContinue = Boolean(fileMeta) && (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : Boolean(selectedSpecialistId));
+  const roleDoesNotNeedSpecialist = selectedRole === 'ADMIN';
+  const canContinue = Boolean(fileMeta) && (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : roleDoesNotNeedSpecialist || Boolean(selectedSpecialistId));
   const canImport =
     validation.errors === 0 &&
     validation.warnings === 0 &&
     validation.total > 0 &&
-    (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : Boolean(selectedSpecialistId));
+    (selectedRole === ALL_SPECIALISTS_OPTION ? hasSpecialistColumns : roleDoesNotNeedSpecialist || Boolean(selectedSpecialistId));
   const missingSpecialist =
     !selectedRole ||
-    (selectedRole === ALL_SPECIALISTS_OPTION ? !hasSpecialistColumns : !selectedSpecialistId);
+    (selectedRole === ALL_SPECIALISTS_OPTION ? !hasSpecialistColumns : !roleDoesNotNeedSpecialist && !selectedSpecialistId);
   const missingSpecialistReason = !selectedRole
     ? 'Selecciona una especialidad antes de importar.'
     : selectedRole === ALL_SPECIALISTS_OPTION
       ? 'El Excel debe incluir IDs de especialista por fila.'
+      : selectedRole === 'ADMIN'
+        ? ''
       : 'Selecciona un especialista antes de importar.';
   const specialistOptions = users.filter((user) => user.role === selectedRole);
 

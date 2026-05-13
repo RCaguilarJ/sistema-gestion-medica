@@ -44,6 +44,8 @@ import {
     deletePsicologiaEstrategia,
     deletePsicologiaNota,
 } from '../services/psicologiaService.js';
+import api from '../services/api.js';
+import { getCanonicalMunicipioJalisco, municipiosJalisco } from '../constants/municipiosJalisco.js';
 
 // --- HELPERS ---
 
@@ -75,11 +77,62 @@ const calcularIMC = (peso, estatura) => {
     return imc.toFixed(1);
 };
 
+const getCurrentDateInput = () => new Date().toISOString().slice(0, 10);
+
+const getDefaultConsultaForm = () => ({
+    motivo: '',
+    hallazgos: '',
+    tratamiento: '',
+    pesoKg: '',
+    hba1c: '',
+    glucosa: '',
+    presionArterial: '',
+    fechaConsulta: getCurrentDateInput(),
+});
+
 // Listas para selectores
-const allowedGeneros = ['Masculino', 'Femenino', 'Otro'];
+const allowedGeneros = ['Femenino', 'Masculino', 'Otro'];
 const allowedTipoDiabetes = ['Tipo 1', 'Tipo 2', 'Gestacional', 'Otro'];
 const allowedEstatus = ['Activo', 'Inactivo'];
 const allowedRiesgo = ['Alto', 'Medio', 'Bajo'];
+const allowedTipoTerapia = ['Individual', 'Grupal', 'Familiar'];
+const allowedEstadosPago = ['Pagado', 'Pendiente', 'Vencido', 'Atrasado', 'Parcial', 'Exento', 'Cancelado', 'Moroso'];
+const mesesEstadisticos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const grupoSuggestions = ['Grupo Matutino A', 'Grupo Vespertino A', 'Grupo Control Metabolico', 'Grupo Nutricion', 'Grupo Psicologia', 'Adultos Mayores'];
+const tipoServicioSuggestions = ['Médico', 'Nutricional', 'Psicológico', 'Mixto', 'Educativo', 'Otro'];
+const motivoConsultaSuggestions = ['Primera vez', 'Seguimiento', 'Control glucemico', 'Valoracion nutricional', 'Evaluacion psicologica', 'Revaloracion'];
+const responsableSuggestions = ['Paciente', 'Madre', 'Padre', 'Tutor', 'Familiar responsable'];
+
+const getPacienteUltimaVisita = (paciente) => paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? '';
+const getPacienteEstadoPago = (paciente) =>
+    paciente?.estadoPago
+    ?? paciente?.estado_pago
+    ?? paciente?.estadoFinanciero
+    ?? paciente?.estado_financiero
+    ?? '';
+
+const buildPacientePayload = (data) => {
+    const cleanedData = cleanAndNormalizeData({
+        ...data,
+        municipio: getCanonicalMunicipioJalisco(data?.municipio) || data?.municipio,
+        ultimaVisita: data?.ultimaVisita ?? getPacienteUltimaVisita(data),
+    });
+
+    delete cleanedData.edad;
+    delete cleanedData.fechaConsulta;
+
+    return cleanedData;
+};
+
+// Normaliza roles que llegan con variantes en español/inglés
+const normalizeRole = (role) => {
+    const r = (role || '').toString().trim().toUpperCase();
+    if (['ADMIN', 'ADMINISTRADOR', 'ADMINISTRATOR', 'SUPERADMIN', 'SUPER_ADMIN'].includes(r)) return 'ADMIN';
+    if (['DOCTOR', 'MEDICO', 'MÉDICO'].includes(r)) return 'DOCTOR';
+    if (['PSICOLOGO', 'PSICOLOGA', 'PSICÓLOGO', 'PSICÓLOGA', 'PSY'].includes(r)) return 'PSICOLOGO';
+    if (['NUTRIOLOGO', 'NUTRIOLOGA', 'NUTRI'].includes(r)) return 'NUTRI';
+    return r;
+};
 
 // --------------------------------------------------------
 // --- SUB-COMPONENTES Y MODALES ---
@@ -137,20 +190,11 @@ const ModalVerConsulta = ({ consultaId, onClose }) => {
 
 // Modal Nueva/Editar Consulta
 const ModalNuevaConsulta = ({ pacienteId, consulta, onClose, onConsultaSaved }) => {
-    const defaultForm = {
-        motivo: '',
-        hallazgos: '',
-        tratamiento: '',
-        pesoKg: '',
-        hba1c: '',
-        glucosa: '',
-        presionArterial: '',
-        fechaConsulta: new Date().toISOString().slice(0, 10),
-    };
-    const [formData, setFormData] = useState(defaultForm);
+    const [formData, setFormData] = useState(() => getDefaultConsultaForm());
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
+        const defaultForm = getDefaultConsultaForm();
         if (consulta) {
             setFormData({
                 motivo: consulta.motivo || '',
@@ -180,7 +224,7 @@ const ModalNuevaConsulta = ({ pacienteId, consulta, onClose, onConsultaSaved }) 
             }
             onConsultaSaved?.();
             onClose();
-        } catch (err) {
+        } catch {
             alert('Error al guardar la consulta');
         } finally {
             setIsSaving(false);
@@ -232,12 +276,26 @@ const ModalNuevaConsulta = ({ pacienteId, consulta, onClose, onConsultaSaved }) 
 };
 
 // Modal Agendar / Editar Cita (sin asignaciÃ³n de especialista)
-const ModalAgendarCita = ({ pacienteId, cita, onClose, onCitaCreated }) => {
+const ModalAgendarCita = ({ pacienteId, cita, onClose, onCitaCreated, defaultMedicoId = null }) => {
+    const { user: currentUser } = useAuth();
+    const role = (currentUser?.role || '').toUpperCase();
+    const isDoctor = role === 'DOCTOR';
     const [formData, setFormData] = useState({
         fechaHora: '', motivo: '', notas: ''
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [medicoIdSeleccionado, setMedicoIdSeleccionado] = useState(defaultMedicoId || (isDoctor ? currentUser?.id : null));
+    const [doctores, setDoctores] = useState([]);
+    const [cargandoDoctores, setCargandoDoctores] = useState(false);
+
+    const inferMedicoId = (c) => (
+        c?.doctor_id
+        ?? c?.medicoId
+        ?? c?.Medico?.id
+        ?? c?.medico?.id
+        ?? null
+    );
 
     useEffect(() => {
         if (cita) {
@@ -246,10 +304,32 @@ const ModalAgendarCita = ({ pacienteId, cita, onClose, onCitaCreated }) => {
                 motivo: cita.motivo || '',
                 notas: cita.notas || ''
             });
+            setMedicoIdSeleccionado(inferMedicoId(cita) || defaultMedicoId || (isDoctor ? currentUser?.id : null));
         } else {
             setFormData({ fechaHora: '', motivo: '', notas: '' });
+            setMedicoIdSeleccionado(defaultMedicoId || (isDoctor ? currentUser?.id : null));
         }
-    }, [cita]);
+    }, [cita, defaultMedicoId, isDoctor, currentUser]);
+
+    useEffect(() => {
+        if (isDoctor) return;
+        const loadDoctors = async () => {
+            setCargandoDoctores(true);
+            try {
+                const res = await api.get('/users/especialistas', { params: { role: 'DOCTOR' } });
+                const list = Array.isArray(res.data?.especialistas) ? res.data.especialistas : [];
+                setDoctores(list);
+                if (!medicoIdSeleccionado && list.length > 0) {
+                    setMedicoIdSeleccionado(list[0].id);
+                }
+            } catch (err) {
+                console.error('No se pudo cargar lista de doctores', err);
+            } finally {
+                setCargandoDoctores(false);
+            }
+        };
+        loadDoctors();
+    }, [isDoctor, medicoIdSeleccionado]);
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -259,7 +339,19 @@ const ModalAgendarCita = ({ pacienteId, cita, onClose, onCitaCreated }) => {
         setIsSaving(true);
         try {
             const payload = cleanAndNormalizeData(formData);
-            payload.medicoId = null; // El backend espera explÃ­citamente el campo en null
+            const medicoId =
+                medicoIdSeleccionado ||
+                inferMedicoId(cita) ||
+                defaultMedicoId ||
+                (isDoctor ? currentUser.id : null);
+
+            if (!medicoId) {
+                setError('Debes asignar un médico a la cita.');
+                setIsSaving(false);
+                return;
+            }
+
+            payload.medicoId = medicoId;
             if (cita?.id) {
                 await updateCita(cita.id, payload);
             } else {
@@ -290,6 +382,29 @@ const ModalAgendarCita = ({ pacienteId, cita, onClose, onCitaCreated }) => {
                 <label>Notas</label>
                 <textarea rows="2" name="notas" value={formData.notas} onChange={handleChange} style={{width:'100%', padding:'8px'}}></textarea>
             </div>
+            {!isDoctor && (
+                <div className={formStyles.formGroup} style={{marginTop:'15px'}}>
+                    <label>Médico responsable *</label>
+                    {cargandoDoctores ? (
+                        <p style={{margin:0}}><FaSpinner className="fa-spin" /> Cargando doctores...</p>
+                    ) : (
+                        <select
+                            name="medicoId"
+                            value={medicoIdSeleccionado || ''}
+                            onChange={(e) => setMedicoIdSeleccionado(Number(e.target.value) || null)}
+                            required
+                            style={{width:'100%', padding:'8px'}}
+                        >
+                            <option value="">Seleccione un médico</option>
+                            {doctores.map((doc) => (
+                                <option key={doc.id} value={doc.id}>
+                                    {doc.nombre || `Doctor #${doc.id}`}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </div>
+            )}
             {error && <p style={{color:'red'}}>{error}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
                 <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
@@ -308,15 +423,14 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
     const { user: currentUser } = useAuth();
     const role = (currentUser?.role || '').toUpperCase();
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-    const isDoctor = role === 'DOCTOR';
 
-    const loadConsultas = () => {
+    const loadConsultas = React.useCallback(() => {
         getConsultasByPaciente(pacienteId).then(setConsultas).catch(console.error);
-    };
+    }, [pacienteId]);
 
     useEffect(() => {
         loadConsultas();
-    }, [pacienteId, isModalOpen]); 
+    }, [loadConsultas, isModalOpen]); 
 
     const startEdit = (consulta) => {
         setEditingConsulta(consulta);
@@ -328,7 +442,7 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
         try {
             await deleteConsulta(id);
             loadConsultas();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar la consulta');
         }
     };
@@ -375,7 +489,7 @@ const HistorialClinicoSection = ({ pacienteId, onConsultaCreated }) => {
     );
 };
 
-const CitasSection = ({ pacienteId }) => {
+const CitasSection = ({ pacienteId, defaultMedicoId = null }) => {
     const [citas, setCitas] = useState({ proximasCitas: [], historialCitas: [] });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCita, setEditingCita] = useState(null);
@@ -416,7 +530,7 @@ const CitasSection = ({ pacienteId }) => {
         return Number.isNaN(date.getTime()) ? null : date;
     };
 
-    const load = async () => {
+    const refreshCitas = async () => {
         try {
             const data = await getCitasByPaciente(pacienteId);
             const citasList = normalizeCitasResponse(data);
@@ -437,11 +551,50 @@ const CitasSection = ({ pacienteId }) => {
                 proximasCitas: proximas,
                 historialCitas: [],
             });
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+            console.error(error);
         }
     };
-    useEffect(() => { load(); }, [pacienteId, currentUser]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const syncCitas = async () => {
+            try {
+                const data = await getCitasByPaciente(pacienteId);
+                const citasList = normalizeCitasResponse(data);
+                const shouldFilterByDoctor = currentUser?.role === 'DOCTOR' && currentUser?.id;
+                const filteredByDoctor = shouldFilterByDoctor
+                    ? citasList.filter((c) => getCitaDoctorId(c) === currentUser.id)
+                    : citasList;
+
+                const now = new Date();
+                const proximas = filteredByDoctor
+                    .filter((c) => {
+                        const fecha = parseFechaHora(getCitaFecha(c));
+                        return fecha && fecha >= now;
+                    })
+                    .sort((a, b) => parseFechaHora(getCitaFecha(a)) - parseFechaHora(getCitaFecha(b)));
+
+                if (!cancelled) {
+                    setCitas({
+                        proximasCitas: proximas,
+                        historialCitas: [],
+                    });
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error(error);
+                }
+            }
+        };
+
+        void syncCitas();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser, pacienteId]);
 
     const openEditCita = (cita) => {
         setEditingCita(cita);
@@ -453,8 +606,8 @@ const CitasSection = ({ pacienteId }) => {
         if (!window.confirm('¿Eliminar esta cita?')) return;
         try {
             await deleteCita(cita.id);
-            load();
-        } catch (err) {
+            await refreshCitas();
+        } catch {
             alert('No se pudo eliminar la cita');
         }
     };
@@ -494,8 +647,9 @@ const CitasSection = ({ pacienteId }) => {
                 <ModalAgendarCita
                     pacienteId={pacienteId}
                     cita={editingCita}
+                    defaultMedicoId={defaultMedicoId}
                     onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
-                    onCitaCreated={load}
+                    onCitaCreated={refreshCitas}
                 />
             </Modal>
         </div>
@@ -509,7 +663,6 @@ const DoctorSeguimientoSection = ({ paciente, onConsultaCreated }) => {
     const { user: currentUser } = useAuth();
     const role = (currentUser?.role || '').toUpperCase();
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-    const isDoctor = role === 'DOCTOR';
 
     const loadConsultas = () => {
         if (!paciente?.id) return;
@@ -517,7 +670,8 @@ const DoctorSeguimientoSection = ({ paciente, onConsultaCreated }) => {
     };
 
     useEffect(() => {
-        loadConsultas();
+        if (!paciente?.id) return;
+        getConsultasByPaciente(paciente.id).then(setConsultas).catch(console.error);
     }, [paciente?.id, isModalOpen]);
 
     const formatDate = (value) => {
@@ -548,7 +702,7 @@ const DoctorSeguimientoSection = ({ paciente, onConsultaCreated }) => {
         try {
             await deleteConsulta(id);
             loadConsultas();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar el seguimiento');
         }
     };
@@ -613,7 +767,13 @@ const DoctorNotasSection = ({ pacienteId }) => {
     const [consultas, setConsultas] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [nota, setNota] = useState('');
+    const [editingNota, setEditingNota] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const { user: currentUser } = useAuth();
+    const role = normalizeRole(currentUser?.role);
+    const isAdmin = role === 'ADMIN';
+    const canEdit = role === 'DOCTOR' || isAdmin;
+    const canDelete = isAdmin;
 
     useEffect(() => {
         if (!pacienteId) return;
@@ -635,7 +795,7 @@ const DoctorNotasSection = ({ pacienteId }) => {
                     <h3 className={styles.sectionTitle}>Notas Clínicas</h3>
                     <p className={styles.sectionSubtitle}>Observaciones registradas en consultas</p>
                 </div>
-                <Button onClick={() => setIsModalOpen(true)}><FaPlus /> Agregar nota</Button>
+                {canEdit && <Button onClick={() => { setEditingNota(null); setNota(''); setIsModalOpen(true); }}><FaPlus /> Agregar nota</Button>}
             </div>
             {notes.length === 0 ? (
                 <div className={styles.emptyStateCard}>No hay notas clinicas registradas.</div>
@@ -647,25 +807,52 @@ const DoctorNotasSection = ({ pacienteId }) => {
                                 {note.fecha ? new Date(note.fecha).toLocaleDateString('es-MX') : '-'}
                             </div>
                             <div className={styles.notaText}>{note.texto}</div>
+                            <div style={{display:'flex', gap:'6px', marginTop:'8px'}}>
+                                {canEdit && (
+                                    <Button size="xs" variant="secondary" onClick={() => {
+                                        setEditingNota(note);
+                                        setNota(note.texto || '');
+                                        setIsModalOpen(true);
+                                    }}><FaEdit /> Editar</Button>
+                                )}
+                                {canDelete && (
+                                    <Button size="xs" variant="danger" onClick={async () => {
+                                        if (!window.confirm('¿Eliminar esta nota?')) return;
+                                        try {
+                                            await deleteConsulta(note.id);
+                                            const updated = await getConsultasByPaciente(pacienteId);
+                                            setConsultas(updated);
+                                        } catch {
+                                            alert('No se pudo eliminar la nota');
+                                        }
+                                    }}><FaTimesCircle /> Borrar</Button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
-            <Modal title="Nueva Nota Clínica" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal title={editingNota ? "Editar Nota Clínica" : "Nueva Nota Clínica"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form
                     onSubmit={async (e) => {
                         e.preventDefault();
                         if (!nota.trim()) return;
                         setIsSaving(true);
                         try {
-                            await createConsulta(pacienteId, {
+                            const payload = {
                                 motivo: 'Nota clínica',
                                 hallazgos: nota.trim(),
                                 fechaConsulta: new Date().toISOString().slice(0, 10),
-                            });
+                            };
+                            if (editingNota?.id) {
+                                await updateConsulta(editingNota.id, payload);
+                            } else {
+                                await createConsulta(pacienteId, payload);
+                            }
                             const updated = await getConsultasByPaciente(pacienteId);
                             setConsultas(updated);
                             setNota('');
+                            setEditingNota(null);
                             setIsModalOpen(false);
                         } catch (err) {
                             console.error(err);
@@ -715,7 +902,7 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh, canEdit, c
         try {
             await deletePsicologiaSesion(pacienteId, sesion.id);
             onRefresh();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar la sesión');
         }
     };
@@ -771,16 +958,6 @@ const PsicologiaSesionesSection = ({ pacienteId, sesiones, onRefresh, canEdit, c
                     <p className={styles.sectionSubtitle}>Registro de sesiones y seguimiento del paciente</p>
                 </div>
                 <div style={{display:'flex', gap:'10px'}}>
-                    {canEdit && (
-                        <Button variant="secondary" onClick={() => { setEditingSesion(sesiones[0] || null); setFormData({
-                            fecha: sesiones[0]?.fecha?.slice(0,10) || new Date().toISOString().slice(0,10),
-                            estadoAnimo: sesiones[0]?.estadoAnimo || '',
-                            adherencia: sesiones[0]?.adherencia ?? '',
-                            estres: sesiones[0]?.estres ?? '',
-                            intervenciones: sesiones[0]?.intervenciones || '',
-                            notas: sesiones[0]?.notas || '',
-                        }); setIsModalOpen(true); }}><FaEdit /> Editar</Button>
-                    )}
                     <Button onClick={() => { setEditingSesion(null); setIsModalOpen(true); }}><FaPlus /> Nueva Sesión</Button>
                 </div>
             </div>
@@ -897,7 +1074,7 @@ const PsicologiaEvaluacionesSection = ({ pacienteId, evaluaciones, onRefresh, ca
         try {
             await deletePsicologiaEvaluacion(pacienteId, evaluation.id);
             onRefresh();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar la evaluación');
         }
     };
@@ -950,27 +1127,6 @@ const PsicologiaEvaluacionesSection = ({ pacienteId, evaluaciones, onRefresh, ca
                     <p className={styles.sectionSubtitle}>Instrumentos y pruebas aplicadas</p>
                 </div>
                 <div style={{display:'flex', gap:'10px'}}>
-                    {canEdit && (
-                        <Button variant="secondary" onClick={() => {
-                            const first = evaluaciones[0];
-                            if (first) {
-                                setEditingEvaluacion(first);
-                                setFormData({
-                                    titulo: first.titulo || '',
-                                    fecha: first.fecha?.slice(0,10) || new Date().toISOString().slice(0,10),
-                                    ansiedadScore: first.ansiedadScore || '',
-                                    ansiedadNivel: first.ansiedadNivel || '',
-                                    depresionScore: first.depresionScore || '',
-                                    depresionNivel: first.depresionNivel || '',
-                                    autoeficaciaScore: first.autoeficaciaScore || '',
-                                    autoeficaciaNivel: first.autoeficaciaNivel || '',
-                                    estrategias: first.estrategias || '',
-                                    notas: first.notas || '',
-                                });
-                                setIsModalOpen(true);
-                            }
-                        }}><FaEdit /> Editar</Button>
-                    )}
                     <Button onClick={() => { setEditingEvaluacion(null); setIsModalOpen(true); }}><FaPlus /> Nueva Evaluacion</Button>
                 </div>
             </div>
@@ -1095,7 +1251,7 @@ const PsicologiaEvaluacionesSection = ({ pacienteId, evaluaciones, onRefresh, ca
 const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, canEdit, canDelete }) => {
     const [objectiveOpen, setObjectiveOpen] = useState(false);
     const [strategyOpen, setStrategyOpen] = useState(false);
-    const [objectiveForm, setObjectiveForm] = useState({ objetivo: '', progreso: '', avance: '' });
+    const [objectiveForm, setObjectiveForm] = useState({ objetivo: '', progreso: '' });
     const [strategyForm, setStrategyForm] = useState({ estrategia: '', frecuencia: '', estado: '' });
     const [editingObjective, setEditingObjective] = useState(null);
     const [editingStrategy, setEditingStrategy] = useState(null);
@@ -1106,7 +1262,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
         try {
             await deletePsicologiaObjetivo(pacienteId, obj.id);
             onRefresh();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar el objetivo');
         }
     };
@@ -1117,7 +1273,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
         try {
             await deletePsicologiaEstrategia(pacienteId, row.id);
             onRefresh();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar la estrategia');
         }
     };
@@ -1129,7 +1285,6 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
             const payload = {
                 objetivo: objectiveForm.objetivo,
                 progreso: objectiveForm.progreso ? Number(objectiveForm.progreso) : null,
-                avance: objectiveForm.avance ? Number(objectiveForm.avance) : null,
             };
             if (editingObjective?.id) {
                 await updatePsicologiaObjetivo(pacienteId, editingObjective.id, payload);
@@ -1138,7 +1293,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
             }
             setObjectiveOpen(false);
             setEditingObjective(null);
-            setObjectiveForm({ objetivo: '', progreso: '', avance: '' });
+            setObjectiveForm({ objetivo: '', progreso: '' });
             onRefresh();
         } finally {
             setIsSaving(false);
@@ -1170,22 +1325,6 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
                     <h3 className={styles.sectionTitle}>Plan de Intervencion Psicológica</h3>
                     <p className={styles.sectionSubtitle}>Objetivos terapeuticos y estrategias de intervencion</p>
                 </div>
-                {canEdit && (
-                    <Button variant="secondary" onClick={() => {
-                        if (objetivos[0]) {
-                            setEditingObjective(objetivos[0]);
-                            setObjectiveForm({
-                                objetivo: objetivos[0].objetivo || '',
-                                progreso: objetivos[0].progreso ?? '',
-                                avance: objetivos[0].avance ?? '',
-                            });
-                        } else {
-                            setEditingObjective(null);
-                            setObjectiveForm({ objetivo: '', progreso: '', avance: '' });
-                        }
-                        setObjectiveOpen(true);
-                    }}><FaEdit /> Editar</Button>
-                )}
             </div>
 
             <div className={styles.psicoObjectives}>
@@ -1203,7 +1342,6 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
                                         setObjectiveForm({
                                             objetivo: obj.objetivo || '',
                                             progreso: obj.progreso ?? '',
-                                            avance: obj.avance ?? '',
                                         });
                                         setObjectiveOpen(true);
                                     }}><FaEdit /> Editar</Button>
@@ -1227,14 +1365,6 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
                 <div className={styles.seguimientoHeaderRow}>
                     <h4>Estrategias de Intervención</h4>
                     <div style={{display:'flex', gap:'10px'}}>
-                        {canEdit && <Button variant="secondary" onClick={() => {
-                            const first = estrategias[0];
-                            if (first) {
-                                setEditingStrategy(first);
-                                setStrategyForm({ estrategia: first.estrategia || '', frecuencia: first.frecuencia || '', estado: first.estado || '' });
-                                setStrategyOpen(true);
-                            }
-                        }}><FaEdit /> Editar</Button>}
                         <Button onClick={() => { setEditingStrategy(null); setStrategyOpen(true); }}><FaPlus /> Nueva Estrategia</Button>
                     </div>
                 </div>
@@ -1273,7 +1403,7 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
                 </div>
             </div>
 
-            <Button className={styles.psicoFullButton} onClick={() => { setEditingObjective(null); setObjectiveForm({ objetivo: '', progreso: '', avance: '' }); setObjectiveOpen(true); }}>
+            <Button className={styles.psicoFullButton} onClick={() => { setEditingObjective(null); setObjectiveForm({ objetivo: '', progreso: '' }); setObjectiveOpen(true); }}>
                 <FaPlus /> Agregar Nuevo Objetivo
             </Button>
 
@@ -1287,20 +1417,6 @@ const PsicologiaPlanSection = ({ pacienteId, objetivos, estrategias, onRefresh, 
                         <div className={formStyles.formGroup}>
                             <label>Progreso (%)</label>
                             <input type="number" name="progreso" value={objectiveForm.progreso} onChange={(e) => setObjectiveForm((p) => ({ ...p, progreso: e.target.value }))} style={{width:'100%', padding:'8px'}} />
-                        </div>
-                        <div className={formStyles.formGroup}>
-                            <label>Avance (%)</label>
-                            <input
-                                type="number"
-                                name="avance"
-                                min="0"
-                                max="100"
-                                step="1"
-                                placeholder="0 - 100"
-                                value={objectiveForm.avance}
-                                onChange={(e) => setObjectiveForm((p) => ({ ...p, avance: e.target.value }))}
-                                style={{width:'100%', padding:'8px'}}
-                            />
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
@@ -1346,7 +1462,7 @@ const PsicologiaNotasSection = ({ pacienteId, notas, onRefresh, canEdit, canDele
         try {
             await deletePsicologiaNota(pacienteId, item.id);
             onRefresh();
-        } catch (err) {
+        } catch {
             alert('No se pudo eliminar la nota');
         }
     };
@@ -1440,14 +1556,16 @@ function DetallePacientePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('generales');
     const { user: currentUser } = useAuth();
-    const role = (currentUser?.role || '').toUpperCase();
+    const role = normalizeRole(currentUser?.role);
     const isDoctor = role === 'DOCTOR';
-    const isPsych = role === 'PSICOLOGO' || role === 'PSY';
-    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-    const canEditPsych = true; // todos pueden editar; borrado solo admin
+    const isPsych = role === 'PSICOLOGO';
+    const isAdmin = role === 'ADMIN';
+    // Regla solicitada: solo admin puede borrar; los demás pueden editar
+    const canEditPsych = true;
     const canDeletePsych = isAdmin;
     const [isPsychLike, setIsPsychLike] = useState(isPsych || isAdmin); // admin podrá ver vista de psicología si aplica
     const [isDoctorLike, setIsDoctorLike] = useState(isDoctor || isAdmin);
+    const [adminEspecialidad, setAdminEspecialidad] = useState('');
     const [psicoData, setPsicoData] = useState({
         sesiones: [],
         evaluaciones: [],
@@ -1456,47 +1574,102 @@ function DetallePacientePage() {
         notas: [],
     });
 
-    const fetchPaciente = async () => {
+    const normalizeEspecialidad = (value = '') =>
+        value.toString()
+            .trim()
+            .toUpperCase()
+            .replace('Ó', 'O')
+            .replace('Í', 'I')
+            .replace('Á', 'A')
+            .replace('É', 'E')
+            .replace('Ú', 'U');
+
+    const fetchPaciente = React.useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await getPacienteById(id);
-            setPaciente(data);
-            setFormData(data);
+            const normalizedData = {
+                ...data,
+                municipio: getCanonicalMunicipioJalisco(data?.municipio) || '',
+                talla: data?.talla ?? '',
+                estadoPago: getPacienteEstadoPago(data),
+                ultimaVisita: getPacienteUltimaVisita(data),
+            };
+            setPaciente(normalizedData);
+            setFormData(normalizedData);
         } catch (err) {
             console.error(err);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id]);
 
-    useEffect(() => { fetchPaciente(); }, [id]);
+    useEffect(() => {
+        void fetchPaciente();
+    }, [fetchPaciente]);
 
-    const loadPsicologia = async () => {
+    useEffect(() => {
+        if (!isAdmin || !paciente?.id) return;
+        const loadEspecialidad = async () => {
+            try {
+                const data = await getCitasByPaciente(paciente.id);
+                const list = Array.isArray(data)
+                    ? data
+                    : [
+                        ...(Array.isArray(data?.proximasCitas) ? data.proximasCitas : []),
+                        ...(Array.isArray(data?.historialCitas) ? data.historialCitas : []),
+                    ];
+                const now = new Date();
+                const next = list
+                    .map((cita) => {
+                        const fecha = new Date(cita.fechaHora || cita.fecha_cita || cita.fecha || cita.fechaRegistro || '');
+                        return { cita, fecha };
+                    })
+                    .filter((item) => item.fecha instanceof Date && !Number.isNaN(item.fecha))
+                    .sort((a, b) => a.fecha - b.fecha)
+                    .find((item) => item.fecha >= now);
+
+                const rawEspecialidad =
+                    next?.cita?.especialidad ||
+                    next?.cita?.especialidadNombre ||
+                    next?.cita?.Medico?.especialidad ||
+                    next?.cita?.medico?.especialidad ||
+                    '';
+
+                setAdminEspecialidad(normalizeEspecialidad(rawEspecialidad));
+            } catch (err) {
+                console.error(err);
+                setAdminEspecialidad('');
+            }
+        };
+        loadEspecialidad();
+    }, [isAdmin, paciente?.id]);
+
+    const loadPsicologia = React.useCallback(async () => {
         if (!paciente?.id) return;
-        try {
-            const data = await getPsicologia(paciente.id);
-            setPsicoData({
-                sesiones: Array.isArray(data?.sesiones) ? data.sesiones : [],
-                evaluaciones: Array.isArray(data?.evaluaciones) ? data.evaluaciones : [],
-                objetivos: Array.isArray(data?.objetivos) ? data.objetivos : [],
-                estrategias: Array.isArray(data?.estrategias) ? data.estrategias : [],
-                notas: Array.isArray(data?.notas) ? data.notas : [],
-            });
-        } finally {
-        }
-    };
+        const data = await getPsicologia(paciente.id);
+        setPsicoData({
+            sesiones: Array.isArray(data?.sesiones) ? data.sesiones : [],
+            evaluaciones: Array.isArray(data?.evaluaciones) ? data.evaluaciones : [],
+            objetivos: Array.isArray(data?.objetivos) ? data.objetivos : [],
+            estrategias: Array.isArray(data?.estrategias) ? data.estrategias : [],
+            notas: Array.isArray(data?.notas) ? data.notas : [],
+        });
+    }, [paciente?.id]);
 
     useEffect(() => {
         if (isPsychLike && paciente?.id) {
-            loadPsicologia();
+            void loadPsicologia();
         }
-    }, [isPsychLike, paciente?.id]);
+    }, [isPsychLike, loadPsicologia, paciente?.id]);
 
-    const tabs = isPsychLike
-        ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
-        : isDoctorLike
-            ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
-            : ['generales', 'clinico', 'citas', 'nutricion', 'documentos'];
+    const tabs = React.useMemo(() => (
+        isPsychLike
+            ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
+            : isDoctorLike
+                ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
+                : ['generales', 'clinico', 'citas', 'nutricion', 'documentos']
+    ), [isDoctorLike, isPsychLike]);
 
     const tabLabel = (tab) => {
         if (tab === 'generales') return 'Datos Generales';
@@ -1523,10 +1696,28 @@ function DetallePacientePage() {
             psicoData.objetivos.length > 0 ||
             psicoData.estrategias.length > 0 ||
             psicoData.notas.length > 0;
-        // Admin debe poder ver la vista del especialista aunque el paciente aún no tenga asignación
-        setIsPsychLike(isPsych || isAdmin || hasPsico);
-        setIsDoctorLike(isDoctor || isAdmin);
-    }, [paciente, psicoData, isPsych, isDoctor, isAdmin]);
+        const hasDoctor = Boolean(paciente?.medicoId);
+
+        const adminTargetsPsico = isAdmin && adminEspecialidad === 'PSICOLOGIA';
+        const adminTargetsNutri = isAdmin && ['NUTRICION', 'NUTRI', 'NUTRIOLOGO'].includes(adminEspecialidad);
+        const adminTargetsDoctor = isAdmin && adminEspecialidad && !adminTargetsPsico && !adminTargetsNutri;
+
+        const resolvedPsych = isPsych || adminTargetsPsico || (!adminEspecialidad && isAdmin && hasPsico);
+        const resolvedDoctor = isDoctor || adminTargetsDoctor || (!adminEspecialidad && isAdmin && hasDoctor);
+
+        setIsPsychLike(resolvedPsych);
+        setIsDoctorLike(resolvedDoctor && !adminTargetsNutri);
+
+        if (isAdmin) {
+            if (adminTargetsNutri && activeTab !== 'nutricion') setActiveTab('nutricion');
+            if (adminTargetsPsico && !['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos'].includes(activeTab)) {
+                setActiveTab('generales');
+            }
+            if (adminTargetsDoctor && !['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas'].includes(activeTab)) {
+                setActiveTab('clinico');
+            }
+        }
+    }, [paciente, psicoData, isPsych, isDoctor, isAdmin, adminEspecialidad, activeTab]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -1544,12 +1735,19 @@ function DetallePacientePage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const updated = await updatePaciente(id, cleanAndNormalizeData(formData));
-            setPaciente(updated);
-            setFormData(updated);
+            const updated = await updatePaciente(id, buildPacientePayload(formData));
+            const mergedPaciente = {
+                ...formData,
+                ...updated,
+                talla: updated?.talla ?? formData.talla ?? '',
+                estadoPago: getPacienteEstadoPago(updated) || formData.estadoPago || '',
+                ultimaVisita: getPacienteUltimaVisita(updated) || formData.ultimaVisita || '',
+            };
+            setPaciente(mergedPaciente);
+            setFormData(mergedPaciente);
             setIsEditing(false);
             alert("Guardado correctamente");
-        } catch (err) {
+        } catch {
             alert('Error al guardar');
         } finally {
             setIsSaving(false);
@@ -1563,7 +1761,11 @@ function DetallePacientePage() {
     const sesionesCount = psicoData.sesiones.length;
 
     // Helper para renderizar campos
-    const renderField = (label, name, type = 'text', options = [], props = {}) => (
+    const renderField = (label, name, type = 'text', options = [], props = {}) => {
+        const { suggestions = [], ...inputProps } = props;
+        const datalistId = suggestions.length > 0 ? `${name}-suggestions` : undefined;
+
+        return (
         <div className={formStyles.formGroup}>
             <label>{label}</label>
             {type === 'select' ? (
@@ -1582,13 +1784,20 @@ function DetallePacientePage() {
                     name={name} 
                     value={formData[name] || ''} 
                     onChange={handleInputChange} 
+                    list={datalistId}
                     disabled={!isEditing || props.readOnly} 
                     className={(!isEditing || props.readOnly) ? formStyles.disabledInput : ''}
-                    {...props} 
+                    {...inputProps} 
                 />
             )}
+            {suggestions.length > 0 && (
+                <datalist id={datalistId}>
+                    {suggestions.map((option) => <option key={option} value={option} />)}
+                </datalist>
+            )}
         </div>
-    );
+        );
+    };
 
     return (
         <div className={styles.container}>
@@ -1652,8 +1861,10 @@ function DetallePacientePage() {
                 ) : (
                     <>
                         <div className={styles.metricCard}><h4>HbA1c</h4><h2>{paciente.hba1c || '-'}%</h2><small>{paciente.riesgo}</small></div>
-                        <div className={styles.metricCard}><h4>Última Consulta</h4><h3>{paciente.ultimaVisita ? new Date(paciente.ultimaVisita).toLocaleDateString() : 'N/A'}</h3></div>
+                        <div className={styles.metricCard}><h4>Fecha de consulta</h4><h3>{getPacienteUltimaVisita(paciente) ? new Date(getPacienteUltimaVisita(paciente)).toLocaleDateString() : 'N/A'}</h3></div>
+                        <div className={styles.metricCard}><h4>Estado financiero</h4><h3>{getPacienteEstadoPago(paciente) || '-'}</h3><small>Seguimiento de pago del paciente</small></div>
                         <div className={styles.metricCard}><h4>IMC</h4><h2>{paciente.imc || '-'}</h2><small>{paciente.pesoKg}kg / {paciente.estatura}m</small></div>
+                        <div className={styles.metricCard}><h4>Talla de cintura</h4><h2>{paciente.talla || '-'}</h2><small>Referencia independiente de estatura</small></div>
                         <div className={styles.metricCard}><h4>Edad</h4><h2>{calcularEdad(paciente.fechaNacimiento)}</h2><small>{paciente.fechaNacimiento}</small></div>
                     </>
                 )}
@@ -1681,7 +1892,7 @@ function DetallePacientePage() {
                             <form className={formStyles.formGrid} style={{display:'block'}}>
                                 <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
                                 <div className={formStyles.formGrid}>
-                                    {renderField('Nombre Completo', 'nombre')}
+                                    {renderField('Nombre del Paciente', 'nombre')}
                                     {renderField('CURP', 'curp')}
                                     {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
                                     {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
@@ -1691,19 +1902,26 @@ function DetallePacientePage() {
 
                                 <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
                                 <div className={formStyles.formGrid}>
-                                    {renderField('Calle y Numero', 'calleNumero')}
+                                    {renderField('Domicilio', 'calleNumero')}
                                     {renderField('Colonia', 'colonia')}
-                                    {renderField('Municipio', 'municipio')}
+                                    {renderField('Municipio', 'municipio', 'select', [{ value: '', label: 'Selecciona un municipio' }, ...municipiosJalisco.map((v) => ({ value: v, label: v }))])}
                                     {renderField('Estado', 'estado')}
                                     {renderField('CP', 'codigoPostal')}
                                 </div>
 
-                                <h3 className={formStyles.formSectionTitle}>Configuracion</h3>
+                                <h3 className={formStyles.formSectionTitle}>Programa y servicio</h3>
                                 <div className={formStyles.formGrid}>
+                                    {renderField('Tipo de servicio', 'tipoServicio', 'text', [], { suggestions: tipoServicioSuggestions })}
+                                    {renderField('Estado financiero', 'estadoPago', 'select', [{ value: '', label: 'Sin definir' }, ...allowedEstadosPago.map(v => ({ value: v, label: v }))])}
+                                    {renderField('Responsable', 'responsable', 'text', [], { suggestions: responsableSuggestions })}
                                     {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
                                     {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
-                                    {renderField('Grupo/Programa', 'grupo')}
-                                    {renderField('Tipo Terapia', 'tipoTerapia')}
+                                    {renderField('Grupo al que pertenece', 'grupo', 'text', [], { suggestions: grupoSuggestions })}
+                                    {renderField('Tipo de terapia', 'tipoTerapia', 'select', allowedTipoTerapia.map(v => ({value:v, label:v})))}
+                                    {renderField('Motivo de consulta', 'motivoConsulta', 'text', [], { suggestions: motivoConsultaSuggestions })}
+                                    {renderField('Mes', 'mesEstadistico', 'select', mesesEstadisticos.map(v => ({value:v, label:v})))}
+                                    {renderField('Fecha de diagnóstico', 'fechaDiagnostico', 'date')}
+                                    {renderField('Fecha de consulta', 'ultimaVisita', 'date')}
                                 </div>
                             </form>
                         )}
@@ -1754,7 +1972,7 @@ function DetallePacientePage() {
                             <form className={formStyles.formGrid} style={{display:'block'}}>
                                 <h3 className={formStyles.formSectionTitle}>Información Personal</h3>
                                 <div className={formStyles.formGrid}>
-                                    {renderField('Nombre Completo', 'nombre')}
+                                    {renderField('Nombre del Paciente', 'nombre')}
                                     {renderField('CURP', 'curp')}
                                     {renderField('Fecha Nacimiento', 'fechaNacimiento', 'date')}
                                     {renderField('Género', 'genero', 'select', allowedGeneros.map(v => ({value:v, label:v})))}
@@ -1764,9 +1982,9 @@ function DetallePacientePage() {
 
                                 <h3 className={formStyles.formSectionTitle}>Domicilio</h3>
                                 <div className={formStyles.formGrid}>
-                                    {renderField('Calle y Numero', 'calleNumero')}
+                                    {renderField('Domicilio', 'calleNumero')}
                                     {renderField('Colonia', 'colonia')}
-                                    {renderField('Municipio', 'municipio')}
+                                    {renderField('Municipio', 'municipio', 'select', [{ value: '', label: 'Selecciona un municipio' }, ...municipiosJalisco.map((v) => ({ value: v, label: v }))])}
                                     {renderField('Estado', 'estado')}
                                     {renderField('CP', 'codigoPostal')}
                                 </div>
@@ -1774,8 +1992,10 @@ function DetallePacientePage() {
                                 <h3 className={formStyles.formSectionTitle}>Información Clínica</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Tipo Diabetes', 'tipoDiabetes', 'select', allowedTipoDiabetes.map(v => ({value:v, label:v})))}
-                                    {renderField('Fecha Diagnóstico', 'fechaDiagnostico', 'date')}
+                                    {renderField('Fecha de diagnóstico', 'fechaDiagnostico', 'date')}
+                                    {renderField('Fecha de consulta', 'ultimaVisita', 'date')}
                                     {renderField('Estatura (metros)', 'estatura', 'number', [], {step:'0.01', placeholder:'Ej: 1.65'})}
+                                    {renderField('Talla de cintura', 'talla', 'text', [], {placeholder:'Ej: 32, 34, 36'})}
                                     {renderField('Peso (kg)', 'pesoKg', 'number', [], {step:'0.1'})}
                                     {renderField('HbA1c', 'hba1c', 'number', [], {step:'0.1'})}
                                     {isDoctorLike && renderField('Glucosa (mg/dL)', 'glucosa', 'number', [], {step:'0.1'})}
@@ -1783,19 +2003,24 @@ function DetallePacientePage() {
                                     {renderField('IMC (Auto)', 'imc', 'number', [], {readOnly: true, placeholder:'Automatico'})}
                                 </div>
 
-                                <h3 className={formStyles.formSectionTitle}>Configuracion</h3>
+                                <h3 className={formStyles.formSectionTitle}>Programa y servicio</h3>
                                 <div className={formStyles.formGrid}>
+                                    {renderField('Tipo de servicio', 'tipoServicio', 'text', [], { suggestions: tipoServicioSuggestions })}
+                                    {renderField('Estado financiero', 'estadoPago', 'select', [{ value: '', label: 'Sin definir' }, ...allowedEstadosPago.map(v => ({ value: v, label: v }))])}
+                                    {renderField('Responsable', 'responsable', 'text', [], { suggestions: responsableSuggestions })}
                                     {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
                                     {renderField('Riesgo', 'riesgo', 'select', allowedRiesgo.map(v => ({value:v, label:v})))}
-                                    {renderField('Grupo/Programa', 'grupo')}
-                                    {renderField('Tipo Terapia', 'tipoTerapia')}
+                                    {renderField('Grupo al que pertenece', 'grupo', 'text', [], { suggestions: grupoSuggestions })}
+                                    {renderField('Tipo de terapia', 'tipoTerapia', 'select', allowedTipoTerapia.map(v => ({value:v, label:v})))}
+                                    {renderField('Motivo de consulta', 'motivoConsulta', 'text', [], { suggestions: motivoConsultaSuggestions })}
+                                    {renderField('Mes', 'mesEstadistico', 'select', mesesEstadisticos.map(v => ({value:v, label:v})))}
                                 </div>
                             </form>
                         )}
                         {activeTab === 'clinico' && <HistorialClinicoSection pacienteId={paciente.id} onConsultaCreated={fetchPaciente} />}
-                        {activeTab === 'citas' && <CitasSection pacienteId={paciente.id} />}
+                        {activeTab === 'citas' && <CitasSection pacienteId={paciente.id} defaultMedicoId={paciente.medicoId} />}
 
-                        {!isDoctorLike && activeTab === 'nutricion' && <Nutricion pacienteId={paciente.id} pacienteData={paciente} />}
+                        {!isDoctorLike && activeTab === 'nutricion' && <Nutricion pacienteId={paciente.id} pacienteData={paciente} onPacienteUpdated={fetchPaciente} />}
                         {!isDoctorLike && activeTab === 'documentos' && <Documentos pacienteId={paciente.id} />}
 
                         {isDoctorLike && activeTab === 'seguimiento' && (

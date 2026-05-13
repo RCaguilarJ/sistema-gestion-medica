@@ -8,6 +8,12 @@ import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave, FaTrash } from "react-icons
 import Modal from "../components/ui/Modal.jsx";
 import DetallePacienteModal from "../components/ui/DetallePacienteModal.jsx";
 import api from "../services/api.js";
+import { getPacienteRecencyStamp, getPacientesRecientesSnapshot } from "../utils/pacientesRecientes.js";
+import {
+  getCanonicalMunicipioJalisco,
+  matchesMunicipioJalisco,
+  municipiosJalisco as municipiosJaliscoOptions,
+} from "../constants/municipiosJalisco.js";
 
 import {
   getPacientes,
@@ -18,18 +24,41 @@ import {
 import { getCitasPortal, createPacienteFromCita } from "../services/consultaCitaService.js";
 
 // --- LISTA DE MUNICIPIOS DE JALISCO ---
-const municipiosJalisco = [
+const MUNICIPIOS_JALISCO = [
   "Acatic","Acatlán de Juárez","Ahualulco de Mercado","Amacueca","Amatitán","Ameca","Arandas","Atemajac de Brizuela","Atengo","Atenguillo","Atotonilco el Alto","Atoyac","Autlán de Navarro","Ayotlán","Ayutla","Bolaños","Cabo Corrientes","Cañadas de Obregón","Casimiro Castillo","Chapala","Chimaltitán","Chiquilistlán","Cihuatlán","Cocula","Colotlán","Concepción de Buenos Aires","Cuautitlán de García Barragán","Cuautla","Cuquío","Degollado","Ejutla","El Arenal","El Grullo","El Limón","El Salto","Encarnación de Díaz","Etzatlán","Gómez Farías","Guachinango","Guadalajara","Hostotipaquillo","Huejúcar","Huejuquilla el Alto","Ixtlahuacán de los Membrillos","Ixtlahuacán del Río","Jalostotitlán","Jamay","Jesús María","Jilotlán de los Dolores","Jocotepec","Juanacatlán","Juchitlán","La Barca","La Huerta","La Manzanilla de la Paz","Lagos de Moreno","Magdalena","Mascota","Mazamitla","Mexticacán","Mezquitic","Mixtlán","Ocotlán","Ojuelos de Jalisco","Pihuamo","Poncitlán","Puerto Vallarta","Quitupan","San Cristóbal de la Barranca","San Diego de Alejandría","San Gabriel","San Ignacio Cerro Gordo","San Juan de los Lagos","San Juanito de Escobedo","San Julián","San Marcos","San Martín de Bolaños","San Martín Hidalgo","San Miguel el Alto","San Pedro Tlaquepaque","San Sebastián del Oeste","Santa María de los Ángeles","Santa María del Oro","Sayula","Tala","Talpa de Allende","Tamazula de Gordiano","Tapalpa","Tecalitlán","Techaluta de Montenegro","Tecolotlán","Tenamaxtlán","Teocaltiche","Teocuitatlán de Corona","Tepatitlán de Morelos","Tequila","Teuchitlán","Tizapán el Alto","Tlajomulco de Zúñiga","Tolimán","Tomatlán","Tonalá","Tonaya","Tonila","Totatiche","Tototlán","Tuxcacuesco","Tuxcueca","Tuxpan","Unión de San Antonio","Unión de Tula","Valle de Guadalupe","Valle de Juárez","Villa Corona","Villa Guerrero","Villa Hidalgo","Villa Purificación","Yahualica de González Gallo","Zacoalco de Torres","Zapopan","Zapotiltic","Zapotitlán de Vadillo","Zapotlán del Rey","Zapotlán el Grande","Zapotlanejo",
 ];
 
+const allowedGeneros = ["Femenino", "Masculino", "Otro"];
+const allowedTipoTerapia = ["Individual", "Grupal", "Familiar"];
+const allowedEstadosPago = ["Pagado", "Pendiente", "Vencido", "Atrasado", "Parcial", "Exento", "Cancelado", "Moroso"];
+const mesesEstadisticos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const grupoSuggestions = ["Grupo Matutino A", "Grupo Vespertino A", "Grupo Control Metabolico", "Grupo Nutricion", "Grupo Psicologia", "Adultos Mayores"];
+const tipoServicioSuggestions = ["Médico", "Nutricional", "Psicológico", "Mixto", "Educativo", "Otro"];
+const motivoConsultaSuggestions = ["Primera vez", "Seguimiento", "Control glucemico", "Valoracion nutricional", "Evaluacion psicologica", "Revaloracion"];
+const responsableSuggestions = ["Paciente", "Madre", "Padre", "Tutor", "Familiar responsable"];
+const getPacienteUltimaVisita = (paciente) => paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? "";
+const getPacienteEstadoPago = (paciente) =>
+  paciente?.estadoPago
+  ?? paciente?.estado_pago
+  ?? paciente?.estadoFinanciero
+  ?? paciente?.estado_financiero
+  ?? "";
+
 // --- Helpers ---
 const cleanAndNormalizeData = (data) => {
-  const cleanedData = { ...data };
+  const cleanedData = {
+    ...data,
+    municipio: getCanonicalMunicipioJalisco(data?.municipio) || data?.municipio,
+    ultimaVisita: data.ultimaVisita ?? getPacienteUltimaVisita(data),
+  };
 
   if (cleanedData.estaturaCm) cleanedData.estaturaCm = parseInt(cleanedData.estaturaCm, 10);
+  if (cleanedData.estatura) cleanedData.estatura = parseFloat(cleanedData.estatura);
   if (cleanedData.pesoKg) cleanedData.pesoKg = parseFloat(cleanedData.pesoKg);
+  if (cleanedData.hba1c) cleanedData.hba1c = parseFloat(cleanedData.hba1c);
 
   if (cleanedData.edad) delete cleanedData.edad;
+  delete cleanedData.fechaConsulta;
 
   Object.keys(cleanedData).forEach((key) => {
     if (cleanedData[key] === "" || cleanedData[key] === null || cleanedData[key] === undefined) {
@@ -38,6 +67,22 @@ const cleanAndNormalizeData = (data) => {
   });
 
   return cleanedData;
+};
+const mapFocusField = (field) => {
+  const map = {
+    usuario_id: "usuarioId",
+    usuarioid: "usuarioId",
+    medico_id: "medicoId",
+    nutriologo_id: "nutriologoId",
+    psicologo_id: "psicologoId",
+    codigo_postal: "codigoPostal",
+    ultima_visita: "ultimaVisita",
+    fecha_consulta: "ultimaVisita",
+    fechaConsulta: "ultimaVisita",
+    estado_pago: "estadoPago",
+    estado_financiero: "estadoPago",
+  };
+  return map[field] || field;
 };
 
 const calcularEdad = (fechaNacimiento) => {
@@ -53,15 +98,21 @@ const calcularEdad = (fechaNacimiento) => {
 // --- COMPONENTE FORMULARIO MODAL ---
 const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }) => {
   const { user } = useAuth();
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes((user?.role || "").toUpperCase());
   const [formData, setFormData] = useState({
     nombre: "",
     fechaNacimiento: "",
     edad: "",
     genero: "",
+    estatura: "",
+    talla: "",
+    estadoPago: "",
+    pesoKg: "",
+    hba1c: "",
     curp: "",
     calleNumero: "",
     colonia: "",
-    municipio: "Guadalajara",
+    municipio: "",
     codigoPostal: "",
     telefono: "",
     celular: "",
@@ -72,12 +123,13 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
     motivoConsulta: "",
     mesEstadistico: "",
     fechaDiagnostico: "",
-    fechaConsulta: new Date().toISOString().slice(0, 10),
+    ultimaVisita: new Date().toISOString().slice(0, 10),
     primeraVez: true,
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [specialistRole, setSpecialistRole] = useState("");
   const [specialistId, setSpecialistId] = useState("");
   const [specialistOptions, setSpecialistOptions] = useState([]);
@@ -85,7 +137,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
   const formRef = useRef(null);
   const nombreRef = useRef(null);
   const curpRef = useRef(null);
-  const emailRef = useRef(null);
+  const EMAIL_REF = useRef(null);
   const telefonoRef = useRef(null);
   const celularRef = useRef(null);
 
@@ -100,16 +152,30 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
     setFormData((prev) => ({
       ...prev,
       ...initialData,
+      municipio: getCanonicalMunicipioJalisco(initialData?.municipio) || prev.municipio,
+      ultimaVisita: getPacienteUltimaVisita(initialData) || prev.ultimaVisita,
+      estadoPago: getPacienteEstadoPago(initialData) || prev.estadoPago,
     }));
   }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
   };
 
   const clearField = (name) => setFormData((prev) => ({ ...prev, [name]: "" }));
-  const renderClearButton = (name) =>
+  const applySuggestedValue = (name, value) => {
+    if (!value) return;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  const RenderClearButton = (name) =>
     isAdmin && formData[name]
       ? (
         <button
@@ -123,34 +189,13 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
       )
       : null;
 
-  const focusProblemField = (err) => {
-    const backendField =
-      err?.response?.data?.field ||
-      err?.response?.data?.errors?.[0]?.path ||
-      (/curp/i.test(err?.response?.data?.error || "") ? "curp" : null) ||
-      (/curp/i.test(err?.response?.data?.message || "") ? "curp" : null);
-
-    const refMap = {
-      nombre: nombreRef,
-      curp: curpRef,
-      email: emailRef,
-      telefono: telefonoRef,
-      celular: celularRef,
-    };
-
-    const targetName = backendField || formRef.current?.querySelector(":invalid")?.name;
-    const targetRef = targetName && refMap[targetName];
-
-    if (targetRef?.current) {
-      targetRef.current.focus();
-      targetRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-
-    const fallback = formRef.current?.querySelector(":invalid");
-    if (fallback) {
-      fallback.focus();
-      fallback.scrollIntoView({ behavior: "smooth", block: "center" });
+  const focusProblemField = (focusField) => {
+    if (!focusField) return;
+    const selector = `[name="${focusField}"], #${focusField}`;
+    const el = formRef.current?.querySelector(selector) || document.querySelector(selector);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof el.focus === "function") el.focus();
     }
   };
 
@@ -158,6 +203,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
     e.preventDefault();
     setIsSaving(true);
     setError("");
+    setFieldErrors({});
 
     try {
       const payload = cleanAndNormalizeData({
@@ -189,14 +235,27 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
       }
       onSuccess();
     } catch (err) {
-      setError("Datos inválidos o repetidos. Verifique y vuelva a intentar.");
-      focusProblemField(err);
+      const data = err.response?.data;
+      if (data?.focusField) {
+        focusProblemField(mapFocusField(data.focusField));
+      }
+      if (Array.isArray(data?.fields)) {
+        const errs = Object.fromEntries(data.fields.map((f) => [f.field, f.message]));
+        setFieldErrors(errs);
+      }
+      setError(data?.error || "Error guardando paciente");
     } finally {
       setIsSaving(false);
     }
   };
 
   const redStar = <span style={{ color: "red" }}>*</span>;
+  const renderFieldError = (name) =>
+    fieldErrors[name] ? (
+      <p className={styles.errorText || ""} style={{ color: "red", marginTop: 4 }}>
+        {fieldErrors[name]}
+      </p>
+    ) : null;
 
   // carga especialistas según rol
   useEffect(() => {
@@ -231,13 +290,14 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
         <div style={{ marginBottom: "1rem" }}>
           <label className={styles.label}>Nombre del Paciente {redStar}</label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input ref={nombreRef} className={styles.inputFull} name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" required />
-            {isAdmin && formData.nombre && (
-              <button type="button" onClick={() => clearField("nombre")} className={styles.clearButton}>×</button>
-            )}
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input ref={nombreRef} className={styles.inputFull} name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" required />
+              {isAdmin && formData.nombre && (
+                <button type="button" onClick={() => clearField("nombre")} className={styles.clearButton}>×</button>
+              )}
+            </div>
+            {renderFieldError("nombre")}
           </div>
-        </div>
 
         <div className={styles.formGrid}>
           <div>
@@ -252,9 +312,9 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
             <label className={styles.label}>Género {redStar}</label>
             <select className={styles.inputFull} name="genero" value={formData.genero} onChange={handleChange} required>
               <option value="">No especifica</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
+              {allowedGeneros.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -265,6 +325,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
                 <button type="button" onClick={() => clearField("curp")} className={styles.clearButton}>×</button>
               )}
             </div>
+            {renderFieldError("curp")}
           </div>
         </div>
       </div>
@@ -277,22 +338,27 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
         <div className={styles.formGrid}>
           <div>
-            <label className={styles.label}>Domicilio (Calle y Número) {redStar}</label>
+            <label className={styles.label}>Domicilio {redStar}</label>
             <input className={styles.inputFull} name="calleNumero" value={formData.calleNumero} onChange={handleChange} placeholder="Calle y número" required />
+            {renderFieldError("calleNumero")}
           </div>
           <div>
             <label className={styles.label}>Colonia {redStar}</label>
             <input className={styles.inputFull} name="colonia" value={formData.colonia} onChange={handleChange} placeholder="Nombre de la colonia" required />
+            {renderFieldError("colonia")}
           </div>
           <div>
             <label className={styles.label}>Municipio {redStar}</label>
             <select className={styles.inputFull} name="municipio" value={formData.municipio} onChange={handleChange} required>
-              {municipiosJalisco.map((m) => <option key={m} value={m}>{m}</option>)}
+              <option value="">Selecciona un municipio</option>
+              {municipiosJaliscoOptions.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
+            {renderFieldError("municipio")}
           </div>
           <div>
-            <label className={styles.label}>Código Postal {redStar}</label>
+            <label className={styles.label}>CP {redStar}</label>
             <input className={styles.inputFull} name="codigoPostal" value={formData.codigoPostal} onChange={handleChange} placeholder="5 dígitos" required />
+            {renderFieldError("codigoPostal")}
           </div>
           <div>
             <label className={styles.label}>Teléfono (Opcional)</label>
@@ -302,6 +368,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
                 <button type="button" onClick={() => clearField("telefono")} className={styles.clearButton}>×</button>
               )}
             </div>
+            {renderFieldError("telefono")}
           </div>
           <div>
             <label className={styles.label}>Celular {redStar}</label>
@@ -311,6 +378,65 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
                 <button type="button" onClick={() => clearField("celular")} className={styles.clearButton}>×</button>
               )}
             </div>
+            {renderFieldError("celular")}
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.divider}></div>
+
+      <div>
+        <h3 className={styles.sectionHeader}>Informacion Clinica</h3>
+        <p className={styles.sectionSub}>Datos clinicos iniciales del paciente</p>
+
+        <div className={styles.formGrid}>
+          <div>
+            <label className={styles.label}>Estatura (metros)</label>
+            <input
+              type="number"
+              step="0.01"
+              className={styles.inputFull}
+              name="estatura"
+              value={formData.estatura}
+              onChange={handleChange}
+              placeholder="Ej: 1.65"
+            />
+            {renderFieldError("estatura")}
+          </div>
+          <div>
+            <label className={styles.label}>Talla de cintura</label>
+            <input
+              className={styles.inputFull}
+              name="talla"
+              value={formData.talla}
+              onChange={handleChange}
+              placeholder="Ej: 32, 34, 36"
+            />
+            {renderFieldError("talla")}
+          </div>
+          <div>
+            <label className={styles.label}>Peso (kg)</label>
+            <input
+              type="number"
+              step="0.1"
+              className={styles.inputFull}
+              name="pesoKg"
+              value={formData.pesoKg}
+              onChange={handleChange}
+            />
+            {renderFieldError("pesoKg")}
+          </div>
+          <div>
+            <label className={styles.label}>HbA1c</label>
+            <input
+              type="number"
+              step="0.1"
+              className={styles.inputFull}
+              name="hba1c"
+              value={formData.hba1c}
+              onChange={handleChange}
+            />
+            {renderFieldError("hba1c")}
           </div>
         </div>
       </div>
@@ -323,37 +449,68 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
         <div className={styles.formGrid}>
           <div>
-            <label className={styles.label}>Grupo al que Pertenece {redStar}</label>
-            <input className={styles.inputFull} name="grupo" value={formData.grupo} onChange={handleChange} placeholder="Ej: Grupo Matutino A" required />
+            <label className={styles.label}>Grupo al que pertenece {redStar}</label>
+            <input className={styles.inputFull} list="grupo-suggestions" name="grupo" value={formData.grupo} onChange={handleChange} placeholder="Ej: Grupo Matutino A" required />
+            <datalist id="grupo-suggestions">
+              {grupoSuggestions.map((option) => <option key={option} value={option} />)}
+            </datalist>
+            {renderFieldError("grupo")}
           </div>
           <div>
-            <label className={styles.label}>Tipo de Servicio {redStar}</label>
-            <select className={styles.inputFull} name="tipoServicio" value={formData.tipoServicio} onChange={handleChange} required>
-              <option value="Médico">Médico</option>
-              <option value="Nutricional">Nutricional</option>
-              <option value="Mixto">Mixto</option>
+            <label className={styles.label}>Tipo de servicio {redStar}</label>
+            <input className={styles.inputFull} list="tipo-servicio-suggestions" name="tipoServicio" value={formData.tipoServicio} onChange={handleChange} placeholder="Ej: Médico" required />
+            <datalist id="tipo-servicio-suggestions">
+              {tipoServicioSuggestions.map((option) => <option key={option} value={option} />)}
+            </datalist>
+            {renderFieldError("tipoServicio")}
+          </div>
+          <div>
+            <label className={styles.label}>Estado financiero</label>
+            <select className={styles.inputFull} name="estadoPago" value={formData.estadoPago} onChange={handleChange}>
+              <option value="">Sin definir</option>
+              {allowedEstadosPago.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
+            {renderFieldError("estadoPago")}
           </div>
           <div>
-            <label className={styles.label}>Tipo de Terapia {redStar}</label>
+            <label className={styles.label}>Tipo de terapia {redStar}</label>
             <select className={styles.inputFull} name="tipoTerapia" value={formData.tipoTerapia} onChange={handleChange} required>
-              <option value="Individual">Individual</option>
-              <option value="Grupal">Grupal</option>
+              {allowedTipoTerapia.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
+            {renderFieldError("tipoTerapia")}
           </div>
           <div>
             <label className={styles.label}>Responsable {redStar}</label>
             <div style={{ display: "flex", gap: "8px" }}>
-              <input className={styles.inputFull} name="responsable" value={formData.responsable} onChange={handleChange} placeholder="Nombre del tutor o contacto" required />
+              <input className={styles.inputFull} list="responsable-suggestions" name="responsable" value={formData.responsable} onChange={handleChange} placeholder="Nombre del tutor o contacto" required />
               {isAdmin && formData.responsable && (
                 <button type="button" onClick={() => clearField("responsable")} className={styles.clearButton}>×</button>
               )}
             </div>
+            <datalist id="responsable-suggestions">
+              {responsableSuggestions.map((option) => <option key={option} value={option} />)}
+            </datalist>
+            {renderFieldError("responsable")}
           </div>
         </div>
 
         <div style={{ marginTop: "1rem" }}>
-          <label className={styles.label}>Motivo de Consulta {redStar}</label>
+          <label className={styles.label}>Motivo de consulta {redStar}</label>
+          <select
+            className={styles.inputFull}
+            value=""
+            onChange={(e) => applySuggestedValue("motivoConsulta", e.target.value)}
+            style={{ marginBottom: "0.75rem" }}
+          >
+            <option value="">Selecciona una sugerencia o escribe libremente</option>
+            {motivoConsultaSuggestions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
           <textarea
             className={styles.inputFull}
             name="motivoConsulta"
@@ -365,6 +522,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
             required
             style={{ resize: "none", fontFamily: "inherit" }}
           />
+          {renderFieldError("motivoConsulta")}
           {isAdmin && formData.motivoConsulta && (
             <div style={{ textAlign: "right", marginTop: "6px" }}>
               <button type="button" onClick={() => clearField("motivoConsulta")} className={styles.clearButtonInline}>Borrar</button>
@@ -422,21 +580,21 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
 
         <div className={styles.formGrid}>
           <div>
-            <label className={styles.label}>Mes Estadístico {redStar}</label>
+            <label className={styles.label}>Mes {redStar}</label>
             <select className={styles.inputFull} name="mesEstadistico" value={formData.mesEstadistico} onChange={handleChange} required>
               <option value="">Seleccionar</option>
-              {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m) => (
+              {mesesEstadisticos.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className={styles.label}>Fecha de Diagnóstico {redStar}</label>
+            <label className={styles.label}>Fecha de diagnóstico {redStar}</label>
             <input type="date" className={styles.inputFull} name="fechaDiagnostico" value={formData.fechaDiagnostico} onChange={handleChange} required />
           </div>
           <div>
-            <label className={styles.label}>Fecha de Consulta {redStar}</label>
-            <input type="date" className={styles.inputFull} name="fechaConsulta" value={formData.fechaConsulta} onChange={handleChange} required />
+            <label className={styles.label}>Fecha de consulta {redStar}</label>
+            <input type="date" className={styles.inputFull} name="ultimaVisita" value={formData.ultimaVisita} onChange={handleChange} required />
           </div>
 
           <div className={styles.checkboxContainer}>
@@ -476,6 +634,7 @@ function Pacientes() {
     const role = (currentUser?.role || "").toUpperCase();
     return role === "ADMIN" || role === "SUPER_ADMIN";
   })();
+  const currentUserId = currentUser?.id ?? null;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstatus, setFilterEstatus] = useState("");
@@ -492,15 +651,15 @@ function Pacientes() {
 
   const navigate = useNavigate();
 
-  const cargarPacientesYCitas = async () => {
+  const cargarPacientesYCitas = React.useCallback(async () => {
     setIsLoading(true);
     try {
       let data = [];
       let citasData = [];
 
-      if (currentUser?.id && !isAdmin) {
-        data = await getAllPacientesByDoctor(currentUser.id);
-        citasData = await getCitasPortal(currentUser.id);
+      if (currentUserId && !isAdmin) {
+        data = await getAllPacientesByDoctor(currentUserId);
+        citasData = await getCitasPortal(currentUserId);
       } else {
         data = await getPacientes();
         citasData = await getCitasPortal();
@@ -515,11 +674,11 @@ function Pacientes() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUserId, isAdmin]);
 
   useEffect(() => {
     cargarPacientesYCitas();
-  }, [currentUser?.id, isAdmin]);
+  }, [cargarPacientesYCitas]);
 
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth <= 768);
@@ -529,17 +688,31 @@ function Pacientes() {
 
   const pacientesFiltrados = useMemo(() => {
     const pacientesArray = Array.isArray(pacientes) ? pacientes : [];
-    return pacientesArray.filter((p) => {
+    const recientesSnapshot = getPacientesRecientesSnapshot();
+    const filtrados = pacientesArray.filter((p) => {
       const matchesSearch =
         (p.nombre || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.curp || "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesEstatus = filterEstatus ? p.estatus === filterEstatus : true;
       const matchesRiesgo = filterRiesgo ? p.riesgo === filterRiesgo : true;
-      const matchesMunicipio = filterMunicipio ? p.municipio === filterMunicipio : true;
+      const matchesMunicipio = filterMunicipio ? matchesMunicipioJalisco(p.municipio, filterMunicipio) : true;
 
       return matchesSearch && matchesEstatus && matchesRiesgo && matchesMunicipio;
     });
+
+    const indexed = filtrados.map((p, index) => ({
+      paciente: p,
+      index,
+      recency: getPacienteRecencyStamp(p, recientesSnapshot),
+    }));
+
+    indexed.sort((a, b) => {
+      if (a.recency !== b.recency) return b.recency - a.recency;
+      return a.index - b.index;
+    });
+
+    return indexed.map((item) => item.paciente);
   }, [pacientes, searchTerm, filterEstatus, filterRiesgo, filterMunicipio]);
 
   useEffect(() => {
@@ -602,7 +775,7 @@ function Pacientes() {
 
   const handleDeletePaciente = async (pacienteId, nombre) => {
     const confirmed = window.confirm(
-      `¿Seguro que deseas eliminar al paciente${nombre ? ` \"${nombre}\"` : ""}? Esta acción no se puede deshacer.`
+      `¿Seguro que deseas eliminar al paciente${nombre ? ` "${nombre}"` : ""}? Esta acción no se puede deshacer.`
     );
     if (!confirmed) return;
     try {
@@ -661,7 +834,7 @@ function Pacientes() {
 
           <select className={styles.filterSelect} value={filterMunicipio} onChange={(e) => setFilterMunicipio(e.target.value)}>
             <option value="">Todos los municipios</option>
-            {municipiosJalisco.map((m) => (
+            {municipiosJaliscoOptions.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
@@ -725,8 +898,9 @@ function Pacientes() {
                 <th>Paciente</th>
                 <th>CURP</th>
                 <th>Estatus</th>
+                <th>Estado financiero</th>
                 {isAdmin && <th>Especialista</th>}
-                <th>Última Visita</th>
+                <th>Fecha de Consulta</th>
                 <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
             </thead>
@@ -736,18 +910,19 @@ function Pacientes() {
                   <td>
                     <div className={styles.cellNameMain}>{p.nombre}</div>
                     <div className={styles.cellNameSub}>
-                      {p.edad ? `${p.edad} años` : ""} • {p.genero || "-"}
+                      {calcularEdad(p.fechaNacimiento) ? `${calcularEdad(p.fechaNacimiento)} años` : ""} • {p.genero || "-"}
                     </div>
                   </td>
                   <td className={styles.cellCurp}>{p.curp}</td>
                   <td><Tag label={p.estatus || "Activo"} /></td>
+                  <td>{getPacienteEstadoPago(p) ? <Tag label={getPacienteEstadoPago(p)} /> : "-"}</td>
                   {isAdmin && (
                     <td style={{ fontSize: "0.9rem", color: "#555" }}>
                       {getEspecialistasAsignados(p)}
                     </td>
                   )}
                   <td style={{ fontSize: "0.9rem", color: "#555" }}>
-                    {p.ultimaVisita ? new Date(p.ultimaVisita).toLocaleDateString("es-MX") : "-"}
+                    {getPacienteUltimaVisita(p) ? new Date(getPacienteUltimaVisita(p)).toLocaleDateString("es-MX") : "-"}
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <button className={styles.actionButton} onClick={() => handleVerDetalle(p.id)}>
@@ -769,7 +944,7 @@ function Pacientes() {
 
               {pacientesFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? "6" : "5"} className={styles.emptyTable}>No se encontraron resultados.</td>
+                  <td colSpan={isAdmin ? "7" : "6"} className={styles.emptyTable}>No se encontraron resultados.</td>
                 </tr>
               )}
             </tbody>
@@ -832,6 +1007,7 @@ function Pacientes() {
                   telefono: selectedCita.pacienteTelefono || "",
                   celular: selectedCita.pacienteTelefono || "",
                   motivoConsulta: selectedCita.motivo || "",
+                  ultimaVisita: (selectedCita.fechaHora || selectedCita.fecha || "").slice(0, 10),
                   medicoId: selectedCita.medicoId || null,
                 }
               : null
