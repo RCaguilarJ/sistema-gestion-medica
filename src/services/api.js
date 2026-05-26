@@ -11,13 +11,23 @@ const normalizeApiBaseUrl = (rawUrl) => {
   return `${withoutTrailingSlash}/api`;
 };
 
+const buildRelativeApiBaseUrl = (rawBasePath) => {
+  const trimmed = (rawBasePath || "").trim();
+  if (!trimmed || trimmed === "/") return "/api";
+
+  const normalizedBasePath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const withoutTrailingSlash = normalizedBasePath.replace(/\/+$/, "");
+  return `${withoutTrailingSlash}/api`;
+};
+
 const envBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
+const fallbackBaseUrl = buildRelativeApiBaseUrl(import.meta.env.BASE_URL);
 
 const api = axios.create({
   // DEV: usa proxy de Vite (/api)
   // PROD en cPanel: VITE_API_URL vacío → cae a /api (mismo dominio)
   // PROD con dominio externo: usa VITE_API_URL
-  baseURL: envBaseUrl || "/api",
+  baseURL: envBaseUrl || fallbackBaseUrl,
 });
 
 const shouldTrackMutation = (method = "") => {

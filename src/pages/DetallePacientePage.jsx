@@ -124,6 +124,11 @@ const getPacienteFinancialPackage = (paciente) =>
     paciente?.perfilFinanciero?.paquete
     ?? null;
 
+const buildFinanceFormState = (membership, paymentStatus) => ({
+    tipoMembresia: membership || '',
+    estadoPago: paymentStatus || '',
+});
+
 const buildPacientePayload = (data) => {
     const cleanedData = cleanAndNormalizeData({
         ...data,
@@ -1560,17 +1565,7 @@ const FinancialSummarySection = ({ paciente, canEdit = false, onSaveFinancial, i
     const paymentStatus = getPacienteEstadoPago(paciente);
     const benefits = Array.isArray(financialPackage?.benefits) ? financialPackage.benefits : [];
     const [isEditingFinance, setIsEditingFinance] = useState(false);
-    const [financeForm, setFinanceForm] = useState({
-        tipoMembresia: membership || '',
-        estadoPago: paymentStatus || '',
-    });
-
-    useEffect(() => {
-        setFinanceForm({
-            tipoMembresia: membership || '',
-            estadoPago: paymentStatus || '',
-        });
-    }, [membership, paymentStatus, paciente?.id]);
+    const [financeForm, setFinanceForm] = useState(() => buildFinanceFormState(membership, paymentStatus));
 
     const handleFinanceFieldChange = (event) => {
         const { name, value } = event.target;
@@ -1578,10 +1573,7 @@ const FinancialSummarySection = ({ paciente, canEdit = false, onSaveFinancial, i
     };
 
     const handleCancel = () => {
-        setFinanceForm({
-            tipoMembresia: membership || '',
-            estadoPago: paymentStatus || '',
-        });
+        setFinanceForm(buildFinanceFormState(membership, paymentStatus));
         setIsEditingFinance(false);
     };
 
@@ -2141,6 +2133,7 @@ function DetallePacientePage() {
                         )}
                         {activeTab === 'finanzas' && (
                             <FinancialSummarySection
+                                key={`${paciente?.id || 'nuevo'}:${getPacienteMembresia(paciente) || ''}:${getPacienteEstadoPago(paciente) || ''}`}
                                 paciente={paciente}
                                 canEdit={canEditFinancial}
                                 onSaveFinancial={handleFinancialSave}
@@ -2242,6 +2235,7 @@ function DetallePacientePage() {
                         )}
                         {activeTab === 'finanzas' && (
                             <FinancialSummarySection
+                                key={`${paciente?.id || 'nuevo'}:${getPacienteMembresia(paciente) || ''}:${getPacienteEstadoPago(paciente) || ''}`}
                                 paciente={paciente}
                                 canEdit={canEditFinancial}
                                 onSaveFinancial={handleFinancialSave}
