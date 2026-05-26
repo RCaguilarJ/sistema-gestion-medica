@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import ProtectedRoute, { AdminRoute } from './components/layout/ProtectedRoute.jsx';
+import ProtectedRoute, { AdminRoute, CitasRoute, FinanceRoute } from './components/layout/ProtectedRoute.jsx';
 import Layout from './components/layout/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -9,6 +9,7 @@ import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
 import DetallePacientePage from './pages/DetallePacientePage.jsx';
 import Citas from './pages/Citas.jsx';
+import Finanzas from './pages/Finanzas.jsx';
 
 const router = createBrowserRouter([
   {
@@ -29,7 +30,8 @@ const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'pacientes', element: <Pacientes /> },
           { path: 'pacientes/:id', element: <DetallePacientePage /> },
-          { path: 'citas', element: <Citas /> },
+          { path: 'citas', element: <CitasRoute><Citas /></CitasRoute> },
+          { path: 'finanzas', element: <FinanceRoute><Finanzas /></FinanceRoute> },
           { path: 'importar', element: <AdminRoute><Importar /></AdminRoute> },
           { path: 'reportes', element: <AdminRoute><Reportes /></AdminRoute> },
           { path: 'configuracion', element: <AdminRoute><Configuracion /></AdminRoute> },

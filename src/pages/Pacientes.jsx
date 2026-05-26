@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import styles from "./Pacientes.module.css";
 import Button from "../components/ui/Button.jsx";
 import Tag from "../components/ui/Tag.jsx";
-import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave, FaTrash } from "react-icons/fa";
+import { FaSearch, FaPlus, FaEye, FaSpinner, FaSave, FaTrash, FaEdit } from "react-icons/fa";
 import Modal from "../components/ui/Modal.jsx";
 import DetallePacienteModal from "../components/ui/DetallePacienteModal.jsx";
 import api from "../services/api.js";
 import { getPacienteRecencyStamp, getPacientesRecientesSnapshot } from "../utils/pacientesRecientes.js";
+import { canViewGlobalData, isAdminRole, isFinanceRole, isReadOnlyRole } from "../utils/roles.js";
 import {
   getCanonicalMunicipioJalisco,
   matchesMunicipioJalisco,
@@ -20,6 +21,7 @@ import {
   createPaciente,
   getAllPacientesByDoctor,
   deletePaciente,
+  updatePacienteResumen,
 } from "../services/pacienteService.js";
 import { getCitasPortal, createPacienteFromCita } from "../services/consultaCitaService.js";
 
@@ -30,7 +32,8 @@ const MUNICIPIOS_JALISCO = [
 
 const allowedGeneros = ["Femenino", "Masculino", "Otro"];
 const allowedTipoTerapia = ["Individual", "Grupal", "Familiar"];
-const allowedEstadosPago = ["Pagado", "Pendiente", "Vencido", "Atrasado", "Parcial", "Exento", "Cancelado", "Moroso"];
+const allowedEstadosPago = ["Pagado", "Pendiente", "Vencido", "Atrasado", "Parcial", "Exento", "Cancelado", "Moroso", "Suspendido", "Baja"];
+const allowedTiposMembresia = ["Basica", "Basica B", "Educativa", "Completa", "Completa B"];
 const mesesEstadisticos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const grupoSuggestions = ["Grupo Matutino A", "Grupo Vespertino A", "Grupo Control Metabolico", "Grupo Nutricion", "Grupo Psicologia", "Adultos Mayores"];
 const tipoServicioSuggestions = ["Médico", "Nutricional", "Psicológico", "Mixto", "Educativo", "Otro"];
@@ -43,6 +46,26 @@ const getPacienteEstadoPago = (paciente) =>
   ?? paciente?.estadoFinanciero
   ?? paciente?.estado_financiero
   ?? "";
+
+const getPacienteMembresia = (paciente) =>
+  paciente?.perfilFinanciero?.membresia
+  ?? paciente?.tipoMembresia
+  ?? paciente?.tipo_membresia
+  ?? "";
+
+const formatDateForInput = (value) => {
+  if (!value) return "";
+  const text = value.toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10);
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  const year = parsed.getFullYear();
+  const month = `${parsed.getMonth() + 1}`.padStart(2, "0");
+  const day = `${parsed.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 // --- Helpers ---
 const cleanAndNormalizeData = (data) => {
@@ -106,6 +129,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
     genero: "",
     estatura: "",
     talla: "",
+    tipoMembresia: "",
     estadoPago: "",
     pesoKg: "",
     hba1c: "",
@@ -154,6 +178,7 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
       ...initialData,
       municipio: getCanonicalMunicipioJalisco(initialData?.municipio) || prev.municipio,
       ultimaVisita: getPacienteUltimaVisita(initialData) || prev.ultimaVisita,
+      tipoMembresia: getPacienteMembresia(initialData) || prev.tipoMembresia,
       estadoPago: getPacienteEstadoPago(initialData) || prev.estadoPago,
     }));
   }, [initialData]);
@@ -465,6 +490,16 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
             {renderFieldError("tipoServicio")}
           </div>
           <div>
+            <label className={styles.label}>Membresia</label>
+            <select className={styles.inputFull} name="tipoMembresia" value={formData.tipoMembresia} onChange={handleChange}>
+              <option value="">Sin definir</option>
+              {allowedTiposMembresia.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            {renderFieldError("tipoMembresia")}
+          </div>
+          <div>
             <label className={styles.label}>Estado financiero</label>
             <select className={styles.inputFull} name="estadoPago" value={formData.estadoPago} onChange={handleChange}>
               <option value="">Sin definir</option>
@@ -624,16 +659,124 @@ const FormularioNuevoPaciente = ({ onClose, onSuccess, initialData, citaOrigen }
   );
 };
 
+const FormularioEdicionResumenPaciente = ({ paciente, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    estatus: paciente?.estatus || "Activo",
+    tipoMembresia: getPacienteMembresia(paciente) || "",
+    estadoPago: getPacienteEstadoPago(paciente) || "",
+    ultimaVisita: formatDateForInput(getPacienteUltimaVisita(paciente)),
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setFormData({
+      estatus: paciente?.estatus || "Activo",
+      tipoMembresia: getPacienteMembresia(paciente) || "",
+      estadoPago: getPacienteEstadoPago(paciente) || "",
+      ultimaVisita: formatDateForInput(getPacienteUltimaVisita(paciente)),
+    });
+    setError("");
+  }, [paciente]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const updated = await updatePacienteResumen(paciente.id, {
+        estatus: formData.estatus,
+        tipoMembresia: formData.tipoMembresia,
+        estadoPago: formData.estadoPago,
+        ultimaVisita: formData.ultimaVisita,
+      });
+      onSuccess(updated);
+    } catch (err) {
+      console.error("Error actualizando resumen del paciente:", err);
+      setError(err.response?.data?.error || "No se pudo actualizar el paciente.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.quickEditForm}>
+      <div className={styles.quickEditGrid}>
+        <div>
+          <label className={styles.label}>Estatus</label>
+          <select className={styles.inputFull} name="estatus" value={formData.estatus} onChange={handleChange} required>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={styles.label}>Membresia</label>
+          <select className={styles.inputFull} name="tipoMembresia" value={formData.tipoMembresia} onChange={handleChange}>
+            <option value="">Sin membresia</option>
+            {allowedTiposMembresia.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={styles.label}>Estado financiero</label>
+          <select className={styles.inputFull} name="estadoPago" value={formData.estadoPago} onChange={handleChange}>
+            <option value="">Sin estado</option>
+            {allowedEstadosPago.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={styles.label}>Fecha de consulta</label>
+          <input
+            type="date"
+            className={styles.inputFull}
+            name="ultimaVisita"
+            value={formData.ultimaVisita}
+            onChange={handleChange}
+            required
+          />
+        </div>
+      </div>
+
+      {error ? <div className={styles.errorMessage}>{error}</div> : null}
+
+      <div className={styles.modalActions}>
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSaving} style={{ backgroundColor: "#003366", color: "white" }}>
+          {isSaving ? <><FaSpinner className="fa-spin" /> Guardando...</> : <><FaSave /> Guardar cambios</>}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 // --- PÁGINA PRINCIPAL ---
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [citasPortal, setCitasPortal] = useState([]);
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const isAdmin = (() => {
-    const role = (currentUser?.role || "").toUpperCase();
-    return role === "ADMIN" || role === "SUPER_ADMIN";
-  })();
+  const isAdmin = isAdminRole(currentUser?.role);
+  const isFinance = isFinanceRole(currentUser?.role);
+  const canEditResumen = isAdmin || isFinance;
+  const canViewGlobal = canViewGlobalData(currentUser?.role);
+  const isReadOnly = isReadOnlyRole(currentUser?.role);
   const currentUserId = currentUser?.id ?? null;
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -645,6 +788,7 @@ function Pacientes() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState(null);
+  const [editingPaciente, setEditingPaciente] = useState(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState(null);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
@@ -657,7 +801,7 @@ function Pacientes() {
       let data = [];
       let citasData = [];
 
-      if (currentUserId && !isAdmin) {
+      if (currentUserId && !canViewGlobal) {
         data = await getAllPacientesByDoctor(currentUserId);
         citasData = await getCitasPortal(currentUserId);
       } else {
@@ -674,7 +818,7 @@ function Pacientes() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUserId, isAdmin]);
+  }, [currentUserId, canViewGlobal]);
 
   useEffect(() => {
     cargarPacientesYCitas();
@@ -787,19 +931,30 @@ function Pacientes() {
     }
   };
 
+  const handleResumenSaved = (updatedPaciente) => {
+    setPacientes((prev) => prev.map((item) => (item.id === updatedPaciente.id ? updatedPaciente : item)));
+    setEditingPaciente(null);
+  };
+
   return (
     <div>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Gestión de Pacientes</h1>
-          <p className={styles.subtitle}>Total: {pacientesFiltrados.length} pacientes</p>
+          <h1 className={styles.title}>{isFinance ? "Resumen financiero" : "Gestión de Pacientes"}</h1>
+          <p className={styles.subtitle}>
+            {isFinance
+              ? `Total: ${pacientesFiltrados.length} pacientes con seguimiento financiero`
+              : `Total: ${pacientesFiltrados.length} pacientes`}
+          </p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          style={{ backgroundColor: "#003366", color: "#fff", padding: "0.75rem 1.5rem" }}
-        >
-          <FaPlus /> Nuevo Paciente
-        </Button>
+        {!isReadOnly && (
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            style={{ backgroundColor: "#003366", color: "#fff", padding: "0.75rem 1.5rem" }}
+          >
+            <FaPlus /> Nuevo Paciente
+          </Button>
+        )}
       </div>
 
       <div className={styles.filtersContainer}>
@@ -869,15 +1024,17 @@ function Pacientes() {
                   </td>
                   <td><Tag label={(cita.estado || "pendiente").toString()} /></td>
                   <td style={{ textAlign: "right" }}>
-                    <button
-                      className={styles.actionButton}
-                      onClick={() => {
-                        setSelectedCita(cita);
-                        setIsModalOpen(true);
-                      }}
-                    >
-                      <FaPlus /> Nuevo Paciente
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        className={styles.actionButton}
+                        onClick={() => {
+                          setSelectedCita(cita);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        <FaPlus /> Nuevo Paciente
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -898,6 +1055,7 @@ function Pacientes() {
                 <th>Paciente</th>
                 <th>CURP</th>
                 <th>Estatus</th>
+                <th>Membresia</th>
                 <th>Estado financiero</th>
                 {isAdmin && <th>Especialista</th>}
                 <th>Fecha de Consulta</th>
@@ -915,6 +1073,7 @@ function Pacientes() {
                   </td>
                   <td className={styles.cellCurp}>{p.curp}</td>
                   <td><Tag label={p.estatus || "Activo"} /></td>
+                  <td>{getPacienteMembresia(p) ? <Tag label={getPacienteMembresia(p)} /> : "-"}</td>
                   <td>{getPacienteEstadoPago(p) ? <Tag label={getPacienteEstadoPago(p)} /> : "-"}</td>
                   {isAdmin && (
                     <td style={{ fontSize: "0.9rem", color: "#555" }}>
@@ -925,6 +1084,15 @@ function Pacientes() {
                     {getPacienteUltimaVisita(p) ? new Date(getPacienteUltimaVisita(p)).toLocaleDateString("es-MX") : "-"}
                   </td>
                   <td style={{ textAlign: "right" }}>
+                    {canEditResumen && (
+                      <button
+                        className={styles.actionButton}
+                        onClick={() => setEditingPaciente(p)}
+                        style={{ marginRight: "0.5rem" }}
+                      >
+                        <FaEdit /> Editar
+                      </button>
+                    )}
                     <button className={styles.actionButton} onClick={() => handleVerDetalle(p.id)}>
                       <FaEye /> Ver
                     </button>
@@ -944,7 +1112,7 @@ function Pacientes() {
 
               {pacientesFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? "7" : "6"} className={styles.emptyTable}>No se encontraron resultados.</td>
+                  <td colSpan={isAdmin ? "8" : "7"} className={styles.emptyTable}>No se encontraron resultados.</td>
                 </tr>
               )}
             </tbody>
@@ -990,29 +1158,45 @@ function Pacientes() {
         </div>
       )}
 
-      <Modal title="Nuevo Paciente" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <FormularioNuevoPaciente
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={() => {
-            setIsModalOpen(false);
-            setSelectedCita(null);
-            cargarPacientesYCitas();
-          }}
-          citaOrigen={selectedCita}
-          initialData={
-            selectedCita
-              ? {
-                  nombre: selectedCita.pacienteNombre || "",
-                  email: selectedCita.pacienteEmail || "",
-                  telefono: selectedCita.pacienteTelefono || "",
-                  celular: selectedCita.pacienteTelefono || "",
-                  motivoConsulta: selectedCita.motivo || "",
-                  ultimaVisita: (selectedCita.fechaHora || selectedCita.fecha || "").slice(0, 10),
-                  medicoId: selectedCita.medicoId || null,
-                }
-              : null
-          }
-        />
+      {!isReadOnly && (
+        <Modal title="Nuevo Paciente" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          <FormularioNuevoPaciente
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={() => {
+              setIsModalOpen(false);
+              setSelectedCita(null);
+              cargarPacientesYCitas();
+            }}
+            citaOrigen={selectedCita}
+            initialData={
+              selectedCita
+                ? {
+                    nombre: selectedCita.pacienteNombre || "",
+                    email: selectedCita.pacienteEmail || "",
+                    telefono: selectedCita.pacienteTelefono || "",
+                    celular: selectedCita.pacienteTelefono || "",
+                    motivoConsulta: selectedCita.motivo || "",
+                    ultimaVisita: (selectedCita.fechaHora || selectedCita.fecha || "").slice(0, 10),
+                    medicoId: selectedCita.medicoId || null,
+                  }
+                : null
+            }
+          />
+        </Modal>
+      )}
+
+      <Modal
+        title={editingPaciente ? `Editar resumen de ${editingPaciente.nombre}` : "Editar paciente"}
+        isOpen={Boolean(editingPaciente)}
+        onClose={() => setEditingPaciente(null)}
+      >
+        {editingPaciente ? (
+          <FormularioEdicionResumenPaciente
+            paciente={editingPaciente}
+            onClose={() => setEditingPaciente(null)}
+            onSuccess={handleResumenSaved}
+          />
+        ) : null}
       </Modal>
 
       <DetallePacienteModal

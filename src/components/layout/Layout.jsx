@@ -7,6 +7,7 @@ import {
   FaTachometerAlt,
   FaUsers,
   FaCalendarAlt,
+  FaWallet,
   FaUpload,
   FaFileAlt,
   FaCog,
@@ -14,6 +15,7 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
+import { canAccessAdminTools, isAdminRole, isFinanceRole } from "../../utils/roles.js";
 
 import logoAmd from "../../assets/img/logo.png";
 
@@ -23,9 +25,15 @@ function Layout() {
   const isLaptopUp = useMediaQuery("(min-width: 769px)");
 
   const role = (user?.role || "").toUpperCase();
-  const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
-  const displayName =
-    isAdmin && isLaptopUp ? "Admin" : user?.nombre || "Usuario";
+  const isAdmin = isAdminRole(role);
+  const isFinance = isFinanceRole(role);
+  const showCitas = !isAdmin && !isFinance;
+  const canUseAdminTools = canAccessAdminTools(user);
+  const displayName = isLaptopUp && (isFinance || (isAdmin && !canUseAdminTools))
+    ? "Finanzas"
+    : isAdmin && isLaptopUp
+      ? "Admin"
+      : user?.nombre || "Usuario";
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleMobile = () => setMobileOpen((v) => !v);
@@ -51,32 +59,46 @@ function Layout() {
         </button>
 
         <div className={`${styles.navLinks} ${mobileOpen ? styles.navLinksOpen : ""}`}>
-          <NavLink
-            onClick={closeMobile}
-            to="/app"
-            end
-            className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-          >
-            <FaTachometerAlt /> <span>Dashboard</span>
-          </NavLink>
+          {!isFinance && (
+            <NavLink
+              onClick={closeMobile}
+              to="/app"
+              end
+              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+            >
+              <FaTachometerAlt /> <span>Dashboard</span>
+            </NavLink>
+          )}
 
           <NavLink
             onClick={closeMobile}
             to="/app/pacientes"
             className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
           >
-            <FaUsers /> <span>Pacientes</span>
+            <FaUsers /> <span>{isFinance ? "Resumen financiero" : "Pacientes"}</span>
           </NavLink>
 
-          <NavLink
-            onClick={closeMobile}
-            to="/app/citas"
-            className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-          >
-            <FaCalendarAlt /> <span>Citas</span>
-          </NavLink>
+          {showCitas && (
+            <NavLink
+              onClick={closeMobile}
+              to="/app/citas"
+              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+            >
+              <FaCalendarAlt /> <span>Citas</span>
+            </NavLink>
+          )}
 
-          {isAdmin && (
+          {(isAdmin || isFinance) && (
+            <NavLink
+              onClick={closeMobile}
+              to="/app/finanzas"
+              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+            >
+              <FaWallet /> <span>Finanzas</span>
+            </NavLink>
+          )}
+
+          {canUseAdminTools && (
             <NavLink
               onClick={closeMobile}
               to="/app/importar"
@@ -86,7 +108,7 @@ function Layout() {
             </NavLink>
           )}
 
-          {isAdmin && (
+          {canUseAdminTools && (
             <NavLink
               onClick={closeMobile}
               to="/app/reportes"
@@ -96,7 +118,7 @@ function Layout() {
             </NavLink>
           )}
 
-          {isAdmin && (
+          {canUseAdminTools && (
             <NavLink
               onClick={closeMobile}
               to="/app/configuracion"

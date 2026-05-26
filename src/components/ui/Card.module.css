@@ -1,16 +1,18 @@
 /* src/components/ui/Card.module.css */
 .card {
   background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem; /* 24px */
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(221, 231, 241, 0.95);
+  padding: var(--card-padding);
   width: 100%;
-  height: 100%; /* Para que llene el espacio del grid */
+  height: 100%;
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 768px) {
   .card {
-    padding: 1rem;
-    border-radius: 10px;
+    padding: var(--card-padding-mobile);
+    border-radius: var(--radius-card);
   }
 }

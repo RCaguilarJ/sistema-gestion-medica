@@ -16,6 +16,7 @@ import {
 const ROLE_OPTIONS = [
   { value: 'ADMIN', label: 'Administrador' },
   { value: 'RECEPCION', label: 'Recepción' },
+  { value: 'FINANZAS', label: 'Finanzas' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'NUTRI', label: 'Nutriólogo' },
   { value: 'ENDOCRINOLOGO', label: 'Endocrinólogo' },
@@ -29,6 +30,14 @@ const ROLE_PERMISSIONS = [
     permissions: [
       { text: 'Gestión Total', allowed: true },
       { text: 'Configuración', allowed: true },
+    ],
+  },
+  {
+    title: 'Finanzas',
+    permissions: [
+      { text: 'Pacientes y estados de pago', allowed: true },
+      { text: 'Importacion financiera', allowed: true },
+      { text: 'Configuración', allowed: false },
     ],
   },
   {

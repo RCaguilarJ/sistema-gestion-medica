@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/AuthContext.jsx';
-import ProtectedRoute, { AccessTokenRoute, AdminRoute } from './components/layout/ProtectedRoute.jsx';
+import ProtectedRoute, { AccessTokenRoute, AdminRoute, CitasRoute, FinanceRoute } from './components/layout/ProtectedRoute.jsx';
 import Layout from './components/layout/Layout.jsx';
 
 // Páginas
@@ -17,6 +17,8 @@ import Importar from './pages/Importar.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
 import Citas from './pages/Citas.jsx';
+import Finanzas from './pages/Finanzas.jsx';
+import { isFinanceRole } from './utils/roles.js';
 
 // Componente auxiliar para redirigir si ya está logueado
 const LoginRoute = () => {
@@ -26,6 +28,14 @@ const LoginRoute = () => {
     return <Navigate to="/app" replace />;
   }
   return <Login />;
+};
+
+const AppHomeRoute = () => {
+  const { user } = useAuth();
+  if (isFinanceRole(user?.role)) {
+    return <Navigate to="/app/finanzas" replace />;
+  }
+  return <Dashboard />;
 };
 
 const router = createBrowserRouter([
@@ -46,10 +56,11 @@ const router = createBrowserRouter([
         path: '/app',
         element: <Layout />,
         children: [
-          { index: true, element: <Dashboard /> },
+          { index: true, element: <AppHomeRoute /> },
           { path: 'pacientes', element: <Pacientes /> },
           { path: 'pacientes/:id', element: <DetallePacientePage /> },
-          { path: 'citas', element: <Citas /> },
+          { path: 'citas', element: <CitasRoute><Citas /></CitasRoute> },
+          { path: 'finanzas', element: <FinanceRoute><Finanzas /></FinanceRoute> },
           { path: 'importar', element: <AdminRoute><Importar /></AdminRoute> },
           { path: 'reportes', element: <AdminRoute><Reportes /></AdminRoute> },
           { path: 'configuracion', element: <AdminRoute><Configuracion /></AdminRoute> },

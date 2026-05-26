@@ -5,6 +5,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  padding: 1.5rem;
   /* Este es el fondo degradado de tu diseño */
   background: linear-gradient(120deg, #f0f9ff 0%, #e6f7f5 100%);
 }
@@ -12,8 +13,8 @@
 .loginCard {
   background: #ffffff;
   padding: 2.5rem 3rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.08);
   width: 100%;
   max-width: 400px;
   text-align: center;
@@ -26,7 +27,7 @@
 }
 
 .title {
-  font-size: 1.5rem;
+  font-size: clamp(1.5rem, 3vw, 1.8rem);
   font-weight: 600;
   color: #333;
   margin-bottom: 0.5rem;
@@ -130,8 +131,21 @@
   text-decoration: underline;
 }
 
+@media (max-width: 768px) {
+  .loginPage {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .loginCard {
+    margin-top: min(8vh, 3rem);
+    padding: 2rem 1.5rem;
+  }
+}
+
 @media (max-width: 480px) {
   .loginCard {
-    padding: 2rem 1.5rem;
+    border-radius: 16px;
+    padding: 1.6rem 1.1rem;
   }
 }

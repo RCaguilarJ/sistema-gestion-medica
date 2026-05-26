@@ -582,6 +582,171 @@
   font-size: 0.95rem;
 }
 
+.financialSection {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.financialHero {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(10, 74, 171, 0.98), rgba(95, 118, 243, 0.94)),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.14), transparent 35%);
+  color: #fff;
+}
+
+.financialHeroBadge {
+  width: 86px;
+  height: 86px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.financialHeroLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.financialHeroKicker {
+  margin: 0 0 8px;
+  color: rgba(255, 255, 255, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+.financialHeroTitle {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  line-height: 0.98;
+  text-transform: uppercase;
+}
+
+.financialHeroText {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.5;
+}
+
+.financialHeroTags {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.financialMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.financialEditorCard {
+  background: #ffffff;
+  border: 1px solid #dbe7ff;
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.financialEditorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.financialEditorActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.financialEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.financialMetaCard {
+  background: #f8fbff;
+  border: 1px solid #dbe7ff;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.financialMetaCard span {
+  color: #5b6f91;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.financialMetaCard strong {
+  color: #0f2d71;
+  font-size: 1.05rem;
+}
+
+.financialBenefits {
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.financialBenefitLight,
+.financialBenefitDark {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.95fr) 1.3fr;
+  gap: 20px;
+  padding: 20px 22px;
+  color: #fff;
+}
+
+.financialBenefitLight {
+  background: #5d73f2;
+}
+
+.financialBenefitDark {
+  background: #184da4;
+}
+
+.financialBenefitTitle {
+  font-size: 1.7rem;
+  line-height: 0.98;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+.financialBenefitText {
+  line-height: 1.45;
+}
+
+.financialEmpty {
+  border: 1px dashed #c8d8f4;
+  border-radius: 18px;
+  padding: 18px;
+  color: #5b6f91;
+  background: #f8fbff;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 16px;
@@ -589,6 +754,16 @@
 
   .header {
     align-items: flex-start;
+  }
+
+  .headerRight,
+  .sectionHeaderRow,
+  .seguimientoHeaderRow,
+  .financialEditorHeader,
+  .financialEditorActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .metricsGrid {
@@ -600,7 +775,27 @@
   }
 
   .detailGridTwo,
-  .modalFormGrid {
+  .modalFormGrid,
+  .financialHero,
+  .financialBenefitLight,
+  .financialBenefitDark {
     grid-template-columns: 1fr;
+  }
+
+  .financialHeroBadge {
+    width: 70px;
+    height: 70px;
+  }
+
+  .tabContainer {
+    gap: 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.25rem;
+  }
+
+  .tab,
+  .tabActive {
+    white-space: nowrap;
   }
 }

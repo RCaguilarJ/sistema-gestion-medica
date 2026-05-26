@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/AuthContext.jsx';
+import { canAccessAdminTools, isAdminRole, isFinanceRole } from '../../utils/roles.js';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
@@ -30,8 +31,35 @@ export function AdminRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  const role = (user?.role || '').toUpperCase();
-  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+  if (!canAccessAdminTools(user)) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return children;
+}
+
+export function FinanceRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdminRole(user?.role) && !isFinanceRole(user?.role)) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return children;
+}
+
+export function CitasRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isAdminRole(user?.role) || isFinanceRole(user?.role)) {
     return <Navigate to="/app" replace />;
   }
 

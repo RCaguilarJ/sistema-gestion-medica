@@ -2,14 +2,13 @@
 
 .card {
     background-color: #fff;
-    border-radius: 12px;
-    border: 1px solid #eef2f7; /* Borde sutil */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border-radius: 18px;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
     padding: 2rem;
     margin-bottom: 2rem;
 }
 
-/* Títulos */
 .title {
     font-size: 1rem;
     font-weight: 700;
@@ -23,10 +22,9 @@
     margin: 0 0 1.5rem 0;
 }
 
-/* Grilla de Inputs Superiores */
 .gridRow {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* 3 columnas iguales */
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -43,19 +41,18 @@
     color: #444;
 }
 
-/* Estilo específico del Input "Read Only" (Fondo Gris) */
 .readOnlyInput {
     width: 100%;
     padding: 0.75rem 1rem;
-    background-color: #f9fafb; /* El gris muy clarito de la imagen */
+    background-color: #f9fafb;
     border: 1px solid #f0f0f0;
-    border-radius: 6px;
+    border-radius: 10px;
     color: #555;
     font-size: 0.9rem;
     outline: none;
+    transition: all 0.2s;
 }
 
-/* Sección Planes */
 .sectionTitle {
     font-size: 1rem;
     font-weight: 600;
@@ -63,11 +60,10 @@
     margin-bottom: 1rem;
 }
 
-/* Estado Vacío (Empty State) */
 .emptyState {
     background-color: #f9fafb;
-    border-radius: 8px;
-    border: 1px solid #f0f0f0; /* Borde muy sutil, casi invisible */
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
     padding: 3rem 2rem;
     display: flex;
     flex-direction: column;
@@ -79,7 +75,7 @@
 
 .emptyIcon {
     font-size: 2rem;
-    color: #9ca3af; /* Gris medio para el ícono */
+    color: #9ca3af;
     margin-bottom: 0.5rem;
 }
 
@@ -92,7 +88,7 @@
 .createLink {
     background: none;
     border: none;
-    color: #111827; /* Negro suave */
+    color: #111827;
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
@@ -104,37 +100,12 @@
     text-decoration: underline;
 }
 
-/* Responsivo */
-@media (max-width: 768px) {
-    .gridRow {
-        grid-template-columns: 1fr; /* 1 columna en móvil */
-        gap: 1rem;
-    }
-}
-/* src/pages/Nutricion.module.css */
-
-/* ... (estilos anteriores iguales) ... */
-
-/* Input en modo lectura (Gris) */
-.readOnlyInput {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: #f9fafb;
-    border: 1px solid #f0f0f0;
-    border-radius: 6px;
-    color: #555;
-    font-size: 0.9rem;
-    outline: none;
-    transition: all 0.2s;
-}
-
-/* Input en modo edición (Blanco) */
 .editableInput {
     width: 100%;
     padding: 0.75rem 1rem;
     background-color: #ffffff;
-    border: 1px solid #dcdcdc; /* Borde más visible */
-    border-radius: 6px;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
     color: #333;
     font-size: 0.9rem;
     outline: none;
@@ -144,4 +115,22 @@
 .editableInput:focus {
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+@media (max-width: 1024px) {
+    .gridRow {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .gridRow {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
 }

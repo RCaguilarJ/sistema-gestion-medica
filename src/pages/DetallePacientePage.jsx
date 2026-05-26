@@ -25,7 +25,7 @@ import {
     deleteConsulta,
     deleteCita,
 } from '../services/consultaCitaService.js';
-import { getPacienteById, updatePaciente } from '../services/pacienteService.js';
+import { getPacienteById, updatePaciente, updatePacienteFinanzas } from '../services/pacienteService.js';
 import {
     getPsicologia,
     createPsicologiaSesion,
@@ -46,6 +46,8 @@ import {
 } from '../services/psicologiaService.js';
 import api from '../services/api.js';
 import { getCanonicalMunicipioJalisco, municipiosJalisco } from '../constants/municipiosJalisco.js';
+import { isReadOnlyRole } from '../utils/roles.js';
+import logoAmd from '../assets/img/logo.png';
 
 // --- HELPERS ---
 
@@ -96,7 +98,8 @@ const allowedTipoDiabetes = ['Tipo 1', 'Tipo 2', 'Gestacional', 'Otro'];
 const allowedEstatus = ['Activo', 'Inactivo'];
 const allowedRiesgo = ['Alto', 'Medio', 'Bajo'];
 const allowedTipoTerapia = ['Individual', 'Grupal', 'Familiar'];
-const allowedEstadosPago = ['Pagado', 'Pendiente', 'Vencido', 'Atrasado', 'Parcial', 'Exento', 'Cancelado', 'Moroso'];
+const allowedEstadosPago = ['Pagado', 'Pendiente', 'Vencido', 'Atrasado', 'Parcial', 'Exento', 'Cancelado', 'Moroso', 'Suspendido', 'Baja'];
+const allowedTiposMembresia = ['Basica', 'Basica B', 'Educativa', 'Completa', 'Completa B'];
 const mesesEstadisticos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const grupoSuggestions = ['Grupo Matutino A', 'Grupo Vespertino A', 'Grupo Control Metabolico', 'Grupo Nutricion', 'Grupo Psicologia', 'Adultos Mayores'];
 const tipoServicioSuggestions = ['Médico', 'Nutricional', 'Psicológico', 'Mixto', 'Educativo', 'Otro'];
@@ -110,6 +113,16 @@ const getPacienteEstadoPago = (paciente) =>
     ?? paciente?.estadoFinanciero
     ?? paciente?.estado_financiero
     ?? '';
+
+const getPacienteMembresia = (paciente) =>
+    paciente?.perfilFinanciero?.membresia
+    ?? paciente?.tipoMembresia
+    ?? paciente?.tipo_membresia
+    ?? '';
+
+const getPacienteFinancialPackage = (paciente) =>
+    paciente?.perfilFinanciero?.paquete
+    ?? null;
 
 const buildPacientePayload = (data) => {
     const cleanedData = cleanAndNormalizeData({
@@ -1541,6 +1554,163 @@ const PsicologiaNotasSection = ({ pacienteId, notas, onRefresh, canEdit, canDele
     );
 };
 
+const FinancialSummarySection = ({ paciente, canEdit = false, onSaveFinancial, isSaving = false }) => {
+    const financialPackage = getPacienteFinancialPackage(paciente);
+    const membership = getPacienteMembresia(paciente);
+    const paymentStatus = getPacienteEstadoPago(paciente);
+    const benefits = Array.isArray(financialPackage?.benefits) ? financialPackage.benefits : [];
+    const [isEditingFinance, setIsEditingFinance] = useState(false);
+    const [financeForm, setFinanceForm] = useState({
+        tipoMembresia: membership || '',
+        estadoPago: paymentStatus || '',
+    });
+
+    useEffect(() => {
+        setFinanceForm({
+            tipoMembresia: membership || '',
+            estadoPago: paymentStatus || '',
+        });
+    }, [membership, paymentStatus, paciente?.id]);
+
+    const handleFinanceFieldChange = (event) => {
+        const { name, value } = event.target;
+        setFinanceForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleCancel = () => {
+        setFinanceForm({
+            tipoMembresia: membership || '',
+            estadoPago: paymentStatus || '',
+        });
+        setIsEditingFinance(false);
+    };
+
+    const handleSave = async () => {
+        if (!onSaveFinancial) return;
+        const saved = await onSaveFinancial(financeForm);
+        if (saved) {
+            setIsEditingFinance(false);
+        }
+    };
+
+    return (
+        <div className={styles.financialSection}>
+            <div className={styles.financialHero}>
+                <div className={styles.financialHeroBadge}>
+                    <img src={logoAmd} alt="Asociación Mexicana de Diabetes en Jalisco" className={styles.financialHeroLogo} />
+                </div>
+                <div>
+                    <p className={styles.financialHeroKicker}>Expediente financiero</p>
+                    <h3 className={styles.financialHeroTitle}>{financialPackage?.label || membership || 'Sin membresía'}</h3>
+                    <p className={styles.financialHeroText}>
+                        {financialPackage?.heroDescription || 'Este paciente no tiene un paquete financiero asignado actualmente.'}
+                    </p>
+                    <div className={styles.financialHeroTags}>
+                        <Tag label={membership || 'Sin membresía'} />
+                        <Tag label={paymentStatus || 'Sin estado'} />
+                    </div>
+                </div>
+            </div>
+
+            {canEdit && (
+                <div className={styles.financialEditorCard}>
+                    <div className={styles.financialEditorHeader}>
+                        <div>
+                            <h4 className={styles.sectionTitle}>Edición financiera</h4>
+                            <p className={styles.sectionSubtitle}>Actualiza la membresía y el estado financiero de este paciente.</p>
+                        </div>
+                        {isEditingFinance ? (
+                            <div className={styles.financialEditorActions}>
+                                <Button type="button" variant="secondary" onClick={handleCancel} disabled={isSaving}>
+                                    <FaTimesCircle /> Cancelar
+                                </Button>
+                                <Button type="button" onClick={handleSave} disabled={isSaving}>
+                                    <FaSave /> {isSaving ? 'Guardando...' : 'Guardar'}
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button type="button" onClick={() => setIsEditingFinance(true)}>
+                                <FaEdit /> Editar estado
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className={styles.financialEditorGrid}>
+                        <div className={formStyles.formGroup}>
+                            <label>Membresía</label>
+                            <select
+                                name="tipoMembresia"
+                                value={financeForm.tipoMembresia}
+                                onChange={handleFinanceFieldChange}
+                                disabled={!isEditingFinance || isSaving}
+                                className={!isEditingFinance ? formStyles.disabledInput : ''}
+                            >
+                                <option value="">Sin membresía</option>
+                                {allowedTiposMembresia.map((value) => (
+                                    <option key={value} value={value}>{value}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className={formStyles.formGroup}>
+                            <label>Estado financiero</label>
+                            <select
+                                name="estadoPago"
+                                value={financeForm.estadoPago}
+                                onChange={handleFinanceFieldChange}
+                                disabled={!isEditingFinance || isSaving}
+                                className={!isEditingFinance ? formStyles.disabledInput : ''}
+                            >
+                                <option value="">Sin estado</option>
+                                {allowedEstadosPago.map((value) => (
+                                    <option key={value} value={value}>{value}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={styles.financialMetaGrid}>
+                <div className={styles.financialMetaCard}>
+                    <span>Membresía</span>
+                    <strong>{membership || '-'}</strong>
+                </div>
+                <div className={styles.financialMetaCard}>
+                    <span>Estado</span>
+                    <strong>{paymentStatus || '-'}</strong>
+                </div>
+                <div className={styles.financialMetaCard}>
+                    <span>Mensualidad</span>
+                    <strong>{financialPackage?.monthlyPrice ? `$${financialPackage.monthlyPrice}` : '-'}</strong>
+                </div>
+                <div className={styles.financialMetaCard}>
+                    <span>Anualidad</span>
+                    <strong>{financialPackage?.annualPrice ? `$${financialPackage.annualPrice}` : '-'}</strong>
+                </div>
+            </div>
+
+            {benefits.length > 0 ? (
+                <div className={styles.financialBenefits}>
+                    {benefits.map((benefit, index) => (
+                        <div
+                            key={`${benefit.title}-${index}`}
+                            className={index % 2 === 0 ? styles.financialBenefitLight : styles.financialBenefitDark}
+                        >
+                            <div className={styles.financialBenefitTitle}>{benefit.title}</div>
+                            <div className={styles.financialBenefitText}>{benefit.description}</div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className={styles.financialEmpty}>
+                    No hay desglose de beneficios disponible para esta membresía.
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --------------------------------------------------------
 // --- COMPONENTE PRINCIPAL ---
 // --------------------------------------------------------
@@ -1560,8 +1730,11 @@ function DetallePacientePage() {
     const isDoctor = role === 'DOCTOR';
     const isPsych = role === 'PSICOLOGO';
     const isAdmin = role === 'ADMIN';
+    const isFinance = role === 'FINANZAS';
+    const isReadOnly = isReadOnlyRole(role);
+    const canEditFinancial = isAdmin || isFinance;
     // Regla solicitada: solo admin puede borrar; los demás pueden editar
-    const canEditPsych = true;
+    const canEditPsych = !isReadOnly;
     const canDeletePsych = isAdmin;
     const [isPsychLike, setIsPsychLike] = useState(isPsych || isAdmin); // admin podrá ver vista de psicología si aplica
     const [isDoctorLike, setIsDoctorLike] = useState(isDoctor || isAdmin);
@@ -1592,6 +1765,7 @@ function DetallePacientePage() {
                 ...data,
                 municipio: getCanonicalMunicipioJalisco(data?.municipio) || '',
                 talla: data?.talla ?? '',
+                tipoMembresia: getPacienteMembresia(data),
                 estadoPago: getPacienteEstadoPago(data),
                 ultimaVisita: getPacienteUltimaVisita(data),
             };
@@ -1664,21 +1838,28 @@ function DetallePacientePage() {
     }, [isPsychLike, loadPsicologia, paciente?.id]);
 
     const tabs = React.useMemo(() => (
-        isPsychLike
-            ? ['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
+        isReadOnly
+            ? ['generales', 'finanzas', 'documentos']
+            : isPsychLike
+            ? ['generales', 'finanzas', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos']
             : isDoctorLike
-                ? ['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
-                : ['generales', 'clinico', 'citas', 'nutricion', 'documentos']
-    ), [isDoctorLike, isPsychLike]);
+                ? ['generales', 'finanzas', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas']
+                : ['generales', 'finanzas', 'clinico', 'citas', 'nutricion', 'documentos']
+    ), [isDoctorLike, isPsychLike, isReadOnly]);
 
     const tabLabel = (tab) => {
         if (tab === 'generales') return 'Datos Generales';
+        if (tab === 'finanzas') return 'Finanzas';
         if (tab === 'sesiones') return 'Sesiones Psicológicas';
         if (tab === 'evaluaciones') return 'Evaluaciones';
         if (tab === 'plan') return 'Plan de Intervención';
         if (tab === 'notas' && isPsychLike) return 'Notas Clínicas';
         if (tab === 'nutricion') return 'Seguimiento';
         if (tab === 'documentos') return 'Documentos';
+        if (tab === 'archivos') return 'Documentos';
+        if (tab === 'clinico') return 'Historial Clínico';
+        if (tab === 'citas') return 'Citas';
+        if (tab === 'seguimiento') return 'Seguimiento';
         return tab;
     };
 
@@ -1710,10 +1891,10 @@ function DetallePacientePage() {
 
         if (isAdmin) {
             if (adminTargetsNutri && activeTab !== 'nutricion') setActiveTab('nutricion');
-            if (adminTargetsPsico && !['generales', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos'].includes(activeTab)) {
+            if (adminTargetsPsico && !['generales', 'finanzas', 'sesiones', 'evaluaciones', 'plan', 'notas', 'documentos'].includes(activeTab)) {
                 setActiveTab('generales');
             }
-            if (adminTargetsDoctor && !['generales', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas'].includes(activeTab)) {
+            if (adminTargetsDoctor && !['generales', 'finanzas', 'clinico', 'citas', 'seguimiento', 'archivos', 'notas'].includes(activeTab)) {
                 setActiveTab('clinico');
             }
         }
@@ -1733,6 +1914,7 @@ function DetallePacientePage() {
     };
 
     const handleSave = async () => {
+        if (isReadOnly) return;
         setIsSaving(true);
         try {
             const updated = await updatePaciente(id, buildPacientePayload(formData));
@@ -1749,6 +1931,36 @@ function DetallePacientePage() {
             alert("Guardado correctamente");
         } catch {
             alert('Error al guardar');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleFinancialSave = async (financialData) => {
+        if (!canEditFinancial) return false;
+        setIsSaving(true);
+        try {
+            const updated = await updatePacienteFinanzas(id, financialData);
+            const mergedPaciente = {
+                ...paciente,
+                ...updated,
+                talla: updated?.talla ?? paciente?.talla ?? '',
+                tipoMembresia: getPacienteMembresia(updated) || financialData.tipoMembresia || '',
+                estadoPago: getPacienteEstadoPago(updated) || financialData.estadoPago || '',
+                ultimaVisita: getPacienteUltimaVisita(updated) || paciente?.ultimaVisita || '',
+            };
+            setPaciente(mergedPaciente);
+            setFormData((prev) => ({
+                ...prev,
+                tipoMembresia: mergedPaciente.tipoMembresia,
+                estadoPago: mergedPaciente.estadoPago,
+            }));
+            alert('Información financiera actualizada correctamente');
+            return true;
+        } catch (error) {
+            console.error(error);
+            alert('Error al actualizar la información financiera');
+            return false;
         } finally {
             setIsSaving(false);
         }
@@ -1818,9 +2030,9 @@ function DetallePacientePage() {
                             <Button onClick={() => { setIsEditing(false); setFormData(paciente); }} variant="secondary">Cancelar</Button>
                             <Button onClick={handleSave} disabled={isSaving}><FaSave /> Guardar</Button>
                         </div>
-                    ) : (
+                    ) : !isReadOnly ? (
                         <Button onClick={() => setIsEditing(true)}><FaEdit /> Editar</Button>
-                    )}
+                    ) : null}
                 </div>
             </div>
             {/* Metrica */}
@@ -1862,6 +2074,7 @@ function DetallePacientePage() {
                     <>
                         <div className={styles.metricCard}><h4>HbA1c</h4><h2>{paciente.hba1c || '-'}%</h2><small>{paciente.riesgo}</small></div>
                         <div className={styles.metricCard}><h4>Fecha de consulta</h4><h3>{getPacienteUltimaVisita(paciente) ? new Date(getPacienteUltimaVisita(paciente)).toLocaleDateString() : 'N/A'}</h3></div>
+                        <div className={styles.metricCard}><h4>Membresía</h4><h3>{getPacienteMembresia(paciente) || '-'}</h3><small>Paquete vigente del paciente</small></div>
                         <div className={styles.metricCard}><h4>Estado financiero</h4><h3>{getPacienteEstadoPago(paciente) || '-'}</h3><small>Seguimiento de pago del paciente</small></div>
                         <div className={styles.metricCard}><h4>IMC</h4><h2>{paciente.imc || '-'}</h2><small>{paciente.pesoKg}kg / {paciente.estatura}m</small></div>
                         <div className={styles.metricCard}><h4>Talla de cintura</h4><h2>{paciente.talla || '-'}</h2><small>Referencia independiente de estatura</small></div>
@@ -1912,6 +2125,7 @@ function DetallePacientePage() {
                                 <h3 className={formStyles.formSectionTitle}>Programa y servicio</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Tipo de servicio', 'tipoServicio', 'text', [], { suggestions: tipoServicioSuggestions })}
+                                    {renderField('Membresía', 'tipoMembresia', 'select', [{ value: '', label: 'Sin definir' }, ...allowedTiposMembresia.map(v => ({ value: v, label: v }))])}
                                     {renderField('Estado financiero', 'estadoPago', 'select', [{ value: '', label: 'Sin definir' }, ...allowedEstadosPago.map(v => ({ value: v, label: v }))])}
                                     {renderField('Responsable', 'responsable', 'text', [], { suggestions: responsableSuggestions })}
                                     {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
@@ -1924,6 +2138,14 @@ function DetallePacientePage() {
                                     {renderField('Fecha de consulta', 'ultimaVisita', 'date')}
                                 </div>
                             </form>
+                        )}
+                        {activeTab === 'finanzas' && (
+                            <FinancialSummarySection
+                                paciente={paciente}
+                                canEdit={canEditFinancial}
+                                onSaveFinancial={handleFinancialSave}
+                                isSaving={isSaving}
+                            />
                         )}
                         {activeTab === 'sesiones' && (
                             <PsicologiaSesionesSection
@@ -2006,6 +2228,7 @@ function DetallePacientePage() {
                                 <h3 className={formStyles.formSectionTitle}>Programa y servicio</h3>
                                 <div className={formStyles.formGrid}>
                                     {renderField('Tipo de servicio', 'tipoServicio', 'text', [], { suggestions: tipoServicioSuggestions })}
+                                    {renderField('Membresía', 'tipoMembresia', 'select', [{ value: '', label: 'Sin definir' }, ...allowedTiposMembresia.map(v => ({ value: v, label: v }))])}
                                     {renderField('Estado financiero', 'estadoPago', 'select', [{ value: '', label: 'Sin definir' }, ...allowedEstadosPago.map(v => ({ value: v, label: v }))])}
                                     {renderField('Responsable', 'responsable', 'text', [], { suggestions: responsableSuggestions })}
                                     {renderField('Estatus', 'estatus', 'select', allowedEstatus.map(v => ({value:v, label:v})))}
@@ -2016,6 +2239,14 @@ function DetallePacientePage() {
                                     {renderField('Mes', 'mesEstadistico', 'select', mesesEstadisticos.map(v => ({value:v, label:v})))}
                                 </div>
                             </form>
+                        )}
+                        {activeTab === 'finanzas' && (
+                            <FinancialSummarySection
+                                paciente={paciente}
+                                canEdit={canEditFinancial}
+                                onSaveFinancial={handleFinancialSave}
+                                isSaving={isSaving}
+                            />
                         )}
                         {activeTab === 'clinico' && <HistorialClinicoSection pacienteId={paciente.id} onConsultaCreated={fetchPaciente} />}
                         {activeTab === 'citas' && <CitasSection pacienteId={paciente.id} defaultMedicoId={paciente.medicoId} />}

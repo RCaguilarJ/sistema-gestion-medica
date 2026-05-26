@@ -371,3 +371,23 @@
     align-self: flex-start;
   }
 }
+
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions,
+  .badges,
+  .rowActions {
+    flex-wrap: wrap;
+  }
+
+  .uploadButton,
+  .linkButton,
+  .dangerButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

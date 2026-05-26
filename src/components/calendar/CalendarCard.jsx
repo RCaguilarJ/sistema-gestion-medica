@@ -16,14 +16,18 @@ export default function CalendarCard({
   onToday,
   onSelectDay,
 }) {
+  const getVariantClass = (variant) => {
+    if (variant === "success") return styles.variantSuccess;
+    if (variant === "warning") return styles.variantWarning;
+    if (variant === "danger") return styles.variantDanger;
+    return "";
+  };
+
   return (
     <section className={styles.card}>
-      <div
-        className={styles.hero}
-        style={{ "--hero-logo": `url(${logo})` }}
-      >
+      <div className={styles.hero} style={{ "--hero-logo": `url(${logo})` }}>
         <button className={styles.navBtn} onClick={onPrev} aria-label="Mes anterior">
-          ←
+          &larr;
         </button>
         <div className={styles.monthBlock}>
           <h2>{monthLabel}</h2>
@@ -33,7 +37,7 @@ export default function CalendarCard({
             Hoy
           </button>
           <button className={styles.navBtn} onClick={onNext} aria-label="Mes siguiente">
-            →
+            &rarr;
           </button>
         </div>
       </div>
@@ -50,8 +54,8 @@ export default function CalendarCard({
       )}
 
       <div className={styles.weekdays}>
-        {weekdayLabels.map((d) => (
-          <span key={d}>{d}</span>
+        {weekdayLabels.map((label, idx) => (
+          <span key={`${label}-${idx}`}>{label}</span>
         ))}
       </div>
 
@@ -60,6 +64,7 @@ export default function CalendarCard({
           if (!day?.inMonth) {
             return <div key={`empty-${idx}`} className={styles.empty} />;
           }
+
           return (
             <button
               key={`day-${day.label}`}
@@ -68,11 +73,12 @@ export default function CalendarCard({
                 day.state === "selected" && styles.selected,
                 day.state === "range" && styles.range,
                 day.state === "today" && styles.today,
-                day.state === "active" && styles.active
+                day.state === "active" && styles.active,
+                getVariantClass(day.variant)
               )}
               onClick={() => onSelectDay?.(day.label)}
               onDoubleClick={() => onSelectDay?.(day.label)}
-              aria-label={`Día ${day.label}${day.count ? `, ${day.count} citas` : ""}`}
+              aria-label={day.ariaLabel || `Dia ${day.label}${day.count ? `, ${day.count} registros` : ""}`}
             >
               <span className={styles.dayLabel}>{day.label}</span>
               {day.count > 0 && <span className={styles.countBubble}>{day.count}</span>}
@@ -83,9 +89,9 @@ export default function CalendarCard({
 
       {chips.length > 0 && (
         <div className={styles.chips}>
-          {chips.map((c) => (
-            <span key={c} className={styles.chip}>
-              {c}
+          {chips.map((chip) => (
+            <span key={chip} className={styles.chip}>
+              {chip}
             </span>
           ))}
         </div>

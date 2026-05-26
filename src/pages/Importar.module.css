@@ -1,14 +1,15 @@
 /* src/pages/Importar.module.css */
 .title {
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
+  line-height: 1.05;
 }
 
 .subtitle {
   font-size: 1rem;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -77,14 +78,15 @@
 }
 
 .infoBox {
-  background-color: #f4f4f4;
+  background: linear-gradient(180deg, #f7fafc, #f1f5f9);
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: #555;
+  color: #475569;
   margin-bottom: 1.5rem;
+  border: 1px solid #e3ebf4;
 }
 
 .infoText {
@@ -95,13 +97,14 @@
 }
 
 .specialistBox {
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
+  border: 1px solid #e3ebf4;
+  border-radius: 18px;
   padding: 1rem 1.25rem;
   background-color: #ffffff;
   margin-bottom: 1.5rem;
   display: grid;
   gap: 0.75rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
 }
 
 .fieldRow {
@@ -117,9 +120,9 @@
 }
 
 .fieldControl {
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  border: 1px solid #d6e0eb;
+  border-radius: var(--radius-control);
+  padding: 0.72rem 0.8rem;
   font-size: 0.95rem;
   color: #111827;
   background-color: #ffffff;
@@ -164,12 +167,18 @@
 
 /* --- Paso 1: Dropzone --- */
 .dropzone {
-  border: 2px dashed #dcdcdc;
-  border-radius: 12px;
-  padding: 4rem 2rem;
+  border: 2px dashed #d6e0eb;
+  border-radius: 20px;
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem);
   text-align: center;
-  background-color: #fafafa;
+  background: linear-gradient(180deg, #fbfdff, #f7fafc);
   cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.18s ease;
+}
+
+.dropzone:hover {
+  border-color: #adc6ea;
+  transform: translateY(-1px);
 }
 
 .dropzoneIcon {
@@ -214,7 +223,7 @@
   right: 24px;
   bottom: 24px;
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 0.85rem 1.1rem;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
   display: inline-flex;
@@ -227,14 +236,16 @@
 
 /* --- Pasos 2 y 4: Tablas --- */
 .tableContainer {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid #e3ebf4;
+  border-radius: 18px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 680px;
 }
 
 .table th,
@@ -245,7 +256,7 @@
 }
 
 .table th {
-  background-color: #f9f9f9;
+  background-color: #f8fafc;
   font-size: 0.8rem;
   color: #666;
   text-transform: uppercase;
@@ -392,6 +403,21 @@
 }
 
 @media (max-width: 768px) {
+  .title {
+    font-size: 1.65rem;
+  }
+
+  .subtitle,
+  .stepSubtitle,
+  .infoText,
+  .helperText {
+    font-size: 0.92rem;
+  }
+
+  .pageHeader {
+    align-items: flex-start;
+  }
+
   .dropzone {
     padding: 2.5rem 1.5rem;
   }
@@ -399,6 +425,11 @@
   .infoBox {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .specialistBox {
+    padding: 0.95rem 1rem;
   }
 
   .tableContainer {
@@ -413,5 +444,15 @@
     left: 16px;
     right: 16px;
     bottom: 16px;
+  }
+
+  .navigation {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .navigation > * {
+    width: 100%;
   }
 }

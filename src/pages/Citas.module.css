@@ -3,7 +3,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: clamp(1.25rem, 2vw, 2rem);
 }
 
 .header {
@@ -13,25 +13,27 @@
 }
 
 .title {
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
   font-weight: 700;
   margin: 0;
   color: #1a1a1a;
+  line-height: 1.05;
 }
 
 .subtitle {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1rem;
+  max-width: 68ch;
 }
 
 .calendarCard {
   position: relative;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 22px;
   border: 1px solid transparent;
   padding: 1.5rem;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
   background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #0f3fa5, #2563eb);
   background-origin: border-box;
   background-clip: padding-box, border-box;
@@ -50,6 +52,7 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .calendarNavButton {
@@ -98,7 +101,7 @@
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   justify-content: flex-end;
-  color: #4b5563; /* texto neutro */
+  color: #4b5563;
 }
 
 .legendItem {
@@ -226,10 +229,10 @@
 
 .tableCard {
   background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #eef0f2;
-  padding: 1.5rem;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  border-radius: var(--radius-card);
+  border: 1px solid #e6edf5;
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-card);
 }
 
 .tableHeader {
@@ -237,6 +240,7 @@
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .tableHeader h2 {
@@ -252,14 +256,36 @@
   font-weight: 600;
 }
 
+.chipsRow {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.summaryChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .tableContainer {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+  scrollbar-gutter: stable both-edges;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 720px;
 }
 
 .table th {
@@ -282,6 +308,10 @@
   vertical-align: top;
 }
 
+.table tbody tr:hover td {
+  background: #fafcff;
+}
+
 .focusedRow td {
   background: #eff6ff;
 }
@@ -300,6 +330,16 @@
   font-size: 0.8rem;
   color: #6b7280;
   line-height: 1.4;
+}
+
+.financePatientName {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .status {
@@ -334,6 +374,131 @@
   color: #15803d;
 }
 
+@media (max-width: 900px) {
+  .tableHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .subtitle {
+    font-size: 0.92rem;
+  }
+
+  .table {
+    min-width: 640px;
+  }
+
+  .tableCard {
+    padding: 1rem;
+  }
+
+  .summaryChip {
+    min-height: 34px;
+    font-size: 0.78rem;
+  }
+}
+
+.statusPagado {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.financeNamePagado {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.statusParcial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.financeNameParcial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusExento {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.financeNameExento {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.statusAtrasado {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.financeNameAtrasado {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.statusVencido {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.financeNameVencido {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statusMoroso {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.financeNameMoroso {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.statusSuspendido {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.financeNameSuspendido {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.statusBaja {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.financeNameBaja {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.statusSinRegistro {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.financeNameSinRegistro {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.financeNamePendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .stateMessage {
   text-align: center;
   color: #6b7280;
@@ -355,6 +520,8 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 38px;
+  white-space: nowrap;
 }
 
 .actionButton:disabled {
@@ -371,6 +538,10 @@
 }
 
 @media (max-width: 768px) {
+  .page {
+    gap: 1rem;
+  }
+
   .calendarCard {
     padding: 1rem;
   }
@@ -392,6 +563,17 @@
     min-height: 70px;
   }
 
+  .calendarControls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .calendarNavButton {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+  }
+
   .tableCard {
     padding: 1rem;
   }
@@ -400,5 +582,14 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.4rem;
+  }
+
+  .table {
+    min-width: 640px;
+  }
+
+  .actionButton {
+    width: 100%;
+    justify-content: center;
   }
 }

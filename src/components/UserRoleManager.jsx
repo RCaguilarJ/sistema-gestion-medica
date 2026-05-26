@@ -96,6 +96,7 @@ const UserRoleManager = ({ token }) => {
                 <label>Rol: </label>
                 <select name="role" value={newUser.role} onChange={handleCreateChange} required>
                   <option value="ADMIN">ADMIN</option>
+                  <option value="FINANZAS">FINANZAS</option>
                   <option value="DOCTOR">DOCTOR</option>
                   <option value="NUTRI">NUTRI</option>
                   <option value="PSY">PSY</option>
@@ -135,6 +136,7 @@ const UserRoleManager = ({ token }) => {
                     disabled={updating}
                   >
                     <option value="ADMIN">ADMIN</option>
+                    <option value="FINANZAS">FINANZAS</option>
                     <option value="DOCTOR">DOCTOR</option>
                     <option value="NUTRI">NUTRI</option>
                     <option value="PSY">PSY</option>

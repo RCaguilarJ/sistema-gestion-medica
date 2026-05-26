@@ -21,6 +21,16 @@ export const updatePaciente = async (id, pacienteData) => {
   return res.data;
 };
 
+export const updatePacienteFinanzas = async (id, pacienteData) => {
+  const res = await api.patch(`/pacientes/${id}/finanzas`, pacienteData);
+  return res.data;
+};
+
+export const updatePacienteResumen = async (id, pacienteData) => {
+  const res = await api.patch(`/pacientes/${id}/resumen`, pacienteData);
+  return res.data;
+};
+
 export const deletePaciente = async (id) => {
   const res = await api.delete(`/pacientes/${id}`);
   return res.data;

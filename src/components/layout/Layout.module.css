@@ -8,18 +8,20 @@
 
 .navbar {
   width: 100%;
-  padding: 1rem 2rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  min-height: var(--nav-height);
+  padding: 0.9rem clamp(1rem, 2vw, 2rem);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(199, 213, 230, 0.7);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 10;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
 }
 
-/* Esta regla se aplica a la <img> */
 .navbarLogo {
   max-height: 40px;
   max-width: 220px;
@@ -28,48 +30,66 @@
   object-fit: contain;
 }
 
-
 .menuButton {
   display: none;
-  background: none;
-  border: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(180deg, #ffffff, #f5f8fd);
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
   cursor: pointer;
   font-size: 1.25rem;
-  color: #333;
+  color: #1f2937;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .navbarUser {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 0;
 }
 
-
 .userAvatar {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: #007bff; /* El azul de tu diseño */
+  background: linear-gradient(135deg, var(--brand-500), #2383ff);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  box-shadow: 0 10px 20px rgba(15, 94, 234, 0.24);
 }
 
 .mainContent {
   width: 100%;
-  max-width: 1200px; /* Un ancho máximo para centrar el contenido */
+  max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--page-padding);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--section-gap);
 }
 
 .navLinks {
   display: flex;
-  gap: 2rem;
+  gap: 0.45rem;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  align-items: center;
+  padding: 0.4rem;
+  border-radius: 18px;
+  background: rgba(246, 250, 255, 0.88);
+  border: 1px solid rgba(219, 232, 245, 0.95);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .navLinksOpen {
@@ -79,62 +99,66 @@
 .navLink,
 .navLinkActive {
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.98rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   letter-spacing: 0.2px;
   line-height: 1.2;
-  padding: 0.5rem 0;
+  padding: 0.7rem 0.95rem;
   border-bottom: 2px solid transparent;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem; 
-  transition: color 0.2s, border-color 0.2s;
+  gap: 0.5rem;
+  border-radius: 12px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .navLink {
-  color: #555;
+  color: #455468;
 }
 
 .navLink:hover {
-  color: #000;
+  color: #10233f;
+  background: #f2f7ff;
 }
 
 .navLinkActive {
-  color: #007bff;
-  border-bottom: 2px solid #007bff;
+  color: var(--brand-500);
+  background: #edf4ff;
+  border-bottom: 2px solid transparent;
+  box-shadow:
+    inset 0 0 0 1px #d7e6ff,
+    0 8px 18px rgba(15, 94, 234, 0.1);
 }
 
-/* Media queries para dispositivos móviles */
 @media (max-width: 768px) {
   .menuButton {
-    display: block;
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    display: inline-flex;
+    position: static;
     z-index: 1010;
   }
+
   .navLinks {
-    /* Off-canvas panel */
     position: fixed;
     left: 0;
     top: 0;
     height: 100vh;
     width: var(--menu-width);
-    transform: translateX(calc(-1 * var(--menu-width)));
-    background: #ffffff;
+    transform: translateX(calc(-100% - 1rem));
+    background: rgba(255, 255, 255, 0.98);
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.75rem;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+    gap: 0.35rem;
+    padding: calc(1rem + env(safe-area-inset-top)) 0.9rem calc(1.25rem + env(safe-area-inset-bottom));
+    box-shadow: 12px 0 42px rgba(0, 0, 0, 0.14);
     z-index: 1001;
     transition: transform 260ms cubic-bezier(.2,.9,.2,1);
     overflow-y: auto;
     align-items: flex-start;
     pointer-events: none;
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 22px 22px 0;
   }
 
   .navLinksOpen {
@@ -144,42 +168,36 @@
 
   .navLink,
   .navLinkActive {
-    padding: 0.75rem 0;
+    padding: 0.9rem 0.75rem;
     width: 100%;
     border-bottom: none;
+    justify-content: flex-start;
   }
 
   .navbarUser {
-    display: none; /* ocultamos info de usuario en pantallas pequeñas */
+    display: none;
   }
 
   .navbar {
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1rem;
+    gap: 0.85rem;
   }
 
   .navbarLogo {
     max-height: 36px;
-    max-width: 200px;
-  }
-
-  .navLink,
-  .navLinkActive {
-    padding: 0.75rem 0.5rem;
-    width: 100%;
+    max-width: 168px;
   }
 
   .navLinks a {
     width: 100%;
   }
 
-  /* Ajustes del main para evitar desfaces del contenido en móvil */
   .mainContent {
-    padding: 1rem;
+    padding: var(--page-padding);
     max-width: 100%;
   }
 }
 
-/* Backdrop when mobile menu is open */
 .mobileBackdrop {
   position: fixed;
   inset: 0;
@@ -189,23 +207,23 @@
   pointer-events: none;
   transition: opacity 200ms ease;
 }
+
 .mobileBackdropOpen {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Layout for medium and large screens
-   - Medium (768px - 1199px): keep nav in document flow to avoid overlap with logo
-   - Large (>=1200px): center nav using absolute positioning */
 @media (min-width: 768px) and (max-width: 1199px) {
   .navbar {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
     gap: 0.75rem;
     padding: 0.8rem 1.5rem;
   }
 
   .navLinks {
+    grid-column: 1 / -1;
     position: static;
     left: auto;
     top: auto;
@@ -213,7 +231,7 @@
     margin: 0;
     justify-content: center;
     display: flex;
-    gap: 0.6rem;
+    gap: 0.55rem;
     flex-wrap: wrap;
     overflow: visible;
   }
@@ -229,8 +247,8 @@
 
   .navLink,
   .navLinkActive {
-    font-size: 0.94rem;
-    padding: 0.45rem 0.6rem;
+    font-size: 0.92rem;
+    padding: 0.6rem 0.8rem;
   }
 
   .navbarUser {
@@ -250,19 +268,23 @@
     transform: translate(-50%, -50%);
   }
 }
-/* ... (todos tus estilos anteriores) ... */
 
 .logoutButton {
   background: transparent;
   border: none;
-  color: #555;
-  font-size: 1.2rem;
+  color: #526070;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logoutButton:hover {
-  background-color: #f4f4f4;
-  color: #de350b; /* Rojo al pasar el mouse */
+  background-color: #f4f7fb;
+  color: #de350b;
 }
