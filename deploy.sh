@@ -43,26 +43,23 @@ mkdir -p "$PUBLIC_HTML"
 cp -r dist/* "$PUBLIC_HTML/"
 
 cat > "$PUBLIC_HTML/.htaccess" << 'HTACCESS_EOF'
-<IfModule mod_proxy.c>
-  ProxyRequests Off
-  ProxyPreserveHost On
-  ProxyPass /api http://127.0.0.1:__API_PORT__/
-  ProxyPassReverse /api http://127.0.0.1:__API_PORT__/
-  ProxyPass /uploads http://127.0.0.1:__API_PORT__/uploads
-  ProxyPassReverse /uploads http://127.0.0.1:__API_PORT__/uploads
-</IfModule>
-
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
 </IfModule>
 
-<FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$">
-  Header set Cache-Control "public, max-age=31536000, immutable"
-</FilesMatch>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+  RewriteRule ^auth/(.*)$ http://localhost:__API_PORT__/api/auth/$1 [P,L]
+  RewriteRule ^api/(.*)$ http://localhost:__API_PORT__/api/$1 [P,L]
+  RewriteRule ^uploads/(.*)$ http://localhost:__API_PORT__/uploads/$1 [P,L]
+  RewriteCond %{REQUEST_URI} !^/auth(/|$)
   RewriteCond %{REQUEST_URI} !^/api(/|$)
   RewriteCond %{REQUEST_URI} !^/uploads(/|$)
   RewriteCond %{REQUEST_FILENAME} !-f

@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/AuthContext.jsx';
 import { getAllPacientesByDoctor, getPacientes } from '../services/pacienteService.js';
 import { getCitasPortal } from '../services/consultaCitaService.js';
 import { getDashboardStats } from '../services/dashboardService.js';
+import { isFinanceRole } from '../utils/roles.js';
 import {
   FaUsers,
   FaHeartbeat,
@@ -420,7 +421,9 @@ function Dashboard() {
     return role === 'PSICOLOGO' || role === 'PSY';
   }, [user]);
 
-  const isAdministrativeDashboard = isAdmin && !isPsych;
+  const isFinance = useMemo(() => isFinanceRole(user?.role), [user]);
+
+  const isAdministrativeDashboard = (isAdmin || isFinance) && !isPsych;
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -457,13 +460,13 @@ function Dashboard() {
           };
           setStats(normalized);
         } else {
-          const pacientesPromise = isAdmin
+          const pacientesPromise = isAdministrativeDashboard
             ? getPacientes()
             : user?.id
               ? getAllPacientesByDoctor(user.id)
               : Promise.resolve([]);
 
-          const citasPromise = isAdmin
+          const citasPromise = isAdministrativeDashboard
             ? getCitasPortal()
             : user?.id
               ? getCitasPortal(user.id)
@@ -478,13 +481,18 @@ function Dashboard() {
         }
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
+        setStats(
+          isAdministrativeDashboard
+            ? buildAdministrativeStats([])
+            : buildClinicalStats([], []),
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [isAdmin, isPsych, isAdministrativeDashboard, user]);
+  }, [isAdministrativeDashboard, isPsych, user]);
 
   if (loading || !stats) {
     return (
@@ -496,6 +504,8 @@ function Dashboard() {
 
   const headerTitle = isPsych
     ? 'Panel Psicologico'
+    : isFinance
+      ? 'Panel Financiero'
     : isAdministrativeDashboard
       ? 'Panel Administrativo'
       : 'Panel de Control Administrativo';
