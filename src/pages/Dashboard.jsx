@@ -422,8 +422,8 @@ function Dashboard() {
   }, [user]);
 
   const hasNativeFinanceRole = useMemo(() => isFinanceRole(user?.role), [user]);
-
-  const isAdministrativeDashboard = (isAdmin || hasNativeFinanceRole) && !isPsych;
+  const shouldUseFinanceDashboard = hasNativeFinanceRole && !isPsych;
+  const shouldUseGlobalClinicalData = isAdmin && !isPsych;
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -460,13 +460,13 @@ function Dashboard() {
           };
           setStats(normalized);
         } else {
-          const pacientesPromise = isAdministrativeDashboard
+          const pacientesPromise = (shouldUseFinanceDashboard || shouldUseGlobalClinicalData)
             ? getPacientes()
             : user?.id
               ? getAllPacientesByDoctor(user.id)
               : Promise.resolve([]);
 
-          const citasPromise = isAdministrativeDashboard
+          const citasPromise = (shouldUseFinanceDashboard || shouldUseGlobalClinicalData)
             ? getCitasPortal()
             : user?.id
               ? getCitasPortal(user.id)
@@ -474,7 +474,7 @@ function Dashboard() {
 
           const [pacientesData, citasData] = await Promise.all([pacientesPromise, citasPromise]);
           setStats(
-            isAdministrativeDashboard
+            shouldUseFinanceDashboard
               ? buildAdministrativeStats(pacientesData)
               : buildClinicalStats(pacientesData, citasData),
           );
@@ -482,7 +482,7 @@ function Dashboard() {
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
         setStats(
-          isAdministrativeDashboard
+          shouldUseFinanceDashboard
             ? buildAdministrativeStats([])
             : buildClinicalStats([], []),
         );
@@ -492,7 +492,7 @@ function Dashboard() {
     };
 
     fetchStats();
-  }, [isAdministrativeDashboard, isPsych, user]);
+  }, [isPsych, shouldUseFinanceDashboard, shouldUseGlobalClinicalData, user]);
 
   if (loading || !stats) {
     return (
@@ -504,15 +504,17 @@ function Dashboard() {
 
   const headerTitle = isPsych
     ? 'Panel Psicologico'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
+      ? 'Panel Financiero'
+    : isAdmin
       ? 'Panel Administrativo'
       : 'Panel de Control Administrativo';
 
-  const headerSubtitle = isAdministrativeDashboard
+  const headerSubtitle = shouldUseFinanceDashboard
     ? `Vista financiera basada en ${stats.kpis.trackedPatients} pacientes con seguimiento`
     : `Vista general basada en ${stats.kpis.total} beneficiarios registrados`;
 
-  const kpiCards = isAdministrativeDashboard
+  const kpiCards = shouldUseFinanceDashboard
     ? [
         {
           icon: <FaUsers size={24} color="#0f766e" />,
@@ -612,45 +614,45 @@ function Dashboard() {
 
   const pie1Title = isPsych
     ? 'Distribucion estado de animo'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Semaforo de membresias'
       : 'Distribucion control glucemico';
   const pie1Subtitle = isPsych
     ? 'Sesiones psicologicas'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Rojo: vencidas · Amarillo: por regularizar · Verde: al corriente'
       : 'Clasificacion HbA1c';
 
   const pie2Title = isPsych
     ? 'Distribucion estres'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Desglose de estados financieros'
       : 'Distribucion IMC';
   const pie2Subtitle = isPsych
     ? 'Niveles de estres'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Misma semantica que la vista financiera'
       : 'Estado nutricional';
 
   const barChartTitle = isPsych
     ? 'Pacientes por municipio'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Pacientes por membresia'
       : 'Beneficiarios por municipio';
-  const barChartSubtitle = isAdministrativeDashboard
+  const barChartSubtitle = shouldUseFinanceDashboard
     ? 'Top 5 membresias con seguimiento'
     : 'Top 5';
 
-  const lineChartTitle = isAdministrativeDashboard
+  const lineChartTitle = shouldUseFinanceDashboard
     ? 'Tendencia mensual de cobranza'
     : 'Tendencias mensuales';
   const lineChartSubtitle = isPsych
     ? 'Estres y adherencia'
-    : isAdministrativeDashboard
+    : shouldUseFinanceDashboard
       ? 'Vencidas, por regularizar y porcentaje al corriente'
       : 'HbA1c y adherencia';
 
-  const lineDatasets = isAdministrativeDashboard
+  const lineDatasets = shouldUseFinanceDashboard
     ? [
         {
           label: 'Membresias vencidas',
@@ -770,9 +772,9 @@ function Dashboard() {
                 labels: stats.municipios.labels,
                 datasets: [
                   {
-                    label: isAdministrativeDashboard ? 'Pacientes' : 'Beneficiarios',
+                    label: shouldUseFinanceDashboard ? 'Pacientes' : 'Beneficiarios',
                     data: stats.municipios.data,
-                    backgroundColor: isAdministrativeDashboard ? '#0f766e' : '#3b82f6',
+                    backgroundColor: shouldUseFinanceDashboard ? '#0f766e' : '#3b82f6',
                     borderRadius: 8,
                   },
                 ],
@@ -798,7 +800,7 @@ function Dashboard() {
           <Card>
             <div className={styles.cardHeader}>
               <h3>Alertas y pendientes</h3>
-              <p>{isAdministrativeDashboard ? 'Pacientes que requieren regularizacion financiera' : 'Pacientes que requieren atencion inmediata'}</p>
+              <p>{shouldUseFinanceDashboard ? 'Pacientes que requieren regularizacion financiera' : 'Pacientes que requieren atencion inmediata'}</p>
             </div>
             {stats.alertas.length === 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', padding: '2rem 0', color: '#6b7280', flexWrap: 'wrap' }}>
