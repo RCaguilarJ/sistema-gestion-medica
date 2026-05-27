@@ -18,7 +18,6 @@ import Reportes from './pages/Reportes.jsx';
 import Configuracion from './pages/Configuracion.jsx';
 import Citas from './pages/Citas.jsx';
 import Finanzas from './pages/Finanzas.jsx';
-import { isFinanceRole } from './utils/roles.js';
 
 // Componente auxiliar para redirigir si ya está logueado
 const LoginRoute = () => {
@@ -30,13 +29,7 @@ const LoginRoute = () => {
   return <Login />;
 };
 
-const AppHomeRoute = () => {
-  const { user } = useAuth();
-  if (isFinanceRole(user?.role)) {
-    return <Navigate to="/app/finanzas" replace />;
-  }
-  return <Dashboard />;
-};
+const AppHomeRoute = () => <Dashboard />;
 
 const router = createBrowserRouter([
   {

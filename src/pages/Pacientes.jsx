@@ -774,6 +774,7 @@ function Pacientes() {
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = isAdminRole(currentUser?.role);
   const isFinance = isFinanceRole(currentUser?.role);
+  const canUseAdministrativePatientActions = isAdmin || isFinance;
   const canEditResumen = isAdmin || isFinance;
   const canViewGlobal = canViewGlobalData(currentUser?.role);
   const isReadOnly = isReadOnlyRole(currentUser?.role);
@@ -940,12 +941,8 @@ function Pacientes() {
     <div>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>{isFinance ? "Resumen financiero" : "Gestión de Pacientes"}</h1>
-          <p className={styles.subtitle}>
-            {isFinance
-              ? `Total: ${pacientesFiltrados.length} pacientes con seguimiento financiero`
-              : `Total: ${pacientesFiltrados.length} pacientes`}
-          </p>
+          <h1 className={styles.title}>Gestión de Pacientes</h1>
+          <p className={styles.subtitle}>{`Total: ${pacientesFiltrados.length} pacientes`}</p>
         </div>
         {!isReadOnly && (
           <Button
@@ -1057,7 +1054,7 @@ function Pacientes() {
                 <th>Estatus</th>
                 <th>Membresia</th>
                 <th>Estado financiero</th>
-                {isAdmin && <th>Especialista</th>}
+                {canUseAdministrativePatientActions && <th>Especialista</th>}
                 <th>Fecha de Consulta</th>
                 <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
@@ -1075,7 +1072,7 @@ function Pacientes() {
                   <td><Tag label={p.estatus || "Activo"} /></td>
                   <td>{getPacienteMembresia(p) ? <Tag label={getPacienteMembresia(p)} /> : "-"}</td>
                   <td>{getPacienteEstadoPago(p) ? <Tag label={getPacienteEstadoPago(p)} /> : "-"}</td>
-                  {isAdmin && (
+                  {canUseAdministrativePatientActions && (
                     <td style={{ fontSize: "0.9rem", color: "#555" }}>
                       {getEspecialistasAsignados(p)}
                     </td>
@@ -1096,8 +1093,7 @@ function Pacientes() {
                     <button className={styles.actionButton} onClick={() => handleVerDetalle(p.id)}>
                       <FaEye /> Ver
                     </button>
-                    {/* Mostrar eliminar solo para ADMIN. Comentado para especialistas por ahora. */}
-                    {isAdmin && (
+                    {canUseAdministrativePatientActions && (
                       <button
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                         onClick={() => handleDeletePaciente(p.id, p.nombre)}
@@ -1112,7 +1108,7 @@ function Pacientes() {
 
               {pacientesFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? "8" : "7"} className={styles.emptyTable}>No se encontraron resultados.</td>
+                  <td colSpan={canUseAdministrativePatientActions ? "8" : "7"} className={styles.emptyTable}>No se encontraron resultados.</td>
                 </tr>
               )}
             </tbody>

@@ -421,9 +421,9 @@ function Dashboard() {
     return role === 'PSICOLOGO' || role === 'PSY';
   }, [user]);
 
-  const isFinance = useMemo(() => isFinanceRole(user?.role), [user]);
+  const hasNativeFinanceRole = useMemo(() => isFinanceRole(user?.role), [user]);
 
-  const isAdministrativeDashboard = (isAdmin || isFinance) && !isPsych;
+  const isAdministrativeDashboard = (isAdmin || hasNativeFinanceRole) && !isPsych;
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -504,8 +504,6 @@ function Dashboard() {
 
   const headerTitle = isPsych
     ? 'Panel Psicologico'
-    : isFinance
-      ? 'Panel Financiero'
     : isAdministrativeDashboard
       ? 'Panel Administrativo'
       : 'Panel de Control Administrativo';

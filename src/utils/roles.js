@@ -29,10 +29,7 @@ export const isFinanceRole = (role) => normalizeRole(role) === "FINANZAS";
 
 export const isReceptionRole = (role) => normalizeRole(role) === "RECEPCION";
 
-export const isReadOnlyRole = (role) => {
-  const normalized = normalizeRole(role);
-  return normalized === "FINANZAS" || normalized === "RECEPCION";
-};
+export const isReadOnlyRole = (role) => normalizeRole(role) === "RECEPCION";
 
 export const canViewGlobalData = (role) =>
   isAdminRole(role) || isFinanceRole(role) || isReceptionRole(role);
@@ -46,6 +43,9 @@ export const hasRestrictedAdminViews = (user) => {
     RESTRICTED_ADMIN_VIEW_USERNAMES.has(username)
   );
 };
+
+export const hasFinanceConsoleAccess = (user) =>
+  isFinanceRole(user?.role) || hasRestrictedAdminViews(user);
 
 export const canAccessAdminTools = (user) =>
   isAdminRole(user?.role) && !hasRestrictedAdminViews(user);

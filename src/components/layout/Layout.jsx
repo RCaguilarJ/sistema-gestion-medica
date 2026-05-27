@@ -15,7 +15,11 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
-import { canAccessAdminTools, isAdminRole, isFinanceRole } from "../../utils/roles.js";
+import {
+  canAccessAdminTools,
+  hasFinanceConsoleAccess,
+  isAdminRole,
+} from "../../utils/roles.js";
 
 import logoAmd from "../../assets/img/logo.png";
 
@@ -26,10 +30,10 @@ function Layout() {
 
   const role = (user?.role || "").toUpperCase();
   const isAdmin = isAdminRole(role);
-  const isFinance = isFinanceRole(role);
-  const showCitas = !isAdmin && !isFinance;
+  const hasFinanceConsole = hasFinanceConsoleAccess(user);
+  const showCitas = !isAdmin && !hasFinanceConsole;
   const canUseAdminTools = canAccessAdminTools(user);
-  const displayName = isLaptopUp && (isFinance || (isAdmin && !canUseAdminTools))
+  const displayName = isLaptopUp && (hasFinanceConsole || (isAdmin && !canUseAdminTools))
     ? "Finanzas"
     : isAdmin && isLaptopUp
       ? "Admin"
@@ -59,23 +63,21 @@ function Layout() {
         </button>
 
         <div className={`${styles.navLinks} ${mobileOpen ? styles.navLinksOpen : ""}`}>
-          {!isFinance && (
-            <NavLink
-              onClick={closeMobile}
-              to="/app"
-              end
-              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-            >
-              <FaTachometerAlt /> <span>Dashboard</span>
-            </NavLink>
-          )}
+          <NavLink
+            onClick={closeMobile}
+            to="/app"
+            end
+            className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+          >
+            <FaTachometerAlt /> <span>Dashboard</span>
+          </NavLink>
 
           <NavLink
             onClick={closeMobile}
             to="/app/pacientes"
             className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
           >
-            <FaUsers /> <span>{isFinance ? "Resumen financiero" : "Pacientes"}</span>
+            <FaUsers /> <span>Pacientes</span>
           </NavLink>
 
           {showCitas && (
@@ -88,7 +90,7 @@ function Layout() {
             </NavLink>
           )}
 
-          {(isAdmin || isFinance) && (
+          {(isAdmin || hasFinanceConsole) && (
             <NavLink
               onClick={closeMobile}
               to="/app/finanzas"
