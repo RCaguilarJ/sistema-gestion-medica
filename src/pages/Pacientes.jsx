@@ -39,7 +39,8 @@ const grupoSuggestions = ["Grupo Matutino A", "Grupo Vespertino A", "Grupo Contr
 const tipoServicioSuggestions = ["Médico", "Nutricional", "Psicológico", "Mixto", "Educativo", "Otro"];
 const motivoConsultaSuggestions = ["Primera vez", "Seguimiento", "Control glucemico", "Valoracion nutricional", "Evaluacion psicologica", "Revaloracion"];
 const responsableSuggestions = ["Paciente", "Madre", "Padre", "Tutor", "Familiar responsable"];
-const getPacienteUltimaVisita = (paciente) => paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? "";
+const getPacienteUltimaVisita = (paciente) =>
+  paciente?.fechaPago ?? paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? "";
 const getPacienteEstadoPago = (paciente) =>
   paciente?.estadoPago
   ?? paciente?.estado_pago
@@ -81,6 +82,7 @@ const cleanAndNormalizeData = (data) => {
   if (cleanedData.hba1c) cleanedData.hba1c = parseFloat(cleanedData.hba1c);
 
   if (cleanedData.edad) delete cleanedData.edad;
+  delete cleanedData.fechaPago;
   delete cleanedData.fechaConsulta;
 
   Object.keys(cleanedData).forEach((key) => {
@@ -100,6 +102,8 @@ const mapFocusField = (field) => {
     psicologo_id: "psicologoId",
     codigo_postal: "codigoPostal",
     ultima_visita: "ultimaVisita",
+    fecha_pago: "ultimaVisita",
+    fechaPago: "ultimaVisita",
     fecha_consulta: "ultimaVisita",
     fechaConsulta: "ultimaVisita",
     estado_pago: "estadoPago",
@@ -740,7 +744,7 @@ const FormularioEdicionResumenPaciente = ({ paciente, onClose, onSuccess }) => {
         </div>
 
         <div>
-          <label className={styles.label}>Fecha de consulta</label>
+          <label className={styles.label}>Fecha de pago</label>
           <input
             type="date"
             className={styles.inputFull}
@@ -1055,7 +1059,7 @@ function Pacientes() {
                 <th>Membresia</th>
                 <th>Estado financiero</th>
                 {canUseAdministrativePatientActions && <th>Especialista</th>}
-                <th>Fecha de Consulta</th>
+                <th>Fecha de Pago</th>
                 <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
             </thead>

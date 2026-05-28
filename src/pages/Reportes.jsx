@@ -127,7 +127,7 @@ const REPORT_COLUMNS = [
   { header: 'TIPO DE TERAPIA', width: 18, value: (paciente) => getCellValue(paciente.tipoTerapia) },
   { header: 'MES', width: 16, value: (paciente) => getCellValue(paciente.mesEstadistico) },
   { header: 'FECHA DE DIAGNOSTICO', width: 18, value: (paciente) => formatDateValue(paciente.fechaDiagnostico) },
-  { header: 'FECHA DE CONSULTA', width: 18, value: (paciente) => formatDateValue(getPacienteDate(paciente)) },
+  { header: 'FECHA DE PAGO', width: 18, value: (paciente) => formatDateValue(getPacienteDate(paciente)) },
 ];
 
 const collator = new Intl.Collator('es-MX', { sensitivity: 'base' });
@@ -177,6 +177,7 @@ function formatDateValue(value) {
 function getPacienteDate(paciente) {
   return (
     paciente?.ultimaVisita
+    || paciente?.fechaPago
     || paciente?.fechaConsulta
     || paciente?.fechaDiagnostico
     || paciente?.updatedAt

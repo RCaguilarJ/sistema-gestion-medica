@@ -106,7 +106,8 @@ const tipoServicioSuggestions = ['Médico', 'Nutricional', 'Psicológico', 'Mixt
 const motivoConsultaSuggestions = ['Primera vez', 'Seguimiento', 'Control glucemico', 'Valoracion nutricional', 'Evaluacion psicologica', 'Revaloracion'];
 const responsableSuggestions = ['Paciente', 'Madre', 'Padre', 'Tutor', 'Familiar responsable'];
 
-const getPacienteUltimaVisita = (paciente) => paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? '';
+const getPacienteUltimaVisita = (paciente) =>
+    paciente?.fechaPago ?? paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? '';
 const getPacienteEstadoPago = (paciente) =>
     paciente?.estadoPago
     ?? paciente?.estado_pago
@@ -137,6 +138,7 @@ const buildPacientePayload = (data) => {
     });
 
     delete cleanedData.edad;
+    delete cleanedData.fechaPago;
     delete cleanedData.fechaConsulta;
 
     return cleanedData;
@@ -2065,7 +2067,7 @@ function DetallePacientePage() {
                 ) : (
                     <>
                         <div className={styles.metricCard}><h4>HbA1c</h4><h2>{paciente.hba1c || '-'}%</h2><small>{paciente.riesgo}</small></div>
-                        <div className={styles.metricCard}><h4>Fecha de consulta</h4><h3>{getPacienteUltimaVisita(paciente) ? new Date(getPacienteUltimaVisita(paciente)).toLocaleDateString() : 'N/A'}</h3></div>
+                        <div className={styles.metricCard}><h4>Fecha de pago</h4><h3>{getPacienteUltimaVisita(paciente) ? new Date(getPacienteUltimaVisita(paciente)).toLocaleDateString() : 'N/A'}</h3></div>
                         <div className={styles.metricCard}><h4>Membresía</h4><h3>{getPacienteMembresia(paciente) || '-'}</h3><small>Paquete vigente del paciente</small></div>
                         <div className={styles.metricCard}><h4>Estado financiero</h4><h3>{getPacienteEstadoPago(paciente) || '-'}</h3><small>Seguimiento de pago del paciente</small></div>
                         <div className={styles.metricCard}><h4>IMC</h4><h2>{paciente.imc || '-'}</h2><small>{paciente.pesoKg}kg / {paciente.estatura}m</small></div>

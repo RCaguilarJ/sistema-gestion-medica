@@ -73,7 +73,8 @@ const formatMembership = (value) => {
   return value.toString().trim();
 };
 
-const getPacienteUltimaVisita = (paciente) => paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? "";
+const getPacienteUltimaVisita = (paciente) =>
+  paciente?.fechaPago ?? paciente?.ultimaVisita ?? paciente?.fechaConsulta ?? "";
 const getPacienteEstadoPago = (paciente) =>
   paciente?.estadoPago
   ?? paciente?.estado_pago
@@ -575,7 +576,7 @@ function Citas() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Fecha de consulta</th>
+                  <th>Fecha de pago</th>
                   <th>Paciente</th>
                   <th>Membresia</th>
                   <th>Estado financiero</th>
